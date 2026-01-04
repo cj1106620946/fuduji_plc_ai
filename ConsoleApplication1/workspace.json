@@ -1,0 +1,26 @@
+{
+  "workspace": {"name": "factory_water_supply_system", "desc": "工厂供水系统，控制5个水泵的启停与联动"},
+  "description": "系统根据水位传感器信号和手动启动指令，按预设逻辑顺序启停5台水泵，实现稳定供水。",
+  "signals": {
+    "inputs": [
+      {"name": "manual_start", "type": "BOOL", "desc": "手动系统启动按钮", "plc": {"address": "I0.0", "source": "auto"}},
+      {"name": "manual_stop", "type": "BOOL", "desc": "手动系统停止按钮", "plc": {"address": "I0.1", "source": "auto"}},
+      {"name": "low_level_sensor", "type": "BOOL", "desc": "低水位传感器", "plc": {"address": "I0.2", "source": "auto"}},
+      {"name": "high_level_sensor", "type": "BOOL", "desc": "高水位传感器", "plc": {"address": "I0.3", "source": "auto"}}
+    ],
+    "outputs": [
+      {"name": "pump_1", "type": "BOOL", "desc": "1号水泵", "plc": {"address": "Q0.0", "source": "auto"}},
+      {"name": "pump_2", "type": "BOOL", "desc": "2号水泵", "plc": {"address": "Q0.1", "source": "auto"}},
+      {"name": "pump_3", "type": "BOOL", "desc": "3号水泵", "plc": {"address": "Q0.2", "source": "auto"}},
+      {"name": "pump_4", "type": "BOOL", "desc": "4号水泵", "plc": {"address": "Q0.3", "source": "auto"}},
+      {"name": "pump_5", "type": "BOOL", "desc": "5号水泵", "plc": {"address": "Q0.4", "source": "auto"}},
+      {"name": "system_ready_light", "type": "BOOL", "desc": "系统就绪指示灯", "plc": {"address": "Q0.5", "source": "auto"}}
+    ],
+    "internals": [
+      {"name": "system_enabled", "type": "BOOL", "desc": "系统总使能状态"},
+      {"name": "pump_sequence_counter", "type": "INT", "desc": "水泵启动顺序计数器"}
+    ]
+  },
+  "decision_model": {"type": "RULE", "goal": "根据水位和指令控制5台水泵的启停顺序与系统状态", "inputs": ["manual_start", "manual_stop", "low_level_sensor", "high_level_sensor"], "outputs": ["pump_1", "pump_2", "pump_3", "pump_4", "pump_5", "system_ready_light"]},
+  "plc": {"enabled": true, "program_type": "FC", "desc": "多水泵顺序启停与水位联动控制逻辑"}
+}

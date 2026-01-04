@@ -1,0 +1,42 @@
+###############################################################################
+# Visual Studio C++ + AI project
+# 目标：源码进 Git，运行产物 / 模型永不进 Git
+###############################################################################
+
+# ========== Visual Studio ==========
+.vs/
+x64/
+x86/
+Debug/
+Release/
+[Bb]in/
+[Oo]bj/
+
+# ========== Build / Temp ==========
+*.ilk
+*.obj
+*.pch
+*.ipdb
+*.iobj
+*.log
+*.tlog
+*.tmp
+*.cache
+*.pdb
+
+# ========== Executables ==========
+*.exe
+
+# ========== Runtime libraries ==========
+*.dll
+
+# ========== AI / Large models ==========
+*.bin
+*.onnx
+*.pt
+*.pth
+
+# ========== OS junk ==========
+Thumbs.db
+Desktop.ini
+*~
