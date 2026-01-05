@@ -40,3 +40,5 @@ Release/
 Thumbs.db
 Desktop.ini
 *~
+/ConsoleApplication1/piper
+/ConsoleApplication1/tts_input.txt
