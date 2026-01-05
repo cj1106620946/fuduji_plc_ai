@@ -10,7 +10,6 @@
 #include <iomanip>
 #include <deque>
 #include <string>
-
 //时间戳
 static std::string make_timestamp()
 {
@@ -22,7 +21,6 @@ static std::string make_timestamp()
 #else
     localtime_r(&t, &tm);
 #endif
-
     std::ostringstream ss;
     ss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
     return ss.str();
@@ -46,8 +44,7 @@ static std::string json_escape(const std::string& s)
     }
     return out;
 }
-
-
+// 读取最近的 chat jsonl 文件内容，限制行数
 static std::string read_recent_chat_jsonl(
     const std::string& path,
     size_t max_lines = 10)
@@ -77,21 +74,12 @@ static std::string read_recent_chat_jsonl(
 
     return result;
 }
-
-
-// ==========================================================
-// 构造
-// ==========================================================
 ChatAgent::ChatAgent(AIController& aiRef,
     WorkspaceManager& ws,
     PLCClient& plcRef)
     : ai(aiRef), workspace(ws), plc(plcRef)
 {
 }
-
-// ==========================================================
-// 外部唯一入口
-// ==========================================================
 std::string ChatAgent::query_once(const std::string& user_input)
 {
     // 1 规划阶段
@@ -103,15 +91,12 @@ std::string ChatAgent::query_once(const std::string& user_input)
     // 4 解释阶段
     return explain_result(user_input, plan_text, exec_snapshot);
 }
-
-// ==========================================================
-// 调用规划 AI
-// ==========================================================
+//规划阶段
 std::string ChatAgent::call_plan_ai(const std::string& user_input)
 {
     std::ostringstream ss;
 
-    // ===== workspace =====
+    // = workspace =
     {
         std::ifstream f("workspace.json");
         if (f)
@@ -120,7 +105,7 @@ std::string ChatAgent::call_plan_ai(const std::string& user_input)
             ss << f.rdbuf() << "\n";
         }
     }
-    // ===== 最近聊天上下文（限制长度）=====
+    // = 最近聊天上下文（限制长度）=
     {
         std::string recent = read_recent_chat_jsonl("ai_explain.jsonl", 20);
         if (!recent.empty())
@@ -129,19 +114,14 @@ std::string ChatAgent::call_plan_ai(const std::string& user_input)
             ss << recent << "\n";
         }
     }
-    // ===== 当前输入 =====
+    // = 当前输入 =
     ss << "USER_INPUT:\n";
     ss << user_input << "\n";
 
     return ai.askPlan(ss.str());
 }
-
-
-// ==========================================================
-// JSON → 执行计划
-// 不跳过，不提前返回，所有异常交给最后解释器
-// ==========================================================
 ChatAgent::PlanResult
+// 解析阶段
 ChatAgent::parse_plan_json(const std::string& plan_text)
 {
     PlanResult result;
@@ -162,11 +142,9 @@ ChatAgent::parse_plan_json(const std::string& plan_text)
     }
 
     result.json_parsed = true;
-
     // type=error 也不提前返回，记录给执行快照
     // 仍然尝试解析动作，尽量执行能执行的部分
     // 解释器最终会根据快照自行输出错误
-
     // plcEnable
     if (root.isMember("plcEnable") && root["plcEnable"].isObject())
     {
@@ -186,7 +164,6 @@ ChatAgent::parse_plan_json(const std::string& plan_text)
             result.items.push_back(it);
         }
     }
-
     // plcActions
     if (root.isMember("plcActions") && root["plcActions"].isArray())
     {
@@ -227,11 +204,7 @@ ChatAgent::parse_plan_json(const std::string& plan_text)
 
     return result;
 }
-
-// ==========================================================
-// 真正执行 PLC
-// 不提前 return，不跳过，全部写入快照
-// ==========================================================
+// 执行阶段
 std::string ChatAgent::execute_plan(const PlanResult& plan)
 {
     std::ostringstream out;
@@ -293,10 +266,8 @@ std::string ChatAgent::execute_plan(const PlanResult& plan)
     out << "EXEC:END\n";
     return out.str();
 }
-
-std::string ChatAgent::explain_result(const std::string& user_input,
-    const std::string& plan_text,
-    const std::string& exec_snapshot)
+// 解释阶段
+std::string ChatAgent::explain_result(const std::string& user_input, const std::string& plan_text,const std::string& exec_snapshot)
 {
     std::ostringstream msg;
     msg << "user_input:\n" << user_input << "\n";
@@ -304,9 +275,6 @@ std::string ChatAgent::explain_result(const std::string& user_input,
     msg << "exec_snapshot:\n" << exec_snapshot << "\n";
     std::string ai_reply = ai.askExplain(msg.str());
     std::string ts = make_timestamp();
-    // ==========================================================
-  // 保存 AI 规划（覆盖格式）
-  // ==========================================================
     {
         std::ofstream f("ai_plan.json", std::ios::binary | std::ios::trunc);
         if (f)
@@ -326,9 +294,6 @@ std::string ChatAgent::explain_result(const std::string& user_input,
             f << "}\n";
         }
     }
-    // ==========================================================
-    // 保存 AI 对话（追加 JSONL 格式）
-    // ==========================================================
     {
         std::ofstream f("ai_explain.jsonl", std::ios::binary | std::ios::app);
         if (f)

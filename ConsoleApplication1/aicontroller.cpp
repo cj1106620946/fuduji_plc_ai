@@ -4,9 +4,7 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
-// ==========================================================
 // 构造
-// ==========================================================
 AIController::AIController(PLCClient& plcRef, DeepSeekAI& aiRef)
     : plc(plcRef), ai(aiRef)
 {
@@ -14,10 +12,7 @@ AIController::AIController(PLCClient& plcRef, DeepSeekAI& aiRef)
     buildWorkspacePrompt();
     buildDecisionPrompt();
 }
-
-// ==========================================================
 // 二、Workspace AI（创建工作区）
-// ==========================================================
 AIController::WorkspaceDraft
 AIController::createWorkspace(const std::string& user_requirement)
 {
@@ -36,31 +31,21 @@ AIController::createWorkspace(const std::string& user_requirement)
 
     return draft;
 }
-
-// ==========================================================
 // 三、Decision AI（运行时决策）
-// ==========================================================
 AIController::DecisionResult
 AIController::runDecision(const DecisionInput& input)
 {
     DecisionResult r;
-
     std::ostringstream prompt;
     prompt << "workspace: " << input.workspace_name << "\n";
     prompt << "snapshot:\n" << input.snapshot_json << "\n";
     prompt << "rule:\n" << input.decision_prompt << "\n";
-
     std::string reply = callDecisionAI(prompt.str());
-
     // 当前阶段不做结构化解析
     r.ok = true;
     r.reason = reply;
-
     return r;
 }
-// ==========================================================
-// Prompt 构建
-// ==========================================================
 void AIController::buildChatPrompt()
 {
     chat_prompt =
@@ -68,9 +53,6 @@ void AIController::buildChatPrompt()
         u8"你的任务是将输入转换为可执行的 JSON 控制指令。\n"
         u8"你不会自主推测配置变更，只能根据输入类型执行。\n"
         u8"\n"
-        // =========================
-        // 输入类型判定（核心协议）
-        // =========================
         u8"输入类型判定规则\n"
         u8"1. 普通自然语言 → 视为人类指令\n"
         u8"2. yuyin + 普通自然语言 开头 → 视为语言输入\n"
@@ -78,9 +60,6 @@ void AIController::buildChatPrompt()
         u8"\n"
         u8"除以上三种情况外，不允许自行假设输入意图。\n"
         u8"\n"
-        // =========================
-        // 决策 AI 规则（重点）
-        // =========================
         u8"【决策AI处理规则】\n"
         u8" 自然语言可执行所有操作\n"
         u8"  - yuying + 自然语言：\n"
@@ -94,17 +73,11 @@ void AIController::buildChatPrompt()
         u8"  - 严禁判断为“重复配置”\n"
         u8"  - 只能根据 task 生成 plcActions\n"
         u8"\n"
-        // =========================
-        // Workspace 规则
-        // =========================
         u8"【Workspace 规则】\n"
         u8"- 当用户描述系统结构、设备、工程方案时\n"
         u8"- 必须设置 jumpWorkspace = true\n"
         u8"- jumpWorkspace = true 时，不允许输出 plcActions\n"
         u8"\n"
-        // =========================
-        // 输出约束
-        // =========================
         u8"【输出规则】\n"
         u8"1. 只能输出 JSON\n"
         u8"2. 不允许输出解释性文字\n"
@@ -113,10 +86,6 @@ void AIController::buildChatPrompt()
         u8"5. 无法判断意图时 type=error\n"
         u8"6. message 必须说明原因\n"
         u8"\n"
-
-        // =========================
-        // JSON 结构
-        // =========================
         u8"【JSON 结构（必须严格遵守）】\n"
         u8"{\n"
         u8"  \"type\": \"ok | error\",\n"
@@ -140,9 +109,6 @@ void AIController::buildChatPrompt()
         u8"\n"
         u8"【开始解析】\n"
         u8"用户输入：\n";
-        // =========================
-        // 节点说明（非常重要）
-        // =========================
         u8"【节点说明】\n"
         u8"1. jumpWorkspace（节点）\n"
         u8"- 表示是否进入 Workspace 构建流程\n"
@@ -176,20 +142,16 @@ void AIController::buildChatPrompt()
         u8"\n"
         u8"【开始解析】\n"
         u8"用户输入：\n";
-
     response_prompt =
-        u8"你是工业控制AI的结果解释器。\n"
-        u8"你将收到用户问题与执行结果。\n"
-        u8"用户采用文字和语言输入，你可自行判断，当用户输入语言时，文本可能不完整，信息不确定，需要你进行补充和说明。\n"
-        u8"你必须只输出以下格式：\n"
-        u8"QWQ:TEXT\n"
-        u8"规则：\n"
-        u8"1 按照QWQ:TEXT格式输出\n"
-        u8"2 可多行\n"
-        u8"3 语气尽可能温和柔婉，不要太学术化\n";
+        u8"你是工业控制 AI 的语音回应角色，可以聊天。\n"
+        u8"你的回答会被直接转换成语音播放。\n"
+        u8"你不需要解释用户说了什么，也不要分析输入内容。\n"
+        u8"请直接用自然的口语回应用户当前的状态或下一步。\n"
+        u8"当用户的输入不明确时，不要教学或列举选项，只需要温和地引导一句即可。\n"
+        u8"回答要简短清晰，像人与人对话一样。\n"
+        u8"不要使用书面语或说明书风格。\n"
+        u8"不要使用任何特殊符号，只允许使用中文逗号，问号，感叹号。\n";
 }
-
-
 void AIController::buildWorkspacePrompt()
 {
     workspace_prompt =
@@ -231,11 +193,11 @@ void AIController::buildDecisionPrompt()
         u8"你是工业控制系统的【决策生成 AI】。\n"
         u8"你的唯一作用是：\n"
         u8"根据当前 传递给你的json（特别是decision）生成一段json。\n"
-        u8"==================== 重要规则 ====================\n"
+        u8" 重要规则 \n"
         u8"你只负责生成“下一步要做什么”的描述\n"
         u8"你生成的内容必须是 JSON\n"
         u8"\n"
-        u8"==================== 输出 JSON 结构 ====================\n"
+        u8" 输出 JSON 结构 \n"
         u8"{\n"
         u8"  \"type\": \"decision\",\n"
         u8"  \"decision_name\": \"\",\n"
@@ -243,7 +205,7 @@ void AIController::buildDecisionPrompt()
         u8"  \"note\": \"\"\n"
         u8"}\n"
         u8"\n"
-        u8"==================== 说明 ====================\n"
+        u8" 说明 \n"
         u8"- content 是一段描述性文本\n"
         u8"- 这段文本将被当作用户输入再次交给聊天 AI\n"
         u8"- 你可以在 content 中描述：\n"
@@ -251,7 +213,7 @@ void AIController::buildDecisionPrompt()
         u8"  · 需要执行的逻辑\n"
         u8"  · 条件判断\n"
         u8"\n"
-        u8"==================== 示例 ====================\n"
+        u8" 示例 \n"
         u8"{\n"
         u8"  \"type\": \"decision\",\n"
         u8"  \"decision_name\": \"invert_output\",\n"
@@ -259,7 +221,7 @@ void AIController::buildDecisionPrompt()
         u8"  \"note\": \"周期性取反输出\"\n"
         u8"}\n"
         u8"\n"
-        u8"==================== 开始生成 ====================\n";
+        u8" 开始生成 \n";
 }
 
 std::string AIController::callDecisionAI(const std::string& text)

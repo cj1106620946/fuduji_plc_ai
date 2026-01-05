@@ -5,22 +5,13 @@
 
 class PLCClient;
 class DeepSeekAI;
-
-/*
- * AIController
- * ------------------------------------------------
- * 职责：
- * 1. 管理多个 AI 角色（Chat / Workspace / Decision）
- * 2. 提供统一接口给 Console / WorkspaceManager
- * 3. 不保存业务状态，不直接操作 PLC
- */
 class AIController
 {
 public:
     explicit AIController(PLCClient& plc, DeepSeekAI& ai);
-    // ==========================================================
+    
     // 一、Chat AI（人机交互）
-    // ==========================================================
+    
     struct ChatResult
     {
         bool ok = false;
@@ -29,11 +20,6 @@ public:
         std::string target;          // 变量名 or 地址
         int value = 0;               // 写入值
     };
-    // 用户自然语言 → 操作意图
-    ChatResult chat(const std::string& user_input);
-    // ==========================================================
-    // 二、Workspace AI（工作区创建）
-    // ==========================================================
     struct WorkspaceVar
     {
         std::string name;
@@ -41,7 +27,7 @@ public:
         std::string type;
         std::string default_value;
         std::string desc;
-        std::string addr;     // 可为空
+        std::string addr;    
     };
 
     struct WorkspaceDraft
@@ -66,9 +52,9 @@ public:
 
     // 创建工作区
     WorkspaceDraft createWorkspace(const std::string& user_requirement);
-    // ==========================================================
+    
     // 三、Decision AI（运行时决策）
-    // ==========================================================
+    
     struct DecisionInput
     {
         std::string workspace_name;
@@ -91,9 +77,9 @@ public:
     std::string callDecisionAI(const std::string& text);
 
 private:
-    // ==========================================================
+    
     // 内部：Prompt 构建
-    // ==========================================================
+    
     void buildChatPrompt();
     void buildWorkspacePrompt();
     void buildDecisionPrompt();

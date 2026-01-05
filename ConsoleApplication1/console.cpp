@@ -1,13 +1,12 @@
 ﻿#include "console.h"
-#include <sstream>
-#include <iostream>
-#include <json/json.h>
 #include "decisionai.h"
 #include <conio.h>
+#include <iostream>
+#include <json/json.h>
+#include <sstream>
 
-// ================================
 // 输出函数
-// ================================
+
 void Console::printGBK(const std::string& text)
 {
     DWORD w;
@@ -16,7 +15,6 @@ void Console::printGBK(const std::string& text)
         (DWORD)text.size(),
         &w, NULL);
 }
-
 void Console::printUTF8(const std::string& text)
 {
     int wlen = MultiByteToWideChar(CP_UTF8, 0, text.c_str(), -1, NULL, 0);
@@ -52,9 +50,8 @@ bool Console::checkBreak(const std::string& cmd)
     return cmd == "break0";
 }
 
-// ================================
 // 构造 / 析构
-// ================================
+
 Console::Console()
     : plc()
     , ai()
@@ -66,20 +63,14 @@ Console::Console()
     // ⭐ 这里是关键
     decisionAI = new DecisionAI(*chatAgent);
 }
-
-
-
-
 Console::~Console()
 {
     delete workspace;
     delete decisionAI;
 }
 
-
-// ================================
 // 主循环
-// ================================
+
 void Console::run()
 {
     while (true)
@@ -89,14 +80,11 @@ void Console::run()
     }
 }
 
-// ================================
 // UI
-// ================================
+
 void Console::showMainHeader()
 {
-    printGBK("\n===================================\n");
     printUTF8(u8"        PLC + AI 控制台\n");
-    printGBK("===================================\n");
     printGBK("PLC：");
     printGBK(plc.isConnected() ? "已连接\n" : "未连接\n");
     printGBK("AI Key：");
@@ -110,15 +98,15 @@ void Console::showMainHeader()
     printGBK("6. AI 对话（语音）\n");
     printGBK("7. 语音识别测试\n");
     printGBK("8. 决策 AI 测试\n");
+    printGBK("9. 文本转语音测试\n");
     printGBK("0. 退出\n");
-    printGBK("===================================\n");
+    printGBK("-----------------------------------\n");
 }
 void Console::mainMenu()
 {
     printGBK("> ");
     std::string cmd;
     std::getline(std::cin, cmd);
-
     if (cmd == "0") exit(0);
     else if (cmd == "1") menuPLCConnect();
     else if (cmd == "2") menuAIKey();
@@ -128,12 +116,11 @@ void Console::mainMenu()
     else if (cmd == "6") menuVoiceChat();
     else if (cmd == "7") menuSpeechTest();
     else if (cmd == "8") menuDecisionTest();
+    else if (cmd == "9") menuTtsTest();
     else printGBK("无效输入\n");
 }
-
-// ================================
 // 1. PLC 连接
-// ================================
+
 void Console::menuPLCConnect()
 {
     printGBK("PLC IP> ");
@@ -146,9 +133,9 @@ void Console::menuPLCConnect()
         printGBK("PLC 连接失败\n");
 }
 
-// ================================
+
 // 2. AI Key
-// ================================
+
 void Console::menuAIKey()
 {
     printGBK("请输入 AI Key：\n");
@@ -160,9 +147,9 @@ void Console::menuAIKey()
     printGBK("AI Key 设置完成\n");
 }
 
-// ================================
+
 // 3. PLC 手动
-// ================================
+
 void Console::menuPLCManual()
 {
     if (!plc.isConnected())
@@ -202,9 +189,9 @@ void Console::menuPLCManual()
     }
 }
 
-// ================================
+
 // 4. Workspace 创建（最终版）
-// ================================
+
 void Console::menuWorkspace()
 {
     if (!hasAIKey)
@@ -232,7 +219,7 @@ void Console::menuWorkspace()
 
         printGBK("正在构建 Workspace...\n");
 
-        // ===== 调用 Workspace =====
+        // = 调用 Workspace =
         if (!workspace->buildFromUserInput(utf8Input))
         {
             printGBK("Workspace 尚未完成\n");
@@ -242,18 +229,18 @@ void Console::menuWorkspace()
             // ⭐ 关键：打印 AI 原始输出
             printGBK("【AI 原始输出】\n");
             printUTF8(workspace->getAiRawOutput());
-            printGBK("\n==========================\n");
+            printGBK("\n\n");
 
             printGBK("请补充说明后继续输入\n\n");
             continue;
         }
 
-        // ===== 成功 =====
+        // = 成功 =
         printGBK("Workspace 创建成功\n\n");
 
         printUTF8("=== Workspace JSON ===\n");
         printUTF8(workspace->getWorkspaceJson());
-        printGBK("\n======================\n");
+        printGBK("\n==\n");
 
         if (workspace->saveToFile("workspace.json"))
             printGBK("已保存到 workspace.json\n");
@@ -280,34 +267,30 @@ void Console::menuChat()
     while (true)
     {
         printGBK("chat> ");
-
         std::string input;
         std::getline(std::cin, input);
 
         if (checkBreak(input))
             return;
-
         // GBK -> UTF8
         std::string utf8 = GBKtoUTF8(input);
-        // ============================
+        
         // ① 提示 AI 正在处理
-        // ============================
+        
         printGBK("[AI] 正在解析...\n");
-        // ============================
+        
         // ② 调用 ChatAgent
-        // ============================
+        
         std::string reply = chatAgent->query_once(utf8);
-        // ============================
+        
         // ③ 输出结果
-        // ============================
+        
         printGBK("[AI] 结果：\n");
         printUTF8(reply);
         printGBK("\n\n");
     }
 }
-// ================================
 // 6. AI 对话（语音）
-// ================================
 void Console::menuVoiceChat()
 {
     if (!hasAIKey)
@@ -325,17 +308,23 @@ void Console::menuVoiceChat()
         return;
     }
     speech.setDebug(0);
+    PiperEngine tts;
+    tts.init("\\piper");
+
     while (true)
     {
         if (_kbhit())
         {
             std::string cmd;
             std::getline(std::cin, cmd);
-
             if (checkBreak(cmd))
+            {
+                speech.stop();
                 return;
+            }
         }
         printGBK("voice> ");
+        // 语音识别结果
         std::string text = speech.getText();
         if (text == "nosl")
         {
@@ -346,18 +335,25 @@ void Console::menuVoiceChat()
             speech.stop();
             return;
         }
-
-        printGBK("[AI] 正在解析...\n");
+        printGBK("AI jx...\n");
+        // AI 查询
         std::string reply = chatAgent->query_once("yuyin:" + text);
-        printGBK("[AI] 结果：\n");
+        // 控制台输出
+        printGBK("AI;\n");
         printUTF8(reply);
         printGBK("\n\n");
+        std::string utf8reply = reply;
+        if (!utf8reply.empty())
+        {
+            tts.speak(utf8reply);
+        }
     }
 }
 
-// ================================
+
+
 // 7. 语音识别测试（调试）
-// ================================
+
 void Console::menuSpeechTest()
 {
     printGBK("\n--- 麦克风语音识别测试 ---\n");
@@ -390,9 +386,9 @@ void Console::menuSpeechTest()
     }
 }
 
-// ================================
+
 // 8. 决策 AI
-// ================================
+
 void Console::menuDecisionTest()
 {
     if (!hasAIKey)
@@ -433,4 +429,41 @@ void Console::menuDecisionTest()
 
 }
 
+void Console::menuTtsTest()
+{
+    printUTF8(u8"\n--- 文本转语音测试（Piper）---\n");
+    printUTF8(u8"输入中文即可朗读，输入 exit 或空行返回\n\n");
+
+    // 创建 TTS 实例（只在这个模式用）
+    PiperEngine tts;
+    tts.init("\\piper");   // ⚠️ 使用你现在验证过的工作目录
+
+    while (true)
+    {
+        printUTF8(u8"tts> ");
+        std::string gbk;
+        std::getline(std::cin, gbk);
+
+        if (gbk.empty() || gbk == "exit")
+        {
+            printUTF8(u8"退出文本转语音测试\n");
+            break;
+        }
+
+        // GBK → UTF-8
+        std::string utf8 = GBKtoUTF8(gbk);
+        if (utf8.empty())
+        {
+            printUTF8(u8"编码转换失败\n");
+            continue;
+        }
+
+        // 调用 Piper
+        bool ok = tts.speak(utf8);
+        if (!ok)
+        {
+            printUTF8(u8"语音合成失败\n");
+        }
+    }
+}
 

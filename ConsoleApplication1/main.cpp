@@ -1,4 +1,4 @@
-﻿/*#include <iostream>
+﻿#include <iostream>
 #include <windows.h>
 #include <fcntl.h>
 #include <io.h>
@@ -7,10 +7,10 @@
 #include "deepseek.h"    // AI 客户端
 
 int main()
-{   
+{
     // 创建上位机管理类
     Console app;
     // 启动菜单系统
     app.run();
     return 0;
-}*/
+}

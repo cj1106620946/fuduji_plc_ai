@@ -8,9 +8,9 @@ class AIController;
 class WorkspaceManager;
 class PLCClient;
 
-// ==========================================================
+
 // ChatAgent
-// ==========================================================
+
 class ChatAgent
 {
 public:
@@ -24,9 +24,9 @@ public:
     std::string query_once(const std::string& user_input);
 
 private:
-    // ======================================================
+    
     // 计划项
-    // ======================================================
+    
     struct PlanItem
     {
         enum class Type
@@ -51,9 +51,9 @@ private:
         std::string raw_action;
     };
 
-    // ======================================================
+    
     // 解析结果
-    // ======================================================
+    
     struct PlanResult
     {
         bool json_parsed = false;
@@ -63,9 +63,9 @@ private:
     };
 
 private:
-    // ======================================================
+    
     // 内部逻辑
-    // ======================================================
+    
     std::string call_plan_ai(const std::string& user_input);
     PlanResult parse_plan_json(const std::string& plan_text);
     std::string execute_plan(const PlanResult& plan);
@@ -76,9 +76,9 @@ private:
     );
 
 private:
-    // ======================================================
+    
     // 依赖对象
-    // ======================================================
+    
     AIController& ai;
     WorkspaceManager& workspace;
     PLCClient& plc;

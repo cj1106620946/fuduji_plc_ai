@@ -1,4 +1,4 @@
 {
-  "time": "2026-01-04 05:42:38",
-  "plan_json": "{\n  \"type\": \"ok\",\n  \"message\": \"已识别为决策AI执行请求。将执行当前决策任务：对M1.0进行取反操作。\",\n  \"jumpWorkspace\": false,\n  \"plcEnable\": {\"enable\": false, \"ip\": \"\", \"rack\": 0, \"slot\": 0},\n  \"plcActions\": [{\"enable\": true, \"action\": \"write\", \"address\": \"M1.0\", \"value\": \"toggle\"}],\n  \"decision\": {\"enable\": true, \"source\": \"ai\", \"interval_ms\": 2000, \"task\": {\"type\": \"toggle\", \"params\": {\"address\": \"M1.0\"}}}\n}"
+  "time": "2026-01-05 13:26:32",
+  "plan_json": "{\n  \"type\": \"ok\",\n  \"message\": \"已根据语音指令处理工作区状态查询。\",\n  \"jumpWorkspace\": true,\n  \"plcEnable\": {\"enable\": false, \"ip\": \"\", \"rack\": 0, \"slot\": 0},\n  \"plcActions\": [],\n  \"decision\": {\"enable\": false, \"source\": \"human\", \"interval_ms\": 0, \"task\": {\"type\": \"\", \"params\": {}}}\n}"
 }

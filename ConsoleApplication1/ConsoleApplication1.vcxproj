@@ -122,13 +122,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\复读机\Desktop\c-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\project\c-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\复读机\Desktop\c-cpp\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\project\c-cpp\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>snap7.lib;libcurl_a_debug.lib;libcurl_a.lib;ws2_32.lib;winmm.lib;wldap32.lib;Crypt32.lib;Normaliz.lib;whisper.lib;portaudio.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -141,6 +141,7 @@
     <ClCompile Include="deepseek.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="jsoncpp.cpp" />
+    <ClCompile Include="piperengine.cpp" />
     <ClCompile Include="plcclient.cpp" />
     <ClCompile Include="speechagent.cpp" />
     <ClCompile Include="workspacemanager.cpp" />
@@ -152,6 +153,7 @@
     <ClInclude Include="console.h" />
     <ClInclude Include="decisionai.h" />
     <ClInclude Include="deepseek.h" />
+    <ClInclude Include="piperengine.h" />
     <ClInclude Include="plcclient.h" />
     <ClInclude Include="speechagent.h" />
     <ClInclude Include="workspacemanager.h" />

@@ -48,6 +48,9 @@
     <ClCompile Include="speechagent.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="piperengine.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\c-cpp\include\snap7.h">
@@ -78,6 +81,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="speechagent.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="piperengine.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
