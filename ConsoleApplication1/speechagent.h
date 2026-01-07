@@ -1,13 +1,19 @@
 // speechagent.h
 #pragma once
+
 #include <string>
+#include <vector>
+#include <deque>
+#include <mutex>
 
 // speechagent
-// 只负责 持续监听麦克风语音 返回文本字符串
+// 提供三套并行能力：
+// 1 getText：一体式 语音→文本（独立存在）
+// 2 push：只录制一句语音，放入队列
+// 3 pop：取出一条语音并进行处理
 class speechagent
 {
 public:
-    // 语音参数
     struct SpeechParams
     {
         int device_index = 1;
@@ -28,10 +34,10 @@ public:
         float start_rms_min = 0.08f;
         // 开始说话最低强度 RMS 必须大于等于这个值才允许触发开始说话
 
-        int end_silence_ms = 600;
+        int end_silence_ms = 200;
         // 结束说话判定静音时长 单位 ms 进入说话状态后 连续静音达到该值就结束
 
-        int check_ms = 100;
+        int check_ms = 10;
         // 检测间隔 单位 ms 越小反应越快 CPU 越高
 
         int max_record_ms = 8000;
@@ -40,12 +46,16 @@ public:
         int debug_rms_print_ms = 500;
         // 调试 RMS 打印间隔 单位 ms 只控制打印频率 不影响判定
     };
-
-public:
+    // 生命周期
     bool start();
-    std::string getText();
     void stop();
 
+    // 一体调用接口（与 push / pop 无关）
+    std::string getText();
+    bool pushtext();
+    std::string poptext();
+
+    // 调试控制
     static void setDebug(bool enable);
     static bool getDebug();
 };

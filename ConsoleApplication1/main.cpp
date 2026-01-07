@@ -4,7 +4,7 @@
 #include <io.h>
 #include "console.h"     // 你的 ConsoleApp 类
 #include "plcclient.h"   // PLC 客户端
-#include "deepseek.h"    // AI 客户端
+#include "aiclient.h"    // AI 客户端
 
 int main()
 {

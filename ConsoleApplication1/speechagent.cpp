@@ -77,6 +77,8 @@ bool speechagent::getDebug()
 static speechagent::SpeechParams speechParams;
 static std::vector<float> audioBuffer48k;
 static std::mutex audioBufferMutex;
+static std::deque<std::vector<float>> audioQueue;
+static std::mutex audioQueueMutex;
 
 static whisper_context* whisperContext = nullptr;
 static PaStream* audioInputStream = nullptr;
@@ -222,6 +224,160 @@ bool speechagent::start()
         printUTF81(u8"[语音] speechagent 已启动\n");
 
     return true;
+}
+
+
+bool speechagent::pushtext()
+{
+    {
+        std::lock_guard<std::mutex> lock(audioBufferMutex);
+        audioBuffer48k.clear();
+    }
+
+    bool isRecordingSpeech = false;
+    int speechStartConfirmCount = 0;
+    int silenceDurationMs = 0;
+    size_t speechStartSampleIndex = 0;
+
+    DWORD t_base = GetTickCount();
+
+    while (true)
+    {
+        Sleep(speechParams.check_ms);
+
+        DWORD now = GetTickCount();
+
+        // 超时直接返回，不入队
+        if (!isRecordingSpeech &&
+            now - t_base > (DWORD)speechParams.max_record_ms)
+        {
+            return false;
+        }
+
+        std::vector<float> chunk;
+        {
+            std::lock_guard<std::mutex> lock(audioBufferMutex);
+            size_t need =
+                (size_t)speechParams.sample_rate *
+                (size_t)speechParams.check_ms / 1000;
+
+            if (audioBuffer48k.size() < need)
+                continue;
+
+            chunk.assign(
+                audioBuffer48k.end() - need,
+                audioBuffer48k.end()
+            );
+        }
+
+        float rmsValue = calc_rms(chunk);
+
+        if (!isRecordingSpeech)
+        {
+            if (rmsValue > speechParams.vad_threshold &&
+                rmsValue >= speechParams.start_rms_min)
+            {
+                speechStartConfirmCount++;
+                if (speechStartConfirmCount >= speechParams.start_hit)
+                {
+                    isRecordingSpeech = true;
+                    silenceDurationMs = 0;
+
+                    std::lock_guard<std::mutex> lock(audioBufferMutex);
+                    speechStartSampleIndex = audioBuffer48k.size();
+                }
+            }
+            else
+            {
+                speechStartConfirmCount = 0;
+            }
+        }
+        else
+        {
+            if (rmsValue < speechParams.vad_threshold)
+                silenceDurationMs += speechParams.check_ms;
+            else
+                silenceDurationMs = 0;
+
+            if (silenceDurationMs >= speechParams.end_silence_ms)
+            {
+                // 取出这一句话的音频
+                std::vector<float> pcm48k;
+                {
+                    std::lock_guard<std::mutex> lock(audioBufferMutex);
+                    if (speechStartSampleIndex < audioBuffer48k.size())
+                        pcm48k.assign(
+                            audioBuffer48k.begin() + speechStartSampleIndex,
+                            audioBuffer48k.end()
+                        );
+                }
+
+                std::vector<float> pcm16k;
+                downsample_48k_to_16k(pcm48k, pcm16k);
+
+                if (pcm16k.empty())
+                    return false;
+
+                // 入队
+                {
+                    std::lock_guard<std::mutex> qlock(audioQueueMutex);
+                    audioQueue.push_back(std::move(pcm16k));
+                }
+
+                return true;
+            }
+        }
+    }
+}
+std::string speechagent::poptext()
+{
+    std::vector<float> pcm16k;
+
+    {
+        std::lock_guard<std::mutex> lock(audioQueueMutex);
+        if (audioQueue.empty())
+            return std::string();
+        pcm16k = std::move(audioQueue.front());
+        audioQueue.pop_front();
+    }
+
+    whisper_full_params wparams =
+        whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
+
+    wparams.language = "auto";
+    wparams.temperature = 0.0f;
+    wparams.suppress_blank = true;
+
+    unsigned int hc = std::thread::hardware_concurrency();
+    if (hc == 0) hc = 4;
+    wparams.n_threads = (int)((std::max)(2u, hc / 2));
+
+    wparams.print_progress = false;
+    wparams.print_special = false;
+    wparams.print_timestamps = false;
+
+    std::string result;
+
+    if (!pcm16k.empty())
+    {
+        whisper_full(
+            whisperContext,
+            wparams,
+            pcm16k.data(),
+            (int)pcm16k.size()
+        );
+
+        int n = whisper_full_n_segments(whisperContext);
+        for (int i = 0; i < n; ++i)
+        {
+            const char* t =
+                whisper_full_get_segment_text(whisperContext, i);
+            if (t)
+                result += t;
+        }
+    }
+
+    return result;
 }
 
 // 阻塞获取文本

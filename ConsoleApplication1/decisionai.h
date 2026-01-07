@@ -1,22 +1,16 @@
 #pragma once
-
 #include <string>
-
-class ChatAgent;
+#include "aicontroller.h"
+#include "aitrace.h"
 
 class DecisionAI
 {
 public:
-    // 构造
-    explicit DecisionAI(ChatAgent& agent);
-
-    // 执行一次决策（不解析、不配置、不判断）
-    std::string runOnce();
-
-    // ===== 预留外部接口（不实现）=====
-    // 外部数据输入（例如爬虫、传感器、HTTP 等）
+    DecisionAI(int AICODE, AIController& aiRef, AITrace& traceRef);
+    std::string runOnce(const std::string& user_input); // 声明
     void feedExternalData(const std::string& data);
-
 private:
-    ChatAgent& chat;
+    AIController& ai;
+    AITrace& trace;
+    int aicode;
 };

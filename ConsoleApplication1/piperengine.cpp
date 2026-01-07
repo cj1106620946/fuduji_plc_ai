@@ -27,6 +27,11 @@ bool PiperEngine::speak(const std::string& utf8text)
     if (!writetextfile(m_inputtxt, utf8text))
         return false;
 
+    // ========== 新增：保存当前控制台代码页 ==========
+    UINT originalOutputCP = GetConsoleOutputCP();
+    UINT originalInputCP = GetConsoleCP();
+    // ============================================
+
     std::string cmd =
         "cmd.exe /c \""
         "\"\\piper\\piper.exe\" "
@@ -55,11 +60,22 @@ bool PiperEngine::speak(const std::string& utf8text)
     );
 
     if (!ok)
+    {
+        // ========== 新增：失败时也恢复代码页 ==========
+        SetConsoleOutputCP(originalOutputCP);
+        SetConsoleCP(originalInputCP);
+        // ============================================
         return false;
+    }
 
     WaitForSingleObject(pi.hProcess, INFINITE);
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
+
+    // ========== 新增：执行完成后恢复原始代码页 ==========
+    SetConsoleOutputCP(originalOutputCP);
+    SetConsoleCP(originalInputCP);
+    // =================================================
 
     PlaySoundA(m_outputwav.c_str(), NULL, SND_FILENAME | SND_SYNC);
     return true;

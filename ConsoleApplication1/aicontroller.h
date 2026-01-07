@@ -2,94 +2,67 @@
 #include <string>
 #include <vector>
 #include <cstdint>
-
-class PLCClient;
-class DeepSeekAI;
+class AIClient;
+// AIController
+// 职责：
+// 1. 定义 AI 角色（Chat / Workspace / Decision）
+// 2. 管理 Prompt
+// 3. 选择并调用 AIClient 的具体通道
 class AIController
 {
 public:
-    explicit AIController(PLCClient& plc, DeepSeekAI& ai);
-    
-    // 一、Chat AI（人机交互）
-    
-    struct ChatResult
+    explicit AIController(AIClient& aiRef);
+    // AI 调用通道约定
+    // 1 : 云端 Chat
+    // 2 : 本地 Chat
+    // 3 : 云端 Reason
+    // 4 : 本地 Reaso
+    enum
     {
-        bool ok = false;
-        std::string text;            // 给用户显示的自然语言
-        std::string action;          // READ / WRITE / NONE
-        std::string target;          // 变量名 or 地址
-        int value = 0;               // 写入值
+        AI_C_C = 1,
+        AI_L_C = 2,
+        AI_C_R = 3,
+        AI_L_R = 4
     };
-    struct WorkspaceVar
-    {
-        std::string name;
-        std::string dir;
-        std::string type;
-        std::string default_value;
-        std::string desc;
-        std::string addr;    
-    };
-
-    struct WorkspaceDraft
-    {
-        bool ok = false;
-        std::string err;
-
-        std::string name;
-        std::string desc;
-
-        int db_number = -1;
-        std::string db_name;
-
-        int fb_number = -1;
-        std::string fb_name;
-
-        std::vector<WorkspaceVar> vars;
-
-        std::string raw_json;     // AI 输出
-        std::string final_json;   // 处理后
-    };
-
-    // 创建工作区
-    WorkspaceDraft createWorkspace(const std::string& user_requirement);
-    
-    // 三、Decision AI（运行时决策）
-    
-    struct DecisionInput
-    {
-        std::string workspace_name;
-        std::string snapshot_json;     // 当前 PLC/变量快照
-        std::string decision_prompt;   // 来自 workspace
-    };
-
-    struct DecisionResult
-    {
-        bool ok = false;
-        std::vector<std::string> actions;  // WRITE xxx
-        std::string reason;
-    };
-    DecisionResult runDecision(const DecisionInput& input);
-    // 阶段1：指令规划（P:xxx）
-    std::string askPlan(const std::string& user_input);
-    // 阶段2：结果解释（Q:TEXT）
-    std::string askExplain(const std::string& explain_input);
-    std::string callWorkspaceAI(const std::string& text);
-    std::string callDecisionAI(const std::string& text);
-
+	// Chatexcute AI（执行）
+    std::string chatExecute(int ai_mode, const std::string& text);
+	// ChatTalk AI（对话）
+    std::string chatTalk(int ai_mode, const std::string& text);
+    // Workspace AI（结构生成）
+    std::string workspace(int ai_mode,const std::string& requirement_text);
+    // Decision AI（决策）
+    std::string decision(int ai_mode,const std::string& decision_input);
+	//judgment AI（判决）
+    std::string judgment(int ai_mode,const std::string& decision_input);
+    //读取prompt 
+    std::string chatExecuteprompt_get();
+    std::string chatTalkprompt_get();
+    std::string workspaceprompt_get();
+    std::string decisionprompt_get();
+    std::string judgmentprompt_get();
 private:
-    
-    // 内部：Prompt 构建
-    
-    void buildChatPrompt();
+    // 统一 AI 调用入口
+    // 只负责路由，不做任何业务处理
+    std::string callAI(
+        bool readHistory,
+        bool pd,
+        int ai_mode,
+        const std::string& user_text,
+        const std::string& prompt
+    );
+private:
+    // Prompt 构建
+    void buildResponsePrompt();
+    void buildExecutePrompt();
     void buildWorkspacePrompt();
     void buildDecisionPrompt();
+	void buildJudgmentPrompt();
 private:
-    PLCClient& plc;
-    DeepSeekAI& ai;
-
-    // prompt 模板（一次构建）
-    std::string chat_prompt;
+    AIClient& ai;
+    // Prompt 模板（只存字符串）
     std::string response_prompt;
+    std::string execute_prompt;
     std::string workspace_prompt;
     std::string decision_prompt;
+    std::string Judgment_prompt;
 };

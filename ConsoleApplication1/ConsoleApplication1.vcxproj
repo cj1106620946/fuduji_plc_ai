@@ -24,7 +24,7 @@
     <ProjectGuid>{6efe7a67-6dfe-43c6-9d08-33ae7779a6d8}</ProjectGuid>
     <RootNamespace>ConsoleApplication1</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>plcplc</ProjectName>
+    <ProjectName>fuduij_ai_plc</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -135,29 +135,36 @@
   <ItemGroup>
     <ClCompile Include="..\..\c-cpp\src\snap7.cpp" />
     <ClCompile Include="aicontroller.cpp" />
-    <ClCompile Include="chatagent.cpp" />
+    <ClCompile Include="aimanager.cpp" />
+    <ClCompile Include="aitrace.cpp" />
+    <ClCompile Include="chatai.cpp" />
+    <ClCompile Include="executeai.cpp" />
     <ClCompile Include="console.cpp" />
     <ClCompile Include="decisionai.cpp" />
-    <ClCompile Include="deepseek.cpp" />
+    <ClCompile Include="aiclient.cpp" />
+    <ClCompile Include="judgmentai.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="jsoncpp.cpp" />
     <ClCompile Include="piperengine.cpp" />
     <ClCompile Include="plcclient.cpp" />
     <ClCompile Include="speechagent.cpp" />
-    <ClCompile Include="workspacemanager.cpp" />
+    <ClCompile Include="workspaceai.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\c-cpp\include\snap7.h" />
     <ClInclude Include="aicontroller.h" />
-    <ClInclude Include="chatagent.h" />
+    <ClInclude Include="aimanager.h" />
+    <ClInclude Include="aitrace.h" />
+    <ClInclude Include="chatai.h" />
+    <ClInclude Include="executeai.h" />
     <ClInclude Include="console.h" />
     <ClInclude Include="decisionai.h" />
-    <ClInclude Include="deepseek.h" />
+    <ClInclude Include="aiclient.h" />
+    <ClInclude Include="judgmentai.h" />
     <ClInclude Include="piperengine.h" />
     <ClInclude Include="plcclient.h" />
     <ClInclude Include="speechagent.h" />
-    <ClInclude Include="workspacemanager.h" />
-    <ClInclude Include="workspacetypes.h" />
+    <ClInclude Include="workspaceai.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

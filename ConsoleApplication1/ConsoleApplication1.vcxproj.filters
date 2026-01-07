@@ -27,7 +27,7 @@
     <ClCompile Include="plcclient.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="deepseek.cpp">
+    <ClCompile Include="aiclient.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="console.cpp">
@@ -36,10 +36,10 @@
     <ClCompile Include="aicontroller.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="workspacemanager.cpp">
+    <ClCompile Include="workspaceai.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="chatagent.cpp">
+    <ClCompile Include="executeai.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="decisionai.cpp">
@@ -51,6 +51,18 @@
     <ClCompile Include="piperengine.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="aitrace.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="chatai.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="aimanager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="judgmentai.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\c-cpp\include\snap7.h">
@@ -59,7 +71,7 @@
     <ClInclude Include="plcclient.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="deepseek.h">
+    <ClInclude Include="aiclient.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="console.h">
@@ -68,13 +80,10 @@
     <ClInclude Include="aicontroller.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="workspacemanager.h">
+    <ClInclude Include="workspaceai.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="workspacetypes.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="chatagent.h">
+    <ClInclude Include="executeai.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="decisionai.h">
@@ -84,6 +93,18 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="piperengine.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="aitrace.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="chatai.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="aimanager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="judgmentai.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

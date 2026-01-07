@@ -1,4 +1,0 @@
-{
-  "time": "2026-01-05 13:26:32",
-  "plan_json": "{\n  \"type\": \"ok\",\n  \"message\": \"已根据语音指令处理工作区状态查询。\",\n  \"jumpWorkspace\": true,\n  \"plcEnable\": {\"enable\": false, \"ip\": \"\", \"rack\": 0, \"slot\": 0},\n  \"plcActions\": [],\n  \"decision\": {\"enable\": false, \"source\": \"human\", \"interval_ms\": 0, \"task\": {\"type\": \"\", \"params\": {}}}\n}"
-}
