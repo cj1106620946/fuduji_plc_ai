@@ -55,9 +55,9 @@ AiManager::AiManager()
     : aiController(ai)
 {
     chat = new ChatAI(2, aiController, aiTrace);
-    judgment = new Judgmentai(1, aiController, aiTrace);
-    execute = new ExecuteAI(1, aiController, aiTrace, plc);
-    workspace = new WorkspaceAI(1, aiController, aiTrace);
+    judgment = new Judgmentai(2, aiController, aiTrace);
+    execute = new ExecuteAI(2, aiController, aiTrace, plc);
+    workspace = new WorkspaceAI(2, aiController, aiTrace);
 }
 
 // 析构函数：安全关闭线程并释放资源
@@ -94,11 +94,11 @@ void AiManager::ini()
 {
     printGBK1("\n正在初始化，请等待");
     ai.setAPIKey("sk-358db553de8a4b1d867be");
+    speech.setDebug(0);
     workspace->loadFromFile("workspace.json");
 	chat->runOnce(workspace->getWorkspaceJson());
 	// 输入线程：负责读取控制台输入
     inputThread = std::thread(&AiManager::inputLoop, this);
-
     // 对话线程：处理用户输入、Chat、Judgment
     mainThread = std::thread(&AiManager::processLoop, this);
     // 工作线程：专门执行 Workspace / Execute 等耗时任务
@@ -138,7 +138,7 @@ void AiManager::inputLoop()
     if (textThread.joinable())
         textThread.join();
 
-    if (!useVoiceQueue)
+    if (useVoiceQueue)
     {
         if (voicepush.joinable())
             voicepush.join();
@@ -162,7 +162,6 @@ void AiManager::textInputLoop()
 
         if (!running)
             break;
-
         if (input == "break0")
         {
             running = false;
@@ -171,7 +170,7 @@ void AiManager::textInputLoop()
             break;
         }
 
-        pushUserInput(input);
+        pushUserInput(GBKtoUTF81(input));
     }
 }
 // 语音输入线程循环
@@ -214,7 +213,6 @@ void AiManager::voicepushloop()
         return;
     }
 
-    speech.setDebug(0);
 
     while (running)
     {
@@ -236,9 +234,6 @@ void AiManager::voicepoploop()
 {
     // 注意：这里不需要 start()
     // poptext 只用 whisper，不碰麦克风
-
-    speech.setDebug(0);
-
     while (running)
     {
         std::string text = speech.poptext();
@@ -252,7 +247,6 @@ void AiManager::voicepoploop()
         printUTF81(u8"\n[Speech] 识别结果：");
         printUTF81(text);
         printUTF81("\n");
-
         pushUserInput(text);
     }
 }
@@ -286,10 +280,8 @@ void AiManager::processWorkLoop()
         workcv.wait(lock, [&]() {
             return !workQueue.empty() || !running;
         });
-
         if (!running)
             break;
-
         // 取出一个工作任务
         WorkItem item = workQueue.front();
         workQueue.pop();
@@ -299,11 +291,9 @@ void AiManager::processWorkLoop()
         // 根据任务类型调用对应的功能 AI
         if (item.type == 1)
         {
-            // 执行类任务
-            // ExecuteAI 返回的是 JSON 或错误描述
-            // 这里不做任何改写，原样交给聊天 AI
             resultText = execute->runOnce(item.text);
         }
+        /*
         else if (item.type == 2)
         {
             // 工作区建模任务
@@ -320,7 +310,7 @@ void AiManager::processWorkLoop()
                 // 可能包含 WS:ERR / NEED 等结构化信息
                 resultText = workspace->getAiRawOutput();
             }
-        }
+        }*/
         else
         {
             // 未知任务类型，直接忽略
@@ -333,25 +323,21 @@ void AiManager::processWorkLoop()
             std::lock_guard<std::mutex> rlock(resultMutex);
             resultQueue.push(resultText);
         }
-
-        // 将结果交给聊天 AI 进行自然语言转述
-        // ChatAI 会根据 prompt 判断这是“系统结果”而非用户话
         handleResultInput(resultText);
     }
 }
 // 处理一条用户输入：Chat 立即回应，Judgment 决定是否投递后台任务
 void AiManager::handleUserInput(const std::string& text)
 {
-    std::string utf8Text = GBKtoUTF81(text);
-    if (utf8Text.empty())
+    if (text.empty())
         return;
     // Chat 永远优先执行，保证用户即时反馈
-    std::string chatReply = chat->runOnce(utf8Text);
+    std::string chatReply = chat->runOnce(text);
     printGBK1("[Chat]\n");
     printUTF81(chatReply);
     printGBK1("\n\n");
     // 判决 AI 只负责分类，不执行任务
-    std::string decisionText = judgment->runOnce(utf8Text);
+    std::string decisionText = judgment->runOnce(text);
     int decisionValue = std::atoi(decisionText.c_str());
     if (decisionValue == 0)
         return;
@@ -360,7 +346,7 @@ void AiManager::handleUserInput(const std::string& text)
         std::lock_guard<std::mutex> lock(workMutex);
         WorkItem item;
         item.type = decisionValue;
-        item.text = utf8Text;
+        item.text = text;
         workQueue.push(item);
     }
     workcv.notify_one();

@@ -18,14 +18,11 @@ public:
     {
         int device_index = 1;
         // 麦克风设备选择 0 表示系统默认 1 及以上表示其它输入设备序号
-
         int channels = 1;
         // 采集声道数 1 表示单声道 2 表示立体声 推荐 1
-
         int sample_rate = 48000;
         // 采集采样率 单位 Hz 例如 48000 Whisper 推理前会降采样到 16000
-
-        float vad_threshold = 0.01f;
+        float vad_threshold = 0.1f;
         // 静音判定阈值 RMS 小于该值就算静音 越大越不容易触发说话
 
         int start_hit = 1;
@@ -37,7 +34,7 @@ public:
         int end_silence_ms = 200;
         // 结束说话判定静音时长 单位 ms 进入说话状态后 连续静音达到该值就结束
 
-        int check_ms = 10;
+        int check_ms = 100;
         // 检测间隔 单位 ms 越小反应越快 CPU 越高
 
         int max_record_ms = 8000;

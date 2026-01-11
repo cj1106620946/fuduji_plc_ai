@@ -3,9 +3,7 @@
 #include <windows.h>
 #include <portaudio.h>
 #include <whisper.h>
-
 #include "speechagent.h"
-
 #include <vector>
 #include <mutex>
 #include <thread>
@@ -67,7 +65,6 @@ void speechagent::setDebug(bool enable)
 {
     g_debug = enable;
 }
-
 bool speechagent::getDebug()
 {
     return g_debug;
@@ -225,8 +222,7 @@ bool speechagent::start()
 
     return true;
 }
-
-
+// 录取音频进入队列（带 debug）
 bool speechagent::pushtext()
 {
     {
@@ -240,6 +236,19 @@ bool speechagent::pushtext()
     size_t speechStartSampleIndex = 0;
 
     DWORD t_base = GetTickCount();
+    DWORD last_rms_print = 0;
+
+    auto now_sec = [&]() -> double
+    {
+        return (GetTickCount() - t_base) / 1000.0;
+    };
+
+    if (g_debug)
+    {
+        std::ostringstream oss;
+        oss << u8"[" << now_sec() << u8"s][语音] pushtext 等待说话\n";
+        printUTF81(oss.str());
+    }
 
     while (true)
     {
@@ -247,10 +256,15 @@ bool speechagent::pushtext()
 
         DWORD now = GetTickCount();
 
-        // 超时直接返回，不入队
         if (!isRecordingSpeech &&
             now - t_base > (DWORD)speechParams.max_record_ms)
         {
+            if (g_debug)
+            {
+                std::ostringstream oss;
+                oss << u8"[" << now_sec() << u8"s][语音] pushtext 超时未检测到说话\n";
+                printUTF81(oss.str());
+            }
             return false;
         }
 
@@ -272,19 +286,52 @@ bool speechagent::pushtext()
 
         float rmsValue = calc_rms(chunk);
 
+        if (g_debug && now - last_rms_print >= (DWORD)speechParams.debug_rms_print_ms)
+        {
+            std::ostringstream oss;
+            oss << u8"[" << now_sec() << u8"s][语音] RMS="
+                << rmsValue
+                << u8" threshold=" << speechParams.vad_threshold
+                << u8" start_min=" << speechParams.start_rms_min
+                << u8"\n";
+            printUTF81(oss.str());
+            last_rms_print = now;
+        }
+
         if (!isRecordingSpeech)
         {
             if (rmsValue > speechParams.vad_threshold &&
                 rmsValue >= speechParams.start_rms_min)
             {
                 speechStartConfirmCount++;
+
+                if (g_debug)
+                {
+                    std::ostringstream oss;
+                    oss << u8"[" << now_sec() << u8"s][语音] 开始命中 "
+                        << speechStartConfirmCount
+                        << u8"/"
+                        << speechParams.start_hit
+                        << u8"\n";
+                    printUTF81(oss.str());
+                }
+
                 if (speechStartConfirmCount >= speechParams.start_hit)
                 {
                     isRecordingSpeech = true;
                     silenceDurationMs = 0;
 
-                    std::lock_guard<std::mutex> lock(audioBufferMutex);
-                    speechStartSampleIndex = audioBuffer48k.size();
+                    {
+                        std::lock_guard<std::mutex> lock(audioBufferMutex);
+                        speechStartSampleIndex = audioBuffer48k.size();
+                    }
+
+                    if (g_debug)
+                    {
+                        std::ostringstream oss;
+                        oss << u8"[" << now_sec() << u8"s][语音] pushtext 判定开始说话\n";
+                        printUTF81(oss.str());
+                    }
                 }
             }
             else
@@ -299,9 +346,24 @@ bool speechagent::pushtext()
             else
                 silenceDurationMs = 0;
 
+            if (g_debug)
+            {
+                std::ostringstream oss;
+                oss << u8"[" << now_sec() << u8"s][语音] 静音累计 "
+                    << silenceDurationMs
+                    << u8" ms\n";
+                printUTF81(oss.str());
+            }
+
             if (silenceDurationMs >= speechParams.end_silence_ms)
             {
-                // 取出这一句话的音频
+                if (g_debug)
+                {
+                    std::ostringstream oss;
+                    oss << u8"[" << now_sec() << u8"s][语音] pushtext 判定语音结束，入队\n";
+                    printUTF81(oss.str());
+                }
+
                 std::vector<float> pcm48k;
                 {
                     std::lock_guard<std::mutex> lock(audioBufferMutex);
@@ -318,7 +380,6 @@ bool speechagent::pushtext()
                 if (pcm16k.empty())
                     return false;
 
-                // 入队
                 {
                     std::lock_guard<std::mutex> qlock(audioQueueMutex);
                     audioQueue.push_back(std::move(pcm16k));
@@ -329,18 +390,27 @@ bool speechagent::pushtext()
         }
     }
 }
+
+
+// 弹出并处理一条音频，返回文本
 std::string speechagent::poptext()
 {
     std::vector<float> pcm16k;
 
+    // 从音频队列中取出一条音频
     {
         std::lock_guard<std::mutex> lock(audioQueueMutex);
         if (audioQueue.empty())
             return std::string();
+
         pcm16k = std::move(audioQueue.front());
         audioQueue.pop_front();
     }
 
+    if (pcm16k.empty())
+        return std::string();
+
+    // whisper 参数
     whisper_full_params wparams =
         whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
 
@@ -356,28 +426,24 @@ std::string speechagent::poptext()
     wparams.print_special = false;
     wparams.print_timestamps = false;
 
-    std::string result;
+    // 执行识别
+    whisper_full(
+        whisperContext,
+        wparams,
+        pcm16k.data(),
+        (int)pcm16k.size()
+    );
 
-    if (!pcm16k.empty())
-    {
-        whisper_full(
-            whisperContext,
-            wparams,
-            pcm16k.data(),
-            (int)pcm16k.size()
-        );
+    // 只取第一个 segment
+    int n = whisper_full_n_segments(whisperContext);
+    if (n <= 0)
+        return std::string();
 
-        int n = whisper_full_n_segments(whisperContext);
-        for (int i = 0; i < n; ++i)
-        {
-            const char* t =
-                whisper_full_get_segment_text(whisperContext, i);
-            if (t)
-                result += t;
-        }
-    }
+    const char* t = whisper_full_get_segment_text(whisperContext, 0);
+    if (!t)
+        return std::string();
 
-    return result;
+    return std::string(t);
 }
 
 // 阻塞获取文本
