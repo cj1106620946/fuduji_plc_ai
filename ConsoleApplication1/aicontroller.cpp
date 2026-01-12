@@ -13,28 +13,7 @@ AIController::AIController(AIClient& aiRef)
     buildDecisionPrompt();
     buildJudgmentPrompt();
 }
-//统一接口
-//1.云端chat
-//2.本地chat
-//3.云端reason
-//4.本地reason
-std::string AIController::callAI(bool readHistory,bool pd,int ai_mode,const std::string& user_text,   const std::string& prompt)
-{
 
-    switch (ai_mode)
-    {
-    case AI_C_C:
-        return ai.askChat(readHistory,pd,user_text, prompt);
-    case AI_L_C:
-        return ai.askChatLocal(readHistory,pd,user_text, prompt);
-    case AI_C_R:
-        return ai.askReason(user_text, prompt);
-    case AI_L_R:
-        return ai.askReasonLocal(user_text, prompt);
-    default:
-        return u8"invalid ai mode";
-    }
-}
 // 构建 执行 Prompt
 void AIController::buildExecutePrompt()
 {
@@ -210,7 +189,25 @@ void AIController::buildResponsePrompt()
 
 
 
+//新接口
+//1.读取记忆，2写入记忆，3 ai模式，4 记忆槽，5 用户输入，6 prompt
+std::string AIController::callAI(bool readHistory, bool pd, int ai_mode, const std::string& memkey, const std::string& user_text, const std::string& prompt)
+{
 
+    switch (ai_mode)
+    {
+    case AI_C_C:
+        return ai.askChat(readHistory, pd, memkey, user_text, prompt);
+    case AI_L_C:
+        return ai.askChatLocal(readHistory, pd, memkey, user_text, prompt);
+    case AI_C_R:
+        return ai.askReason(user_text, prompt);
+    case AI_L_R:
+        return ai.askReasonLocal(user_text, prompt);
+    default:
+        return u8"invalid ai mode";
+    }
+}
 //读取prompt 
 std::string AIController::chatExecuteprompt_get()
 {
@@ -220,12 +217,10 @@ std::string AIController::chatTalkprompt_get()
 {
     return response_prompt;
 }
-
 std::string AIController::workspaceprompt_get()
 {
     return workspace_prompt;
 }
-
 std::string AIController::decisionprompt_get()
 {
     return decision_prompt;
@@ -234,27 +229,67 @@ std::string AIController::judgmentprompt_get()
 {
 	return Judgment_prompt;
 }
-//接口
+// execute AI（执行）
+std::string AIController::execute(bool rd,bool wt,int ai_mode, const std::string& memkey, const std::string& text)
+{
+    return callAI(rd,wt, ai_mode, memkey, text, execute_prompt);
+}
+// Chat AI（对话）
+std::string AIController::chat(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
+{
+    return callAI(rd,wt,ai_mode, memkey, text, response_prompt);
+}
+// Workspace AI（结构生成）
+std::string AIController::workspace(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
+{
+    return callAI(rd,wt,ai_mode,memkey, text, workspace_prompt);
+}
+// Decision AI（决策）
+std::string AIController::decision(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
+{
+    return callAI(rd,wt,ai_mode, memkey, text, decision_prompt);
+}
+// judgment AI（判决）
+std::string AIController::judgment(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
+{
+    return callAI(rd,wt,ai_mode, memkey, text, Judgment_prompt);
+}
+
+//旧接口
+std::string AIController::callAI(bool readHistory, bool pd, int ai_mode, const std::string& user_text, const std::string& prompt)
+{
+
+    switch (ai_mode)
+    {
+    case AI_C_C:
+        return ai.askChat(readHistory, pd,"pts", user_text, prompt);
+    case AI_L_C:
+        return ai.askChatLocal(readHistory, pd,"pts", user_text, prompt);
+    case AI_C_R:
+        return ai.askReason(user_text, prompt);
+    case AI_L_R:
+        return ai.askReasonLocal(user_text, prompt);
+    default:
+        return u8"invalid ai mode";
+    }
+}
 std::string AIController::chatExecute(int ai_mode, const std::string& text)
 {
-    return callAI(1,0,ai_mode, text, execute_prompt);
+    return callAI(1, 0, ai_mode, text, execute_prompt);
 }
 std::string AIController::chatTalk(int ai_mode, const std::string& text)
 {
-    return callAI(1,1,ai_mode, text, response_prompt);
+    return callAI(1, 1, ai_mode, text, response_prompt);
 }
-
 std::string AIController::workspace(int ai_mode, const std::string& text)
 {
-    return callAI(1,0,ai_mode, text, workspace_prompt);
+    return callAI(1, 0, ai_mode, text, workspace_prompt);
 }
-
 std::string AIController::decision(int ai_mode, const std::string& text)
 {
-    return callAI(1,0,ai_mode, text, decision_prompt);
+    return callAI(1, 0, ai_mode, text, decision_prompt);
 }
 std::string AIController::judgment(int ai_mode, const std::string& text)
 {
-    return callAI(0,0,ai_mode, text, Judgment_prompt);
+    return callAI(0, 0, ai_mode, text, Judgment_prompt);
 }
-

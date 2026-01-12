@@ -22,6 +22,7 @@ public:
     std::string askChat(
         bool readHistory,
         bool pd,
+        const std::string& memkey,
         const std::string& userMessage,
         const std::string& systemPrompt
     );
@@ -29,6 +30,7 @@ public:
     std::string askChatLocal(
         bool readHistory,
         bool pd,
+        const std::string& memkey,
         const std::string& userMessage,
         const std::string& systemPrompt
     );
@@ -43,18 +45,18 @@ public:
         const std::string& systemPrompt
     );
     // 打印当前聊天历史
-    void showHistory();
+    void showHistory(const std::string& memkey);
     // 清空聊天历史
-    void clearHistory();
+    void clearHistory(const std::string& memkey);
 
 private:
     // 云 API Key
     std::string apiKey;
-    // 聊天历史记录
-    // 仅供 Chat 接口使用
-    std::vector<Message> history;
+   // 新增 多记忆容器
+    std::map<std::string, std::vector<Message>> memories;
     // 添加一条消息到历史记录
     void addMessage(
+        const std::string& memkey,
         const std::string& role,
         const std::string& content
     );
@@ -62,14 +64,14 @@ private:
     std::string callChatAPI(
         bool readHistory,
         bool messagepd,
+        const std::string& memkey,
         const std::string& userMessage,
         const std::string& systemPrompt
     );
-    // 本地聊天接口
-// 使用本地 LLM（Ollama），不影响云端 askChat
     std::string callChatLocalAPI(
         bool readHistory,
         bool messagepd,
+        const std::string& memkey,
         const std::string& userMessage,
         const std::string& systemPrompt
     );
@@ -87,6 +89,7 @@ private:
     // 提取最终文本内容
     std::string parseResponse(
         bool judgmentai,
+        const std::string& memkey,
         const std::string& jsonResponse
     );
 };

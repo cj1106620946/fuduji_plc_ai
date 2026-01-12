@@ -28,42 +28,51 @@ void AIClient::setAPIKey(const std::string& key)
     apiKey = key;
 }
 
-// 添加一条消息到聊天历史
-void AIClient::addMessage(const std::string& role, const std::string& content)
+// 添加一条消息到指定记忆槽
+void AIClient::addMessage(
+    const std::string& memkey,
+    const std::string& role,
+    const std::string& content)
 {
-    history.push_back({ role, content });
-    if (history.size() > 40)
-        history.erase(history.begin());
-}
+    auto& mem = memories[memkey];
+    mem.push_back({ role, content });
 
-// 打印当前聊天历史
-void AIClient::showHistory()
+    // 控制单个记忆槽的长度
+    if (mem.size() > 40)
+        mem.erase(mem.begin());
+}
+// 打印指定记忆槽的聊天历史
+void AIClient::showHistory(const std::string& memkey)
 {
-    int i = 0;
-    for (auto& msg : history)
+    auto it = memories.find(memkey);
+    if (it == memories.end())
+        return;
+
+    for (auto& msg : it->second)
     {
-        (void)i;
+        // 这里只遍历，不输出，由你现有的打印逻辑决定
+        (void)msg;
     }
 }
-
-// 清空聊天历史
-void AIClient::clearHistory()
+// 清空指定记忆槽
+void AIClient::clearHistory(const std::string& memkey)
 {
-    history.clear();
+    memories[memkey].clear();
 }
 
+
 // 聊天接口
-std::string AIClient::askChat(bool readHistory,bool pd,const std::string& userMessage,
+std::string AIClient::askChat(bool readHistory,bool pd, const std::string& memkey, const std::string& userMessage,
     const std::string& systemPrompt)
 {
-    return callChatAPI(readHistory,pd,userMessage, systemPrompt);
+    return callChatAPI(readHistory,pd,memkey, userMessage, systemPrompt);
 }
 
 // 本地聊天接口
-std::string AIClient::askChatLocal(bool readHistory,bool pd,const std::string& userMessage,
+std::string AIClient::askChatLocal(bool readHistory,bool pd, const std::string& memkey, const std::string& userMessage,
     const std::string& systemPrompt)
 {
-    return callChatLocalAPI(readHistory,pd,userMessage, systemPrompt);
+    return callChatLocalAPI(readHistory,pd,memkey, userMessage, systemPrompt);
 }
 
 // 推理接口
@@ -81,7 +90,12 @@ std::string AIClient::askReasonLocal(const std::string& userMessage,
 }
 
 // 云端 Chat
-std::string AIClient::callChatAPI(bool readHistory,bool messagepd,const std::string& userMessage, const std::string& systemPrompt)
+std::string AIClient::callChatAPI(
+    bool readHistory,
+    bool messagepd,
+    const std::string& memkey,
+    const std::string& userMessage,
+    const std::string& systemPrompt)
 {
     if (apiKey.empty())
         return u8"api未绑定";
@@ -97,6 +111,7 @@ std::string AIClient::callChatAPI(bool readHistory,bool messagepd,const std::str
 
     Json::Value root;
     Json::Value messages(Json::arrayValue);
+
     if (!systemPrompt.empty())
     {
         Json::Value sm;
@@ -104,9 +119,12 @@ std::string AIClient::callChatAPI(bool readHistory,bool messagepd,const std::str
         sm["content"] = systemPrompt;
         messages.append(sm);
     }
+
     if (readHistory)
     {
-        for (auto& msg : history)
+        // 关键 读取指定记忆槽
+        std::vector<Message>& mem = memories[memkey];
+        for (auto& msg : mem)
         {
             Json::Value m;
             m["role"] = msg.role;
@@ -114,7 +132,6 @@ std::string AIClient::callChatAPI(bool readHistory,bool messagepd,const std::str
             messages.append(m);
         }
     }
-
 
     {
         Json::Value um;
@@ -153,15 +170,23 @@ std::string AIClient::callChatAPI(bool readHistory,bool messagepd,const std::str
 
     if (res != CURLE_OK)
         return u8"Request error: " + std::string(curl_easy_strerror(res));
+
     if (messagepd)
     {
-        addMessage("user", userMessage);
+        // 关键 写回同一个记忆槽
+        memories[memkey].push_back({ "user", userMessage });
     }
-    return parseResponse(messagepd,response);
+
+    return parseResponse(messagepd, memkey, response);
 }
 
 // 本地 Chat（Ollama）
-std::string AIClient::callChatLocalAPI(bool readHistory,bool messagepd, const std::string& userMessage, const std::string& systemPrompt)
+std::string AIClient::callChatLocalAPI(
+    bool readHistory,
+    bool messagepd,
+    const std::string& memkey,
+    const std::string& userMessage,
+    const std::string& systemPrompt)
 {
     std::string response;
     CURL* curl = curl_easy_init();
@@ -175,6 +200,7 @@ std::string AIClient::callChatLocalAPI(bool readHistory,bool messagepd, const st
     Json::Value root;
     Json::Value messages(Json::arrayValue);
 
+    // system prompt（工作区 / 规则）
     if (!systemPrompt.empty())
     {
         Json::Value sm;
@@ -183,9 +209,11 @@ std::string AIClient::callChatLocalAPI(bool readHistory,bool messagepd, const st
         messages.append(sm);
     }
 
+    // 读取指定记忆槽
     if (readHistory)
     {
-        for (auto& msg : history)
+        auto& mem = memories[memkey];
+        for (auto& msg : mem)
         {
             Json::Value m;
             m["role"] = msg.role;
@@ -194,7 +222,7 @@ std::string AIClient::callChatLocalAPI(bool readHistory,bool messagepd, const st
         }
     }
 
-
+    // 当前用户输入
     {
         Json::Value um;
         um["role"] = "user";
@@ -226,11 +254,14 @@ std::string AIClient::callChatLocalAPI(bool readHistory,bool messagepd, const st
 
     if (res != CURLE_OK)
         return u8"Local request error: " + std::string(curl_easy_strerror(res));
+
+    // 写回同一个记忆槽
     if (messagepd)
     {
-        addMessage("user", userMessage);
+        addMessage(memkey, "user", userMessage);
     }
-    return parseResponse(messagepd,response);
+
+    return parseResponse(messagepd, memkey, response);
 }
 
 // 云端 Reason
@@ -354,7 +385,10 @@ std::string AIClient::callReasonLocalAPI(
 }
 
 // Chat 响应解析
-std::string AIClient::parseResponse(bool messagepd,const std::string& jsonResponse)
+std::string AIClient::parseResponse(
+    bool messagepd,
+    const std::string& memkey,
+    const std::string& jsonResponse)
 {
     Json::Value root;
     Json::CharReaderBuilder reader;
@@ -369,16 +403,27 @@ std::string AIClient::parseResponse(bool messagepd,const std::string& jsonRespon
 
     std::string reply;
     if (root.isMember("message") && root["message"].isMember("content"))
+    {
         reply = root["message"]["content"].asString();
-    else if (root.isMember("choices") && !root["choices"].empty() &&
+    }
+    else if (root.isMember("choices") &&
+        !root["choices"].empty() &&
         root["choices"][0].isMember("message") &&
         root["choices"][0]["message"].isMember("content"))
+    {
         reply = root["choices"][0]["message"]["content"].asString();
+    }
     else
+    {
         return u8"无法识别的AI响应格式";
+    }
+
+    // 写回同一个记忆槽
     if (messagepd)
     {
-        addMessage("assistant", reply);
+        addMessage(memkey, "assistant", reply);
     }
+
     return reply;
 }
+

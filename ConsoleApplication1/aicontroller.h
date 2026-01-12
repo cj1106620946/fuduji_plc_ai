@@ -34,6 +34,18 @@ public:
     std::string decision(int ai_mode,const std::string& decision_input);
 	//judgment AI（判决）
     std::string judgment(int ai_mode,const std::string& decision_input);
+
+    // Chatexcute AI（执行）
+    std::string execute(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
+    // ChatTalk AI（对话）
+    std::string chat(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
+    // Workspace AI（结构生成）
+    std::string workspace(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
+    // Decision AI（决策）
+    std::string decision(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
+    //judgment AI（判决）
+    std::string judgment(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
+
     //读取prompt 
     std::string chatExecuteprompt_get();
     std::string chatTalkprompt_get();
@@ -43,6 +55,14 @@ public:
 private:
     // 统一 AI 调用入口
     // 只负责路由，不做任何业务处理
+    std::string callAI(
+        bool readHistory,
+        bool pd,
+        int ai_mode,
+        const std::string& memkey,
+        const std::string& user_text,
+        const std::string& prompt
+    );
     std::string callAI(
         bool readHistory,
         bool pd,
