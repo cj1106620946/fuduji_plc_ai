@@ -226,27 +226,43 @@ void Console::menuWorkspace()
 // 5. AI 对话（键盘）
 void Console::menuChat()
 {
-    printGBK("\n进入 AI 对话模式\n");
+    printGBK("\n进入 AI 对话模式（调试）\n");
     printGBK("输入 break0 返回主菜单\n\n");
+
     while (true)
     {
         printGBK("chat> ");
+
         std::string input;
         std::getline(std::cin, input);
         if (checkBreak(input))
             return;
+
         // GBK -> UTF8
         std::string utf8 = GBKtoUTF8(input);
-        // 1提示 AI 正在处理
+
+        // 1 提示 AI 正在处理
         printGBK("[AI] 正在解析...\n");
-        // 2调用 Cha
-        std::string reply = chat->runOnce(utf8);
-        // 3输出结果
-        printGBK("[AI] 结果：\n");
+
+        // 2 调用 Chat 的“执行入口”（唯一入口）
+        std::string reply = chat->runExecuteRead(utf8);
+        // 3 正常输出（给用户看的）
+        printGBK("[AI] 输出：\n");
         printUTF8(reply);
+        printGBK("\n");
+
+        // 4 调试输出：原始 AI 返回（JSON 或普通文本）
+        printGBK("[DEBUG] 原始 AI 返回内容：\n");
+
+        // 这里再次调用一次“仅执行、不拼接显示”的内部逻辑
+        // ⚠ 注意：Console 仍然不解析 JSON，只做原样打印
+        std::string raw = chat->runExecuteOnce(utf8);
+
+        printUTF8(raw);
         printGBK("\n\n");
     }
 }
+
 // 6. AI 对话（语音）
 void Console::menuVoiceChat()
 {

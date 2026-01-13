@@ -19,7 +19,7 @@ ExecuteAI::ExecuteAI(
 // 外部唯一入口
 std::string ExecuteAI::runOnce(const std::string& user_input)
 {
-    trace.begin("execute", aicode, user_input, ai.chatExecuteprompt_get());
+    trace.begin("execute", aicode, user_input, ai.executeprompt_get());
 
     std::string json_text = callExecuteAI(user_input);
     ExecutePlan plan = parseExecuteJson(json_text);
@@ -202,7 +202,6 @@ std::string ExecuteAI::executePLC(const ExecutePlan& plan)
     dbg << "EXEC:END\n";
     trace.debug(dbg.str());
 
-    // ========= 读取 AI message =========
     Json::Value root;
     Json::CharReaderBuilder builder;
     std::string err;

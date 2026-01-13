@@ -7,7 +7,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fuduij_ai_plc", "ConsoleApp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pConsoleApp1", "pConsoleApp1\pConsoleApp1\pConsoleApp1.csproj", "{1618DA21-AC5D-484E-8461-D170957776D0}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Demo", "..\..\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\build\proj_msvc2022_x64_md\Demo.vcxproj", "{7F46048F-B3CF-3A77-A3C1-4563F6AA1AD3}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Demo", "live2ddemo\Demo.vcxproj", "{7F46048F-B3CF-3A77-A3C1-4563F6AA1AD3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

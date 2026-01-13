@@ -131,6 +131,9 @@
       <AdditionalLibraryDirectories>D:\project\c-cpp\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>snap7.lib;libcurl_a_debug.lib;libcurl_a.lib;ws2_32.lib;winmm.lib;wldap32.lib;Crypt32.lib;Normaliz.lib;whisper.lib;portaudio.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /d "$(TargetPath)" "D:\project\run\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\c-cpp\src\snap7.cpp" />
@@ -142,6 +145,7 @@
     <ClCompile Include="console.cpp" />
     <ClCompile Include="decisionai.cpp" />
     <ClCompile Include="aiclient.cpp" />
+    <ClCompile Include="jsonstatewriter.cpp" />
     <ClCompile Include="judgmentai.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="jsoncpp.cpp" />
@@ -160,6 +164,7 @@
     <ClInclude Include="console.h" />
     <ClInclude Include="decisionai.h" />
     <ClInclude Include="aiclient.h" />
+    <ClInclude Include="jsonstatewriter.h" />
     <ClInclude Include="judgmentai.h" />
     <ClInclude Include="piperengine.h" />
     <ClInclude Include="plcclient.h" />

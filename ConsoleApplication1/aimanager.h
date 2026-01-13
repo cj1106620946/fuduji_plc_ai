@@ -16,7 +16,7 @@
 #include "judgmentai.h"
 #include "executeai.h"
 #include "workspaceai.h"
-
+#include"jsonstatewriter.h"
 #include"speechagent.h"
 // AiManager 负责统一调度对话 AI 与后台工作 AI
 // 对话线程始终保持流畅，耗时任务全部放入后台线程执行
@@ -110,6 +110,7 @@ private:
     std::condition_variable workcv;
 
 private:
+    JsonStateWriter live2dWriter;
     // 对话线程对象
     std::thread mainThread;
 

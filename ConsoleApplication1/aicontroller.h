@@ -45,13 +45,16 @@ public:
     std::string decision(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
     //judgment AI（判决）
     std::string judgment(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
-
+    std::string allairun(bool rd,bool wt,int ai_mode,const std::string& memkey,const std::string& text,const std::string& prompt
+    );
     //读取prompt 
-    std::string chatExecuteprompt_get();
-    std::string chatTalkprompt_get();
+    std::string executeprompt_get();
+    std::string chatprompt_get();
     std::string workspaceprompt_get();
     std::string decisionprompt_get();
     std::string judgmentprompt_get();
+    std::string chatexecuteprompt_get();
+
 private:
     // 统一 AI 调用入口
     // 只负责路由，不做任何业务处理
@@ -85,4 +88,5 @@ private:
     std::string workspace_prompt;
     std::string decision_prompt;
     std::string Judgment_prompt;
+    std::string chatexecute_prompt;
 };

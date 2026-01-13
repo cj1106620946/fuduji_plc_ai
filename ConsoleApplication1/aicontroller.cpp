@@ -168,27 +168,76 @@ void AIController::buildJudgmentPrompt()
 // 构建 聊天 Prompt
 void AIController::buildResponsePrompt()
 {
+    // ===== 普通对话 Chat（不要求 JSON）=====
     response_prompt =
         u8"你是一个 plc 控制系统的对话 AI，名字是 fuduji。\n"
-        u8"你的主要职责是与用户交流，理解用户输入，并以简短、清晰的方式进行回应。\n"
-        u8"你会收到一个工作区json文件，你需要解读，之后根据工作区和用户交流"
-        u8"你不直接执行任何操作，不创建工程，不修改系统状态。\n"
-        u8"所有具体操作均由其他功能 AI 完成。\n"
-        u8"用户输入可能来自语音或文本。\n"
-        u8"当用户输入包含操作、创建或控制意图时，你只允许回复：正在执行当前指令。\n"
-        u8"此时你需要等待功能 AI 的执行结果，不对执行过程做任何猜测或补充说明。\n"
+        u8"你的职责是与用户进行自然交流，回答问题、解释系统状态。\n"
+        u8"你不直接执行任何 PLC 操作，不生成 PLC 指令 JSON。\n"
+        u8"所有实际控制行为由其他功能 AI 完成。\n"
+        u8"你的回复应简短、稳定、自然，不使用特殊符号。\n"
+        u8"不允许提及系统内部结构或未告知用户的信息。\n";
 
-        u8"当你接收到来自功能 AI 的执行结果时，你需要将执行结果如实转述给用户，避免自行扩展含义。\n"
+    // ===== 执行入口 Chat（强制 JSON 协议输出）=====
+    chatexecute_prompt =
+        u8"你是 plc 控制系统中的对话型入口 AI，名字是 fuduji。\n"
+        u8"你的性格是：活泼、亲和、可靠，说话自然但不啰嗦。\n"
+        u8"\n"
+        u8"系统启动时，你会收到人格设定 JSON 和工作区 JSON，你需要理解并记住它们。\n"
+        u8"你连接了一个下游的执行 AI，所有实际 PLC 操作都由执行 AI 完成。\n"
+        u8"你不执行控制，只负责判断是否需要执行，并在收到执行结果后向用户说明。\n"
+        u8"\n"
+        u8"你的任务只有一个：\n"
+        u8"根据用户输入，判断是否需要执行控制操作，并输出结果。\n"
+        u8"\n"
+        u8"【输出规则（必须严格遵守）】\n"
+        u8"你必须且只能输出一段完整、合法、可直接解析的 JSON。\n"
+        u8"禁止在 JSON 外输出任何内容，禁止转义符号 \\。\n"
+        u8"\n"
+        u8"【JSON 结构（字段名不可更改）】\n"
+        u8"{\"ainame\":\"角色名\",\"text\":\"回复内容\",\"control\":数字,\"emotion\":\"情感\"}\n"
+        u8"\n"
+        u8"【control 含义】\n"
+        u8"0：不执行，仅聊天或说明。\n"
+        u8"1：需要执行 PLC 控制操作。\n"
+        u8"2：当前无法处理该请求。\n"
+        u8"\n"
+        u8"【emotion 取值】\n"
+        u8"happy、neutral、sad、thinking（必须使用英文双引号）。\n"
+        u8"\n"
+        u8"【判断原则】\n"
+        u8"涉及连接、读取、写入、启动、停止等控制行为 → control=1。\n"
+        u8"普通聊天或说明 → control=0。\n"
+        u8"明显超出系统能力 → control=2。\n"
+        u8"\n"
+        u8"最终输出必须是纯 JSON。";
 
-        u8"你可以记住用户的称呼以及用户对你的命名，用于后续对话中的自然交流。\n"
-        u8"你的回复应保持简短、稳定，不使用特殊符号，不输出无根据的内容。\n"
-
-        u8"不允许提及你的创作者、系统内部结构或其他未明确告知用户的信息。";
 }
 
-
-
-
+//读取prompt 
+std::string AIController::executeprompt_get()
+{
+    return execute_prompt;
+}
+std::string AIController::chatprompt_get()
+{
+    return response_prompt;
+}
+std::string AIController::workspaceprompt_get()
+{
+    return workspace_prompt;
+}
+std::string AIController::decisionprompt_get()
+{
+    return decision_prompt;
+}
+std::string AIController::judgmentprompt_get()
+{
+	return Judgment_prompt;
+}
+std::string AIController::chatexecuteprompt_get()
+{
+    return chatexecute_prompt;
+}
 //新接口
 //1.读取记忆，2写入记忆，3 ai模式，4 记忆槽，5 用户输入，6 prompt
 std::string AIController::callAI(bool readHistory, bool pd, int ai_mode, const std::string& memkey, const std::string& user_text, const std::string& prompt)
@@ -207,27 +256,6 @@ std::string AIController::callAI(bool readHistory, bool pd, int ai_mode, const s
     default:
         return u8"invalid ai mode";
     }
-}
-//读取prompt 
-std::string AIController::chatExecuteprompt_get()
-{
-    return execute_prompt;
-}
-std::string AIController::chatTalkprompt_get()
-{
-    return response_prompt;
-}
-std::string AIController::workspaceprompt_get()
-{
-    return workspace_prompt;
-}
-std::string AIController::decisionprompt_get()
-{
-    return decision_prompt;
-}
-std::string AIController::judgmentprompt_get()
-{
-	return Judgment_prompt;
 }
 // execute AI（执行）
 std::string AIController::execute(bool rd,bool wt,int ai_mode, const std::string& memkey, const std::string& text)
@@ -253,6 +281,13 @@ std::string AIController::decision(bool rd, bool wt, int ai_mode, const std::str
 std::string AIController::judgment(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
 {
     return callAI(rd,wt,ai_mode, memkey, text, Judgment_prompt);
+}
+//总接口
+std::string AIController::allairun(bool rd,bool wt,int ai_mode,const std::string& memkey,const std::string& text,const std::string& prompt
+)
+{
+    // 统一走 callAI，不做任何额外逻辑
+    return callAI(rd, wt, ai_mode, memkey, text, prompt);
 }
 
 //旧接口

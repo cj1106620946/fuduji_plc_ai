@@ -53,13 +53,13 @@ std::string GBKtoUTF81(const std::string& gbk)
 // 构造函数：初始化各类 AI，对话线程与工作线程稍后启动
 AiManager::AiManager()
     : aiController(ai)
+    ,   live2dWriter("live2dstate.json")
 {
     chat = new ChatAI(2, aiController, aiTrace);
     judgment = new Judgmentai(2, aiController, aiTrace);
     execute = new ExecuteAI(2, aiController, aiTrace, plc);
     workspace = new WorkspaceAI(2, aiController, aiTrace);
 }
-
 // 析构函数：安全关闭线程并释放资源
 AiManager::~AiManager()
 {
@@ -94,9 +94,10 @@ void AiManager::ini()
 {
     printGBK1("\n正在初始化，请等待");
     ai.setAPIKey("sk-358db553de8a4b1d867be");
+    live2dWriter.init();
     speech.setDebug(0);
     workspace->loadFromFile("workspace.json");
-	chat->runOnce(workspace->getWorkspaceJson());
+	chat->runExecuteRead(workspace->getWorkspaceJson());
 	// 输入线程：负责读取控制台输入
     inputThread = std::thread(&AiManager::inputLoop, this);
     // 对话线程：处理用户输入、Chat、Judgment
@@ -118,26 +119,25 @@ void AiManager::run()
 // 输入线程入口，启动文本与语音输入子线程
 void AiManager::inputLoop()
 {
-     // true = push/pop，false = getText
     // 文本线程始终存在
     textThread = std::thread(&AiManager::textInputLoop, this);
-
-    if (useVoiceQueue)
+    if (0)
     {
-        // 队列模式：两个语音线程
-        voicepush = std::thread(&AiManager::voicepushloop, this);
-        voicepop = std::thread(&AiManager::voicepoploop, this);
+        if (useVoiceQueue)
+        {
+            // 队列模式：两个语音线程
+            voicepush = std::thread(&AiManager::voicepushloop, this);
+            voicepop = std::thread(&AiManager::voicepoploop, this);
+        }
+        else
+        {
+            // 阻塞模式：一个语音线程
+            voiceThread = std::thread(&AiManager::voiceInputLoop, this);
+        }
     }
-    else
-    {
-        // 阻塞模式：一个语音线程
-        voiceThread = std::thread(&AiManager::voiceInputLoop, this);
-    }
-
     // ===== 等待退出 =====
     if (textThread.joinable())
         textThread.join();
-
     if (useVoiceQueue)
     {
         if (voicepush.joinable())
@@ -151,7 +151,6 @@ void AiManager::inputLoop()
             voiceThread.join();
     }
 }
-
 // 文本输入线程循环
 void AiManager::textInputLoop()
 {
@@ -179,10 +178,8 @@ void AiManager::voiceInputLoop()
     // 启动语音识别
     if (!speech.start())
     {
-        // 语音识别启动失败，只退出语音线程
         return;
     }
-
     speech.setDebug(0);
 
     while (running)
@@ -212,8 +209,6 @@ void AiManager::voicepushloop()
     {
         return;
     }
-
-
     while (running)
     {
         // 阻塞等待一句完整语音
@@ -252,6 +247,12 @@ void AiManager::voicepoploop()
 }
 
 
+// ================================
+// AiManager 线程与调度逻辑（新结构）
+// 目标：用户输入 -> 单一 Chat(入口JSON) -> (可选) Execute -> Chat(结果解释)
+// 输入线程、队列结构不动，只改下面这些函数
+// ================================
+
 // 对话线程循环：串行处理用户输入，保证 Chat 连续性
 void AiManager::processLoop()
 {
@@ -261,6 +262,7 @@ void AiManager::processLoop()
         cv.wait(lock, [&]() {
             return !userQueue.empty() || !running;
         });
+
         if (!running)
             break;
         std::string rawText = userQueue.front();
@@ -269,93 +271,90 @@ void AiManager::processLoop()
         handleUserInput(rawText);
     }
 }
+
 // 后台工作线程：专门处理耗时的 Workspace / Execute
 void AiManager::processWorkLoop()
 {
-    // 工作线程主循环
     while (running)
     {
-        // 等待工作队列中有任务，或系统退出
         std::unique_lock<std::mutex> lock(workMutex);
         workcv.wait(lock, [&]() {
             return !workQueue.empty() || !running;
         });
+
         if (!running)
             break;
-        // 取出一个工作任务
         WorkItem item = workQueue.front();
         workQueue.pop();
         lock.unlock();
         std::string resultText;
-
-        // 根据任务类型调用对应的功能 AI
+        // 任务类型：1 = Execute
         if (item.type == 1)
         {
             resultText = execute->runOnce(item.text);
         }
+        // 任务类型：2 = Workspace（以后打开）
         /*
         else if (item.type == 2)
         {
-            // 工作区建模任务
             bool ok = workspace->runOnce(item.text);
-
             if (ok)
-            {
-                // 工作区成功时，将 Workspace JSON 作为结果传递
                 resultText = workspace->getWorkspaceJson();
-            }
             else
-            {
-                // 工作区未完成时，将 AI 原始输出传递
-                // 可能包含 WS:ERR / NEED 等结构化信息
                 resultText = workspace->getAiRawOutput();
-            }
-        }*/
+        }
+        */
         else
         {
-            // 未知任务类型，直接忽略
             continue;
         }
 
-        // 将工作结果放入结果队列
-        // 结果队列中的内容不是用户输入，而是系统状态文本
         {
             std::lock_guard<std::mutex> rlock(resultMutex);
             resultQueue.push(resultText);
         }
+
         handleResultInput(resultText);
     }
 }
-// 处理一条用户输入：Chat 立即回应，Judgment 决定是否投递后台任务
+
+// 处理一条用户输入：单一 Chat 决策（control），决定是否投递后台任务
 void AiManager::handleUserInput(const std::string& text)
 {
     if (text.empty())
         return;
-    // Chat 永远优先执行，保证用户即时反馈
-    std::string chatReply = chat->runOnce(text);
-    printGBK1("[Chat]\n");
+    std::string chatReply = chat->runExecuteRead(text);
+    std::string emotion = chat->getEmotion();
+    std::cout << emotion;
+    live2dWriter.write(emotion);
+    printGBK1("\n");
     printUTF81(chatReply);
-    printGBK1("\n\n");
-    // 判决 AI 只负责分类，不执行任务
-    std::string decisionText = judgment->runOnce(text);
-    int decisionValue = std::atoi(decisionText.c_str());
-    if (decisionValue == 0)
+    printGBK1("\n");
+
+    int control = chat->getControl();
+    if (control == 0)
         return;
-    // 将耗时任务投递到后台线程
+    if (control == 1)
     {
         std::lock_guard<std::mutex> lock(workMutex);
         WorkItem item;
-        item.type = decisionValue;
-        item.text = text;
+        item.type = 1;     // Execute
+        item.text = text;  // 原始用户输入交给 Execute
         workQueue.push(item);
+        workcv.notify_one();
+        return;
     }
-    workcv.notify_one();
+    // control == 2：当前不投递任务，保持对话即可
+    return;
 }
-// 工作完成后，由 Chat 统一对用户进行自然回复
+
+// 工作完成后：由 Chat 统一对用户自然回复
 void AiManager::handleResultInput(const std::string& text)
 {
-    std::string reply = chat->runOnce(text);
-    printGBK1("[Result]\n");
+    std::string reply = chat->runExecuteRead(text);
+    std::string emotion = chat->getEmotion();
+    live2dWriter.write(emotion);
+    printGBK1("\n");
     printUTF81(reply);
-    printGBK1("\n\n");
+    printGBK1("\n");
 }
