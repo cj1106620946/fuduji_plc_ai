@@ -42,4 +42,7 @@ Desktop.ini
 *~
 /ConsoleApplication1/piper
 /ConsoleApplication1/tts_input.txt
-/live2ddemo
+
+/live2ddemo/CMakeFiles
+/live2ddemo/Framework
+/live2ddemo/src

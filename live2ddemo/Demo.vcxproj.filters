@@ -1,0 +1,150 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppAllocator_Common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppModel_Common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppSprite_Common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppTextureManager_Common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppView_Common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppWavFileHandler_Common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\TouchManager_Common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppDefine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppDelegate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppLive2DManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppPal.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppSprite.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppSpriteShader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppTextureManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="jsonstatereader.cpp">
+      <Filter>Source Files\on</Filter>
+    </ClCompile>
+    <ClCompile Include="piperdemo.cpp">
+      <Filter>Source Files\on</Filter>
+    </ClCompile>
+    <ClCompile Include="voicemanager.cpp">
+      <Filter>Source Files\on</Filter>
+    </ClCompile>
+    <ClCompile Include="subtitlewindow.cpp">
+      <Filter>Source Files\on</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppAllocator_Common.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppModel_Common.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppSprite_Common.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppTextureManager_Common.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppView_Common.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppWavFileHandler_Common.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\TouchManager_Common.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppDefine.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppDelegate.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppLive2DManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppModel.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppPal.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppSprite.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppSpriteShader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppTextureManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppView.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="piperdemo.h">
+      <Filter>Header Files\on</Filter>
+    </ClInclude>
+    <ClInclude Include="voicemanager.h">
+      <Filter>Header Files\on</Filter>
+    </ClInclude>
+    <ClInclude Include="jsonstatereader.h">
+      <Filter>Header Files\on</Filter>
+    </ClInclude>
+    <ClInclude Include="subtitlewindow.h">
+      <Filter>Header Files\on</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{34C630B9-4519-3CCE-87F9-70E0BE88FA6E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{23A3FBE4-822F-3465-9500-AB72466517FF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\on">
+      <UniqueIdentifier>{dc61bcd8-17f1-4dba-8e2e-9924d4ebc98a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\on">
+      <UniqueIdentifier>{09653e58-227a-45a3-8a40-12ec162027a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\new">
+      <UniqueIdentifier>{9c3cc5b2-51c6-4f7c-9251-e75f4fd6bb24}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\new">
+      <UniqueIdentifier>{3904d31d-5f0c-4fc6-835d-98ba19009d5c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

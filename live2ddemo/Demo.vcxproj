@@ -1,0 +1,288 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{7F46048F-B3CF-3A77-A3C1-4563F6AA1AD3}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.26100.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>Demo</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\build\proj_msvc2022_x64_md\bin\Demo\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Demo.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Demo</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
+    <LocalDebuggerWorkingDirectory Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/build/proj_msvc2022_x64_md/bin/Demo/$(Configuration)</LocalDebuggerWorkingDirectory>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\build\proj_msvc2022_x64_md\bin\Demo\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Demo.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Demo</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateManifest>
+    <LocalDebuggerWorkingDirectory Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/build/proj_msvc2022_x64_md/bin/Demo/$(Configuration)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\CubismSdkForNative-5-r.4.1\Samples\Common;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src;D:\CubismSdkForNative-5-r.4.1\Framework\src;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\..\..\..\..\Samples\D3D11\thirdParty\DirectXTK\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/../../../../Core/include"</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <BufferSecurityCheck>
+      </BufferSecurityCheck>
+      <CallingConvention>
+      </CallingConvention>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <FloatingPointModel>
+      </FloatingPointModel>
+      <ForceConformanceInForLoopScope>
+      </ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <MinimalRebuild>
+      </MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData>
+      </RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <SupportJustMyCode>
+      </SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType>
+      </TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\CubismSdkForNative-5-r.4.1\Samples\Common;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src;D:\CubismSdkForNative-5-r.4.1\Framework\src;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\..\..\..\..\Samples\D3D11\thirdParty\DirectXTK\Inc;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\..\..\..\..\Core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\CubismSdkForNative-5-r.4.1\Samples\Common;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src;D:\CubismSdkForNative-5-r.4.1\Framework\src;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\..\..\..\..\Samples\D3D11\thirdParty\DirectXTK\Inc;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\..\..\..\..\Core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message>
+      </Message>
+      <Command>setlocal
+D:\cmake\bin\cmake.exe -E copy_directory D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/../../../../Samples/Resources D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/build/proj_msvc2022_x64_md/bin/Demo/Debug/Resources
+if %errorlevel% neq 0 goto :cmEnd
+D:\cmake\bin\cmake.exe -E copy_directory D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/../../../../Samples/D3D11/Shaders D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/build/proj_msvc2022_x64_md/bin/Demo/Debug/SampleShaders
+if %errorlevel% neq 0 goto :cmEnd
+D:\cmake\bin\cmake.exe -E copy_directory D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/../../../../Framework/src/Rendering/D3D11/Shaders D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/build/proj_msvc2022_x64_md/bin/Demo/Debug/FrameworkShaders
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalDependencies>Framework\Debug\Framework.lib;-NODEFAULTLIB:libcmtd.lib;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\..\..\..\..\Core\lib\windows\x86_64\143\Live2DCubismCore_MDd.lib;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\..\..\..\..\Samples\D3D11\thirdParty\DirectXTK\Bin\Desktop_2022\x64\Debug\DirectXTK.lib;d3d11.lib;d3dcompiler.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers>
+      </ImageHasSafeExceptionHandlers>
+      <ImportLibrary>D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/build/proj_msvc2022_x64_md/Debug/Demo.lib</ImportLibrary>
+      <LinkErrorReporting>
+      </LinkErrorReporting>
+      <ProgramDataBaseFile>D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/build/proj_msvc2022_x64_md/bin/Demo/Debug/Demo.pdb</ProgramDataBaseFile>
+      <RandomizedBaseAddress>
+      </RandomizedBaseAddress>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\project\plcpl\live2ddemo;D:\CubismSdkForNative-5-r.4.1\Samples\Common;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src;D:\CubismSdkForNative-5-r.4.1\Framework\src;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\..\..\..\..\Samples\D3D11\thirdParty\DirectXTK\Inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /external:I "D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/../../../../Core/include"</AdditionalOptions>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>
+      </BufferSecurityCheck>
+      <CallingConvention>
+      </CallingConvention>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <FloatingPointModel>
+      </FloatingPointModel>
+      <ForceConformanceInForLoopScope>
+      </ForceConformanceInForLoopScope>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <MinimalRebuild>
+      </MinimalRebuild>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RemoveUnreferencedCodeData>
+      </RemoveUnreferencedCodeData>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <SupportJustMyCode>
+      </SupportJustMyCode>
+      <TreatWChar_tAsBuiltInType>
+      </TreatWChar_tAsBuiltInType>
+      <UseFullPaths>false</UseFullPaths>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+      <ScanSourceForModuleDependencies>false</ScanSourceForModuleDependencies>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>D:\CubismSdkForNative-5-r.4.1\Samples\Common;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src;D:\CubismSdkForNative-5-r.4.1\Framework\src;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\..\..\..\..\Samples\D3D11\thirdParty\DirectXTK\Inc;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\..\..\..\..\Core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>D:\CubismSdkForNative-5-r.4.1\Samples\Common;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src;D:\CubismSdkForNative-5-r.4.1\Framework\src;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\..\..\..\..\Samples\D3D11\thirdParty\DirectXTK\Inc;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\..\..\..\..\Core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <PostBuildEvent>
+      <Message>
+      </Message>
+      <Command>setlocal
+D:\cmake\bin\cmake.exe -E copy_directory D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/../../../../Samples/Resources D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/build/proj_msvc2022_x64_md/bin/Demo/Release/Resources
+if %errorlevel% neq 0 goto :cmEnd
+D:\cmake\bin\cmake.exe -E copy_directory D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/../../../../Samples/D3D11/Shaders D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/build/proj_msvc2022_x64_md/bin/Demo/Release/SampleShaders
+if %errorlevel% neq 0 goto :cmEnd
+D:\cmake\bin\cmake.exe -E copy_directory D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/../../../../Framework/src/Rendering/D3D11/Shaders D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/build/proj_msvc2022_x64_md/bin/Demo/Release/FrameworkShaders
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
+xcopy /y /d "$(TargetPath)" "D:\project\run\"</Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalDependencies>Framework\Release\Framework.lib;-NODEFAULTLIB:libcmt.lib;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\..\..\..\..\Core\lib\windows\x86_64\143\Live2DCubismCore_MD.lib;D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\..\..\..\..\Samples\D3D11\thirdParty\DirectXTK\Bin\Desktop_2022\x64\Release\DirectXTK.lib;d3d11.lib;d3dcompiler.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers>
+      </ImageHasSafeExceptionHandlers>
+      <ImportLibrary>D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/build/proj_msvc2022_x64_md/Release/Demo.lib</ImportLibrary>
+      <LinkErrorReporting>
+      </LinkErrorReporting>
+      <ProgramDataBaseFile>D:/CubismSdkForNative-5-r.4.1/Samples/D3D11/Demo/proj.d3d11.cmake/build/proj_msvc2022_x64_md/bin/Demo/Release/Demo.pdb</ProgramDataBaseFile>
+      <RandomizedBaseAddress>
+      </RandomizedBaseAddress>
+      <SubSystem>Windows</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppAllocator_Common.cpp" />
+    <ClCompile Include="jsonstatereader.cpp" />
+    <ClCompile Include="piperdemo.cpp" />
+    <ClCompile Include="subtitlewindow.cpp" />
+    <ClCompile Include="voicemanager.cpp" />
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppAllocator_Common.hpp" />
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppModel_Common.cpp" />
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppModel_Common.hpp" />
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppSprite_Common.cpp" />
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppSprite_Common.hpp" />
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppTextureManager_Common.cpp" />
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppTextureManager_Common.hpp" />
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppView_Common.cpp" />
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppView_Common.hpp" />
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppWavFileHandler_Common.cpp" />
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\LAppWavFileHandler_Common.hpp" />
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\TouchManager_Common.cpp" />
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\Common\TouchManager_Common.hpp" />
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppDefine.cpp" />
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppDefine.hpp" />
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppDelegate.cpp" />
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppDelegate.hpp" />
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppLive2DManager.cpp" />
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppLive2DManager.hpp" />
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppModel.cpp" />
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppModel.hpp" />
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppPal.cpp" />
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppPal.hpp" />
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppSprite.cpp" />
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppSprite.hpp" />
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppSpriteShader.cpp" />
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppSpriteShader.hpp" />
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppTextureManager.cpp" />
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppTextureManager.hpp" />
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppView.cpp" />
+    <ClInclude Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\LAppView.hpp" />
+    <ClCompile Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\src\main.cpp" />
+    <ClInclude Include="jsonstatereader.h" />
+    <ClInclude Include="piperdemo.h" />
+    <ClInclude Include="subtitlewindow.h" />
+    <ClInclude Include="voicemanager.h" />
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="D:\CubismSdkForNative-5-r.4.1\Samples\D3D11\Demo\proj.d3d11.cmake\build\proj_msvc2022_x64_md\Framework\Framework.vcxproj">
+      <Project>{9FFC7282-D9A3-3056-AA96-D5797390422D}</Project>
+      <Name>Framework</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
