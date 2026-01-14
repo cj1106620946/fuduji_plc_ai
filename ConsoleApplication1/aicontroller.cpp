@@ -193,8 +193,8 @@ void AIController::buildResponsePrompt()
         u8"你必须且只能输出一段完整、合法、可直接解析的 JSON。\n"
         u8"禁止在 JSON 外输出任何内容，禁止转义符号 \\。\n"
         u8"\n"
-        u8"【JSON 结构（字段名不可更改）】\n"
-        u8"{\"ainame\":\"角色名\",\"text\":\"回复内容\",\"control\":数字,\"emotion\":\"情感\"}\n"
+        u8"【JSON 结构（字段名不可更改，必须全部输出）】\n"
+        u8"{\"ainame\":\"角色名\",\"text\":\"回复内容\",\"control\":数字,\"emotion\":\"情感\",\"priority\":数字}\n"
         u8"\n"
         u8"【control 含义】\n"
         u8"0：不执行，仅聊天或说明。\n"
@@ -204,13 +204,21 @@ void AIController::buildResponsePrompt()
         u8"【emotion 取值】\n"
         u8"happy、neutral、sad、thinking（必须使用英文双引号）。\n"
         u8"\n"
+        u8"【priority 含义（对话优先度）】\n"
+        u8"0：普通对话，可延后显示，不需要立即打断当前流程。\n"
+        u8"1：重要对话，应尽快向用户说明。\n"
+        u8"2：紧急对话，必须立即说明，可打断当前流程。\n"
+        u8"\n"
         u8"【判断原则】\n"
         u8"涉及连接、读取、写入、启动、停止等控制行为 → control=1。\n"
-        u8"普通聊天或说明 → control=0。\n"
+        u8"普通聊天、解释说明 → control=0。\n"
         u8"明显超出系统能力 → control=2。\n"
         u8"\n"
+        u8"系统状态变化、执行失败、无法理解但需要提醒用户的情况 → priority 至少为 1。\n"
+        u8"需要立即提醒用户注意或确认的情况 → priority=2。\n"
+        u8"普通闲聊或背景说明 → priority=0。\n"
+        u8"\n"
         u8"最终输出必须是纯 JSON。";
-
 }
 
 //读取prompt 

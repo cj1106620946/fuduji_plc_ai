@@ -22,7 +22,7 @@ public:
         // 采集声道数 1 表示单声道 2 表示立体声 推荐 1
         int sample_rate = 48000;
         // 采集采样率 单位 Hz 例如 48000 Whisper 推理前会降采样到 16000
-        float vad_threshold = 0.1f;
+        float vad_threshold = 0.08f;
         // 静音判定阈值 RMS 小于该值就算静音 越大越不容易触发说话
 
         int start_hit = 1;
@@ -31,7 +31,7 @@ public:
         float start_rms_min = 0.08f;
         // 开始说话最低强度 RMS 必须大于等于这个值才允许触发开始说话
 
-        int end_silence_ms = 200;
+        int end_silence_ms = 400;
         // 结束说话判定静音时长 单位 ms 进入说话状态后 连续静音达到该值就结束
 
         int check_ms = 100;

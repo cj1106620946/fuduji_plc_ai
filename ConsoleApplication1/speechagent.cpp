@@ -323,16 +323,27 @@ bool speechagent::pushtext()
 
                     {
                         std::lock_guard<std::mutex> lock(audioBufferMutex);
-                        speechStartSampleIndex = audioBuffer48k.size();
+
+                        // 向前回退 200ms，保留语音前导
+                        const int preroll_ms = 200;
+                        size_t prerollSamples =
+                            (size_t)speechParams.sample_rate * preroll_ms / 1000;
+
+                        if (audioBuffer48k.size() > prerollSamples)
+                            speechStartSampleIndex = audioBuffer48k.size() - prerollSamples;
+                        else
+                            speechStartSampleIndex = 0;
                     }
 
                     if (g_debug)
                     {
                         std::ostringstream oss;
-                        oss << u8"[" << now_sec() << u8"s][语音] pushtext 判定开始说话\n";
+                        oss << u8"[" << now_sec()
+                            << u8"s][语音] pushtext 判定开始说话（已回退起点）\n";
                         printUTF81(oss.str());
                     }
                 }
+
             }
             else
             {

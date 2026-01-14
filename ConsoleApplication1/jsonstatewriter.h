@@ -16,7 +16,9 @@ public:
     void init();
 
     // 写入状态：直接覆盖文件
-    bool write(const std::string& value);
+    bool write(const std::string& text,
+        const std::string& emotion,
+        int priority);
 
 private:
     std::string filepath;

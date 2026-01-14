@@ -13,7 +13,9 @@ private:
         std::string text;
         int control = 0;
         std::string emotion;
+        int priority = 0;
     };
+
 public:
     ChatAI(int aicode,AIController& aiRef, AITrace& traceRef);
     // 对话唯一入口
@@ -23,6 +25,7 @@ public:
     std::string getAiName();
     std::string getText();
     int getControl();
+    int getPriority();
     std::string getEmotion();
     std::string runExecuteRead(const std::string& user_input);
     std::string runExecuteOnce(const std::string& user_input);

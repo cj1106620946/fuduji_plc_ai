@@ -74,7 +74,7 @@ AiManager::~AiManager()
         workThread.join();
     if (inputThread.joinable())
         inputThread.join();
-
+    speech.stop();
     delete chat;
     delete judgment;
     delete execute;
@@ -93,17 +93,27 @@ void AiManager::pushUserInput(const std::string& text)
 void AiManager::ini()
 {
     printGBK1("\n正在初始化，请等待");
-    ai.setAPIKey("sk-358db553de8a4b1d867be");
     live2dWriter.init();
-    speech.setDebug(0);
     workspace->loadFromFile("workspace.json");
+
 	chat->runExecuteRead(workspace->getWorkspaceJson());
+
 	// 输入线程：负责读取控制台输入
     inputThread = std::thread(&AiManager::inputLoop, this);
     // 对话线程：处理用户输入、Chat、Judgment
     mainThread = std::thread(&AiManager::processLoop, this);
     // 工作线程：专门执行 Workspace / Execute 等耗时任务
     workThread = std::thread(&AiManager::processWorkLoop, this);
+
+    if (!speech.start())
+    {
+        printUTF81(u8"[Speech] 语音系统启动失败\n");
+        running = false;
+        return;
+    }
+    speech.setDebug(0);
+
+
     printGBK1("\n初始化完成\n");
     printGBK1("输入：");
 }
@@ -121,8 +131,6 @@ void AiManager::inputLoop()
 {
     // 文本线程始终存在
     textThread = std::thread(&AiManager::textInputLoop, this);
-    if (0)
-    {
         if (useVoiceQueue)
         {
             // 队列模式：两个语音线程
@@ -134,7 +142,6 @@ void AiManager::inputLoop()
             // 阻塞模式：一个语音线程
             voiceThread = std::thread(&AiManager::voiceInputLoop, this);
         }
-    }
     // ===== 等待退出 =====
     if (textThread.joinable())
         textThread.join();
@@ -175,13 +182,6 @@ void AiManager::textInputLoop()
 // 语音输入线程循环
 void AiManager::voiceInputLoop()
 {
-    // 启动语音识别
-    if (!speech.start())
-    {
-        return;
-    }
-    speech.setDebug(0);
-
     while (running)
     {
         // 获取语音识别文本
@@ -198,17 +198,10 @@ void AiManager::voiceInputLoop()
         printUTF81("\n");
         pushUserInput(text);
     }
-
-    // 线程结束时，关闭语音识别
-    speech.stop();
 }
 //入队
 void AiManager::voicepushloop()
 {
-    if (!speech.start())
-    {
-        return;
-    }
     while (running)
     {
         // 阻塞等待一句完整语音
@@ -221,14 +214,10 @@ void AiManager::voicepushloop()
         }
         // 成功入队后立刻继续下一次录制
     }
-
-    speech.stop();
 }
 //出队
 void AiManager::voicepoploop()
 {
-    // 注意：这里不需要 start()
-    // poptext 只用 whisper，不碰麦克风
     while (running)
     {
         std::string text = speech.poptext();
@@ -324,9 +313,10 @@ void AiManager::handleUserInput(const std::string& text)
     if (text.empty())
         return;
     std::string chatReply = chat->runExecuteRead(text);
+    std::string writetext = chat->getText();
     std::string emotion = chat->getEmotion();
-    std::cout << emotion;
-    live2dWriter.write(emotion);
+    int priority = chat->getPriority();
+    live2dWriter.write(writetext,emotion, priority);
     printGBK1("\n");
     printUTF81(chatReply);
     printGBK1("\n");
@@ -352,8 +342,11 @@ void AiManager::handleUserInput(const std::string& text)
 void AiManager::handleResultInput(const std::string& text)
 {
     std::string reply = chat->runExecuteRead(text);
+    std::string writetext = chat->getText();
     std::string emotion = chat->getEmotion();
-    live2dWriter.write(emotion);
+    int priority = chat->getPriority();
+    live2dWriter.write(writetext, emotion, priority);
+
     printGBK1("\n");
     printUTF81(reply);
     printGBK1("\n");

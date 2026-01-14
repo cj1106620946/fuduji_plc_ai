@@ -41,6 +41,11 @@ int ChatAI::getControl()
 {
     return r.control;
 }
+int ChatAI::getPriority()
+{
+    return r.priority;
+}
+
 std::string ChatAI::getEmotion()
 {
     return r.emotion;
@@ -80,15 +85,11 @@ std::string ChatAI::runExecuteRead(const std::string& user_input)
     trace.debug(displayText);trace.end(true, jsonOut);
     return displayText;
 }
-
-
-// 执行 chat，不解析 JSON，不记录 trace
 std::string ChatAI::runExecuteOnce(const std::string& user_input)
 {
     return callChatExecuteAI(user_input);
 }
 
-// 新增：调用执行入口 Chat AI
 std::string ChatAI::callChatExecuteAI(const std::string& user_input)
 {
     // 这里使用新的 chatExecute 接口
@@ -130,12 +131,19 @@ bool ChatAI::parseChatJson(const std::string& jsonText)
     // emotion
     if (root.isMember("emotion") && root["emotion"].isString())
         r.emotion = root["emotion"].asString();
-    else if (root.isMember("emotion") && root["emotion"].isObject() &&
+    else if (root.isMember("emotion") &&
+        root["emotion"].isObject() &&
         root["emotion"].isMember("state") &&
         root["emotion"]["state"].isString())
         r.emotion = root["emotion"]["state"].asString();
     else
         r.emotion.clear();
+
+    // priority（新增，对话优先度）
+    if (root.isMember("priority") && root["priority"].isInt())
+        r.priority = root["priority"].asInt();
+    else
+        r.priority = 0;
 
     return true;
 }
