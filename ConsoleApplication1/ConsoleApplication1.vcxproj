@@ -139,6 +139,7 @@
     <ClCompile Include="..\..\c-cpp\src\snap7.cpp" />
     <ClCompile Include="aicontroller.cpp" />
     <ClCompile Include="aimanager.cpp" />
+    <ClCompile Include="aimanagerui.cpp" />
     <ClCompile Include="aitrace.cpp" />
     <ClCompile Include="chatai.cpp" />
     <ClCompile Include="executeai.cpp" />
@@ -158,6 +159,7 @@
     <ClInclude Include="..\..\c-cpp\include\snap7.h" />
     <ClInclude Include="aicontroller.h" />
     <ClInclude Include="aimanager.h" />
+    <ClInclude Include="aimanagerui.h" />
     <ClInclude Include="aitrace.h" />
     <ClInclude Include="chatai.h" />
     <ClInclude Include="executeai.h" />

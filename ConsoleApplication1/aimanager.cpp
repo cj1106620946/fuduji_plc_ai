@@ -75,12 +75,22 @@ AiManager::~AiManager()
     if (inputThread.joinable())
         inputThread.join();
     speech.stop();
+    delete ui;
     delete chat;
     delete judgment;
     delete execute;
     delete workspace;
 }
+void uiThread(AiManager* mgr)
+{
+    mgr->ui = new AiManagerUI();
 
+    if (!mgr->ui->create(GetModuleHandleW(nullptr)))
+        return;
+
+    mgr->ui->show();
+    mgr->ui->loop();
+}
 // 将用户原始输入推入队列，仅负责入队，不做任何 AI 处理
 void AiManager::pushUserInput(const std::string& text)
 {
@@ -92,6 +102,19 @@ void AiManager::pushUserInput(const std::string& text)
 }
 void AiManager::ini()
 {
+
+    HANDLE hEvent = CreateEventW(
+        nullptr,          // 默认安全属性
+        TRUE,             // 手动复位
+        FALSE,            // 初始未触发
+        L"Global\\AIMANAGER_UI_READY"
+    );
+
+    if (hEvent)
+    {
+        SetEvent(hEvent);
+        CloseHandle(hEvent);
+    }
     printGBK1("\n正在初始化，请等待");
     live2dWriter.init();
     workspace->loadFromFile("workspace.json");
@@ -104,6 +127,7 @@ void AiManager::ini()
     mainThread = std::thread(&AiManager::processLoop, this);
     // 工作线程：专门执行 Workspace / Execute 等耗时任务
     workThread = std::thread(&AiManager::processWorkLoop, this);
+    uiThread = std::thread(::uiThread, this);
 
     if (!speech.start())
     {
@@ -113,10 +137,10 @@ void AiManager::ini()
     }
     speech.setDebug(0);
 
-
     printGBK1("\n初始化完成\n");
     printGBK1("输入：");
 }
+
 // 主运行入口，启动对话线程与后台工作线程
 void AiManager::run()
 {  
@@ -126,6 +150,8 @@ void AiManager::run()
         ;
     }
 }
+
+
 // 输入线程入口，启动文本与语音输入子线程
 void AiManager::inputLoop()
 {
@@ -234,14 +260,6 @@ void AiManager::voicepoploop()
         pushUserInput(text);
     }
 }
-
-
-// ================================
-// AiManager 线程与调度逻辑（新结构）
-// 目标：用户输入 -> 单一 Chat(入口JSON) -> (可选) Execute -> Chat(结果解释)
-// 输入线程、队列结构不动，只改下面这些函数
-// ================================
-
 // 对话线程循环：串行处理用户输入，保证 Chat 连续性
 void AiManager::processLoop()
 {

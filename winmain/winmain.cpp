@@ -3,19 +3,14 @@
 
 #include <windows.h>
 
-static const wchar_t* kToken = L"--from-launcher";
-
 static PROCESS_INFORMATION gPlcPi{};
 static PROCESS_INFORMATION gLivePi{};
 
 static HWND gHostWnd = NULL;
 static HWND gLiveWnd = NULL;
+static HWND gUiWnd = NULL;
 
-static bool hasTokenInCmdLine(const wchar_t* cmd)
-{
-    if (!cmd) return false;
-    return wcsstr(cmd, kToken) != NULL;
-}
+// ------------------------------------------------------------
 
 static bool createChildProcess(const wchar_t* cmdLine, PROCESS_INFORMATION& pi)
 {
@@ -26,16 +21,11 @@ static bool createChildProcess(const wchar_t* cmdLine, PROCESS_INFORMATION& pi)
     wcsncpy_s(buf, cmdLine, _TRUNCATE);
 
     if (!CreateProcessW(
-        NULL,
-        buf,
-        NULL,
-        NULL,
-        FALSE,
-        0,
-        NULL,
-        NULL,
-        &si,
-        &pi))
+        NULL, buf,
+        NULL, NULL,
+        FALSE, 0,
+        NULL, NULL,
+        &si, &pi))
     {
         return false;
     }
@@ -48,13 +38,23 @@ static bool createChildProcess(const wchar_t* cmdLine, PROCESS_INFORMATION& pi)
     return true;
 }
 
-static BOOL CALLBACK enumFindMainWindow(HWND hwnd, LPARAM lParam)
+// ------------------------------------------------------------
+
+struct FindParam
 {
     DWORD pid = 0;
-    GetWindowThreadProcessId(hwnd, &pid);
+    const wchar_t* titleSub = nullptr;
+    HWND found = NULL;
+};
 
-    DWORD targetPid = (DWORD)lParam;
-    if (pid != targetPid)
+static BOOL CALLBACK enumFindMainWindow(HWND hwnd, LPARAM lParam)
+{
+    FindParam* p = (FindParam*)lParam;
+    if (!p) return TRUE;
+
+    DWORD pid = 0;
+    GetWindowThreadProcessId(hwnd, &pid);
+    if (pid != p->pid)
         return TRUE;
 
     if (!IsWindowVisible(hwnd))
@@ -63,50 +63,104 @@ static BOOL CALLBACK enumFindMainWindow(HWND hwnd, LPARAM lParam)
     if (GetWindow(hwnd, GW_OWNER) != NULL)
         return TRUE;
 
-    gLiveWnd = hwnd;
+    if (p->titleSub && p->titleSub[0])
+    {
+        wchar_t title[256]{};
+        GetWindowTextW(hwnd, title, 255);
+        if (!wcsstr(title, p->titleSub))
+            return TRUE;
+    }
+
+    p->found = hwnd;
     return FALSE;
 }
 
-static HWND findMainWindowByPid(DWORD pid, DWORD timeoutMs)
+static HWND findMainWindowByPid(DWORD pid, DWORD timeoutMs, const wchar_t* titleSub)
 {
     DWORD start = GetTickCount();
-    gLiveWnd = NULL;
+    FindParam param{ pid, titleSub, NULL };
 
     while (GetTickCount() - start < timeoutMs)
     {
-        EnumWindows(enumFindMainWindow, (LPARAM)pid);
-        if (gLiveWnd)
-            return gLiveWnd;
+        param.found = NULL;
+        EnumWindows(enumFindMainWindow, (LPARAM)&param);
+        if (param.found)
+            return param.found;
 
         Sleep(50);
     }
     return NULL;
 }
 
-static void embedLive2dWindow(HWND host, HWND liveChild)
+// ------------------------------------------------------------
+// 关键修改点：嵌入子窗口后的“行为收敛”
+static void embedChildWindow(HWND host, HWND child)
 {
-    if (!host || !liveChild)
+    if (!host || !child)
         return;
 
-    LONG_PTR style = GetWindowLongPtrW(liveChild, GWL_STYLE);
-    style &= ~(WS_OVERLAPPED | WS_CAPTION | WS_THICKFRAME | WS_MINIMIZE | WS_MAXIMIZE | WS_SYSMENU);
+    // 改为真正的子窗口样式
+    LONG_PTR style = GetWindowLongPtrW(child, GWL_STYLE);
+    style &= ~(WS_OVERLAPPED | WS_CAPTION | WS_THICKFRAME |
+        WS_MINIMIZE | WS_MAXIMIZE | WS_SYSMENU);
     style |= WS_CHILD;
-    SetWindowLongPtrW(liveChild, GWL_STYLE, style);
+    SetWindowLongPtrW(child, GWL_STYLE, style);
 
-    LONG_PTR ex = GetWindowLongPtrW(liveChild, GWL_EXSTYLE);
-    ex &= ~(WS_EX_APPWINDOW);
+    LONG_PTR ex = GetWindowLongPtrW(child, GWL_EXSTYLE);
+    ex &= ~(WS_EX_APPWINDOW | WS_EX_TOPMOST);
     ex |= WS_EX_TOOLWINDOW;
-    SetWindowLongPtrW(liveChild, GWL_EXSTYLE, ex);
+    SetWindowLongPtrW(child, GWL_EXSTYLE, ex);
 
-    SetParent(liveChild, host);
+    SetParent(child, host);
 
+    // 不激活、不抢焦点、不改变 Z 顺序
+    SetWindowPos(
+        child,
+        NULL,
+        0, 0, 0, 0,
+        SWP_NOMOVE | SWP_NOSIZE |
+        SWP_NOZORDER | SWP_NOACTIVATE |
+        SWP_FRAMECHANGED
+    );
+
+    ShowWindow(child, SW_SHOW);
+
+    // 强制一次重绘，防止第一次嵌入闪烁
+    InvalidateRect(child, NULL, TRUE);
+    UpdateWindow(child);
+}
+
+// ------------------------------------------------------------
+
+static void layoutChildren(HWND host)
+{
     RECT rc{};
     GetClientRect(host, &rc);
-    MoveWindow(liveChild, 0, 0, rc.right - rc.left, rc.bottom - rc.top, TRUE);
 
-    ShowWindow(liveChild, SW_SHOW);
-    SetForegroundWindow(host);
+    int w = rc.right - rc.left;
+    int h = rc.bottom - rc.top;
+
+    if (gUiWnd && IsWindow(gUiWnd) && gLiveWnd && IsWindow(gLiveWnd))
+    {
+        MoveWindow(gUiWnd, 0, 0, w / 2, h, TRUE);
+        MoveWindow(gLiveWnd, w / 2, 0, w - (w / 2), h, TRUE);
+        return;
+    }
+
+    if (gLiveWnd && IsWindow(gLiveWnd))
+    {
+        MoveWindow(gLiveWnd, 0, 0, w, h, TRUE);
+        return;
+    }
+
+    if (gUiWnd && IsWindow(gUiWnd))
+    {
+        MoveWindow(gUiWnd, 0, 0, w, h, TRUE);
+        return;
+    }
 }
+
+// ------------------------------------------------------------
 
 static void closeBoth()
 {
@@ -124,18 +178,19 @@ static void closeBoth()
     }
 }
 
+// ------------------------------------------------------------
+
 static LRESULT CALLBACK hostWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg)
     {
     case WM_SIZE:
-        if (gLiveWnd && IsWindow(gLiveWnd))
-        {
-            RECT rc{};
-            GetClientRect(hWnd, &rc);
-            MoveWindow(gLiveWnd, 0, 0, rc.right - rc.left, rc.bottom - rc.top, TRUE);
-        }
+        layoutChildren(hWnd);
         return 0;
+
+        // 防止背景反复擦除造成闪烁
+    case WM_ERASEBKGND:
+        return 1;
 
     case WM_CLOSE:
         closeBoth();
@@ -150,6 +205,8 @@ static LRESULT CALLBACK hostWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM l
         return DefWindowProcW(hWnd, msg, wParam, lParam);
     }
 }
+
+// ------------------------------------------------------------
 
 static HWND createHostWindow(HINSTANCE hInst)
 {
@@ -169,7 +226,8 @@ static HWND createHostWindow(HINSTANCE hInst)
         0,
         cls,
         L"fuduji launcher",
-        WS_OVERLAPPEDWINDOW,
+        // 关键：裁剪子窗口，防止闪烁
+        WS_OVERLAPPEDWINDOW | WS_CLIPCHILDREN | WS_CLIPSIBLINGS,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
         1100,
@@ -184,64 +242,67 @@ static HWND createHostWindow(HINSTANCE hInst)
     return hWnd;
 }
 
+// ------------------------------------------------------------
+
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR, int)
 {
     gHostWnd = createHostWindow(hInstance);
     if (!gHostWnd)
         return 1;
 
-    // 先启动 plcai 再启动 live2d
     if (!createChildProcess(L"fuduij_ai_plc.exe --from-launcher", gPlcPi))
-    {
-        closeBoth();
         return 1;
-    }
 
     if (!createChildProcess(L"Demo.exe --from-launcher", gLivePi))
-    {
-        closeBoth();
         return 1;
-    }
 
-    // 找到 live2d 主窗口并嵌入
-    HWND live = findMainWindowByPid(gLivePi.dwProcessId, 8000);
-    if (live)
+    // 先嵌入 live2d
+    gLiveWnd = findMainWindowByPid(gLivePi.dwProcessId, 8000, NULL);
+    if (gLiveWnd)
     {
-        embedLive2dWindow(gHostWnd, live);
+        embedChildWindow(gHostWnd, gLiveWnd);
+        layoutChildren(gHostWnd);
     }
 
-    // 消息循环 同时监控子进程退出
+    HANDLE hUiReady = CreateEventW(
+        nullptr,
+        TRUE,
+        FALSE,
+        L"Global\\AIMANAGER_UI_READY"
+    );
+
+    bool uiEmbedded = false;
     MSG msg{};
+
     while (true)
     {
-        HANDLE hs[2] = { gPlcPi.hProcess, gLivePi.hProcess };
-        DWORD wait = MsgWaitForMultipleObjects(2, hs, FALSE, INFINITE, QS_ALLINPUT);
+        HANDLE hs[3] = { gPlcPi.hProcess, gLivePi.hProcess, hUiReady };
+        DWORD wait = MsgWaitForMultipleObjects(3, hs, FALSE, INFINITE, QS_ALLINPUT);
 
         if (wait == WAIT_OBJECT_0 || wait == WAIT_OBJECT_0 + 1)
         {
-            // 任意一个退出 统一关闭
             closeBoth();
-            PostMessageW(gHostWnd, WM_CLOSE, 0, 0);
             break;
+        }
+
+        if (!uiEmbedded && wait == WAIT_OBJECT_0 + 2)
+        {
+            gUiWnd = findMainWindowByPid(gPlcPi.dwProcessId, 8000, L"AiManagerUI");
+            if (gUiWnd)
+            {
+                embedChildWindow(gHostWnd, gUiWnd);
+                layoutChildren(gHostWnd);
+                uiEmbedded = true;
+            }
         }
 
         while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
         {
             if (msg.message == WM_QUIT)
-            {
-                closeBoth();
-                return (int)msg.wParam;
-            }
+                return 0;
             TranslateMessage(&msg);
             DispatchMessageW(&msg);
         }
     }
-
-    // 再跑一段消息 让窗口销毁流程结束
-    while (GetMessageW(&msg, NULL, 0, 0))
-    {
-        TranslateMessage(&msg);
-        DispatchMessageW(&msg);
-    }
-    return (int)msg.wParam;
+    return 0;
 }

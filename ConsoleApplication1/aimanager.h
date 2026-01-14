@@ -7,6 +7,13 @@
 #include <atomic>
 #include <thread>
 
+// 前向声明（必须）
+class AiManager;
+class AiManagerUI;
+
+// UI 线程入口（类外）
+void aiuiThreadEntry(AiManager* mgr);
+
 #include "plcclient.h"
 #include "aiclient.h"
 #include "aicontroller.h"
@@ -16,107 +23,95 @@
 #include "judgmentai.h"
 #include "executeai.h"
 #include "workspaceai.h"
-#include"jsonstatewriter.h"
-#include"speechagent.h"
-// AiManager 负责统一调度对话 AI 与后台工作 AI
-// 对话线程始终保持流畅，耗时任务全部放入后台线程执行
+#include "jsonstatewriter.h"
+#include "speechagent.h"
+#include "aimanagerui.h"
+
 class AiManager
 {
 public:
     AiManager();
     ~AiManager();
 
-    // 启动 AI 管理器，进入主循环
+    // 启动管理器
     void run();
 
-    // 将用户原始输入推入队列，仅负责入队
+    // 推送用户输入
     void pushUserInput(const std::string& text);
 
+    // UI（附属）
+    AiManagerUI* ui = nullptr;
+
 private:
-	// 初始化各类 AI 模块与线程
+    // 初始化
     void ini();
-    // 对话线程主循环，处理用户输入与 Chat / Judgment
+
+    // 主逻辑线程
     void processLoop();
-    // 后台工作线程主循环，处理 Workspace / Execute 等耗时任务
     void processWorkLoop();
-    // 处理单条用户输入，立即响应 Chat，并决定是否投递后台任务
-    void handleUserInput(const std::string& text);
-    // 后台任务完成后，将结果交由 Chat 进行自然回复
-    void handleResultInput(const std::string& text);
-    // 输入线程入口
+
+    // 输入相关
     void inputLoop();
-
-    // 文本输入线程
     void textInputLoop();
-
-    // 语音输入线程
     void voiceInputLoop();
-    void voicepoploop();
     void voicepushloop();
+    void voicepoploop();
+
+    // 处理逻辑
+    void handleUserInput(const std::string& text);
+    void handleResultInput(const std::string& text);
+
 private:
-    // 后台任务描述结构，仅包含最小必要信息
     struct WorkItem
     {
-        // 任务类型：1 表示 Execute，2 表示 Workspace
         int type = 0;
-        // 原始 UTF-8 文本，作为 AI 输入
         std::string text;
     };
+
 private:
-    // PLC 客户端实例
+    // 核心模块
     PLCClient plc;
-    // AI 网络或本地调用客户端
     AIClient ai;
-    // AI 控制器，负责构建各类 Prompt
     AIController aiController;
-    // AI 调用追踪与调试记录
     AITrace aiTrace;
-    // 各 AI 模块实例
+
     ChatAI* chat = nullptr;
     Judgmentai* judgment = nullptr;
     ExecuteAI* execute = nullptr;
     WorkspaceAI* workspace = nullptr;
 
 private:
-    // 用户输入队列，仅由对话线程消费
+    // 状态输出
+    JsonStateWriter live2dWriter;
+
+private:
+    // 队列
     std::queue<std::string> userQueue;
-    // 后台工作任务队列，仅由工作线程消费
     std::queue<WorkItem> workQueue;
-    // 后台任务结果队列，用于结果回流
     std::queue<std::string> resultQueue;
-    // 输入线程总控
+
+private:
+    // 线程
+    std::thread uiThread;
     std::thread inputThread;
-    // 文本 / 语音 子线程
     std::thread textThread;
     std::thread voiceThread;
     std::thread voicepush;
     std::thread voicepop;
-    speechagent speech;
-    bool useVoiceQueue = true;//切换
+    std::thread mainThread;
+    std::thread workThread;
+
 private:
-    // 用户输入队列互斥锁
+    // 同步
     std::mutex userMutex;
-
-    // 后台工作队列互斥锁
     std::mutex workMutex;
-
-    // 结果队列互斥锁
     std::mutex resultMutex;
-
-    // 用户输入条件变量，用于唤醒对话线程
     std::condition_variable cv;
-
-    // 后台工作条件变量，用于唤醒工作线程
     std::condition_variable workcv;
 
 private:
-    JsonStateWriter live2dWriter;
-    // 对话线程对象
-    std::thread mainThread;
-
-    // 后台工作线程对象
-    std::thread workThread;
-
-    // 运行状态标志，用于安全退出所有线程
+    // 其他
+    speechagent speech;
+    bool useVoiceQueue = true;
     std::atomic<bool> running{ true };
 };

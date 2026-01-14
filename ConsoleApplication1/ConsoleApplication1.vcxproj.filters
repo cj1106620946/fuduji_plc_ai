@@ -66,6 +66,9 @@
     <ClCompile Include="jsonstatewriter.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="aimanagerui.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\c-cpp\include\snap7.h">
@@ -111,6 +114,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="jsonstatewriter.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="aimanagerui.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

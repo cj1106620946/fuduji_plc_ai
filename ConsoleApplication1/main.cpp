@@ -1,16 +1,42 @@
-﻿#include <iostream>
+﻿// ================= plcai main.cpp =================
+#include <iostream>
 #include <windows.h>
-#include <fcntl.h>
-#include <io.h>
-#include "console.h"     // 你的 ConsoleApp 类
-#include "plcclient.h"   // PLC 客户端
-#include "aiclient.h"    // AI 客户端
+#include <string>
+#include <thread>
 
-int main()
+#include "console.h"
+#include "plcclient.h"
+#include "aiclient.h"
+
+// 判断是否携带启动令牌
+static bool checkLaunchToken(int argc, char* argv[])
 {
-    // 创建上位机管理类
+    for (int i = 1; i < argc; ++i)
+    {
+        if (std::string(argv[i]) == "--from-launcher")
+            return true;
+    }
+    return false;
+}
+static void hideConsoleWindow()
+{
+    HWND h = GetConsoleWindow();
+    if (h)
+        ShowWindow(h, SW_HIDE);
+}
+int main(int argc, char* argv[])
+{
+    // 启动即校验令牌
+    if (!checkLaunchToken(argc, argv))
+    {
+        // 非 launcher 启动，直接退出
+        return 0;
+    }
+    // 控制台程序入口
     Console app;
-    // 启动菜单系统
+
+    // 主线程继续跑控制台（你原有逻辑）
     app.run();
+
     return 0;
 }
