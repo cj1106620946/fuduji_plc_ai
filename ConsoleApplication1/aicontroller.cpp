@@ -256,43 +256,39 @@ std::string AIController::callAI(bool readHistory, bool pd, int ai_mode, const s
         return u8"invalid ai mode";
     }
 }
+
+// 分类接口
 //rd:是否读取记忆，wt是否写入记忆，ai_mode:ai模式，memkey:记忆槽，text:用户输入
 // execute AI（执行）
 std::string AIController::execute(bool rd,bool wt,int ai_mode, const std::string& memkey, const std::string& text)
 {
     return callAI(rd,wt, ai_mode, memkey, text, execute_prompt);
 }
-//rd:是否读取记忆，wt是否写入记忆，ai_mode:ai模式，memkey:记忆槽，text:用户输入
 // Chat AI（对话）
 std::string AIController::chat(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
 {
     return callAI(rd,wt,ai_mode, memkey, text, response_prompt);
 }
-//rd:是否读取记忆，wt是否写入记忆，ai_mode:ai模式，memkey:记忆槽，text:用户输入
 // Workspace AI（结构生成）
 std::string AIController::workspace(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
 {
     return callAI(rd,wt,ai_mode,memkey, text, workspace_prompt);
 }
-//rd:是否读取记忆，wt是否写入记忆，ai_mode:ai模式，memkey:记忆槽，text:用户输入
 // Decision AI（决策）
 std::string AIController::decision(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
 {
     return callAI(rd,wt,ai_mode, memkey, text, decision_prompt);
 }
-//rd:是否读取记忆，wt是否写入记忆，ai_mode:ai模式，memkey:记忆槽，text:用户输入
 // judgment AI（判决）
 std::string AIController::judgment(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
 {
     return callAI(rd,wt,ai_mode, memkey, text, Judgment_prompt);
 }
 
-//rd:是否读取记忆，wt是否写入记忆，ai_mode:ai模式，memkey:记忆槽，text:用户输入
 //总接口
 std::string AIController::allairun(bool rd,bool wt,int ai_mode,const std::string& memkey,const std::string& text,const std::string& prompt
 )
 {
-    // 统一走 callAI，不做任何额外逻辑
     return callAI(rd, wt, ai_mode, memkey, text, prompt);
 }
 

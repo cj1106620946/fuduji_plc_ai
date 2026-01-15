@@ -75,10 +75,13 @@
     <ClCompile Include="plcclient.cpp">
       <Filter>源文件\底层</Filter>
     </ClCompile>
-    <ClCompile Include="piperengine.cpp">
-      <Filter>源文件</Filter>
+    <ClCompile Include="plcprogrammanager.cpp">
+      <Filter>源文件\底层</Filter>
     </ClCompile>
     <ClCompile Include="speechagent.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="piperengine.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -129,6 +132,9 @@
       <Filter>头文件\底层</Filter>
     </ClInclude>
     <ClInclude Include="plcclient.h">
+      <Filter>头文件\底层</Filter>
+    </ClInclude>
+    <ClInclude Include="plcprogrammanager.h">
       <Filter>头文件\底层</Filter>
     </ClInclude>
   </ItemGroup>

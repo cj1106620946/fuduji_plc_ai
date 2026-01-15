@@ -152,6 +152,7 @@
     <ClCompile Include="jsoncpp.cpp" />
     <ClCompile Include="piperengine.cpp" />
     <ClCompile Include="plcclient.cpp" />
+    <ClCompile Include="plcprogrammanager.cpp" />
     <ClCompile Include="speechagent.cpp" />
     <ClCompile Include="workspaceai.cpp" />
   </ItemGroup>
@@ -170,6 +171,7 @@
     <ClInclude Include="judgmentai.h" />
     <ClInclude Include="piperengine.h" />
     <ClInclude Include="plcclient.h" />
+    <ClInclude Include="plcprogrammanager.h" />
     <ClInclude Include="speechagent.h" />
     <ClInclude Include="workspaceai.h" />
   </ItemGroup>
