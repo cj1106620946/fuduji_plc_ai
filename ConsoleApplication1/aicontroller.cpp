@@ -180,45 +180,32 @@ void AIController::buildResponsePrompt()
     // ===== 执行入口 Chat（强制 JSON 协议输出）=====
     chatexecute_prompt =
         u8"你是 plc 控制系统中的对话型入口 AI，名字是 fuduji。\n"
-        u8"你的性格是：活泼、亲和、可靠，说话自然但不啰嗦。\n"
+        u8"你的性格是：活泼、亲和、可靠，说话自然简短,能够快速反馈。\n"
+        u8"你不执行任何 PLC 操作，只判断是否需要执行，并向用户说明结果。\n"
         u8"\n"
-        u8"系统启动时，你会收到人格设定 JSON 和工作区 JSON，你需要理解并记住它们。\n"
-        u8"你连接了一个下游的执行 AI，所有实际 PLC 操作都由执行 AI 完成。\n"
-        u8"你不执行控制，只负责判断是否需要执行，并在收到执行结果后向用户说明。\n"
+        u8"你的输出必须且只能是一段合法 JSON，不得输出任何 JSON 以外的内容。\n"
         u8"\n"
-        u8"你的任务只有一个：\n"
-        u8"根据用户输入，判断是否需要执行控制操作，并输出结果。\n"
+        u8"JSON 格式固定如下，字段名和类型不可更改：\n"
+        u8"{\"ainame\":\"fuduji\",\"text\":\"回复内容\",\"control\":数字,\"emotion\":\"情感\",\"priority\":数字}\n"
         u8"\n"
-        u8"【输出规则（必须严格遵守）】\n"
-        u8"你必须且只能输出一段完整、合法、可直接解析的 JSON。\n"
-        u8"禁止在 JSON 外输出任何内容，禁止转义符号 \\。\n"
+        u8"control 含义：\n"
+        u8"0 = 仅对话或说明；1 = 需要执行 PLC 控制；2 = 无法处理。\n"
         u8"\n"
-        u8"【JSON 结构（字段名不可更改，必须全部输出）】\n"
-        u8"{\"ainame\":\"角色名\",\"text\":\"回复内容\",\"control\":数字,\"emotion\":\"情感\",\"priority\":数字}\n"
+        u8"emotion 取值：\"happy\" | \"neutral\" | \"sad\" | \"thinking\"。\n"
         u8"\n"
-        u8"【control 含义】\n"
-        u8"0：不执行，仅聊天或说明。\n"
-        u8"1：需要执行 PLC 控制操作。\n"
-        u8"2：当前无法处理该请求。\n"
+        u8"priority 含义：\n"
+        u8"0 = 普通；1 = 重要；2 = 紧急。\n"
         u8"\n"
-        u8"【emotion 取值】\n"
-        u8"happy、neutral、sad、thinking（必须使用英文双引号）。\n"
+        u8"判断规则：\n"
+        u8"- 涉及连接、读取、写入、启动、停止等控制行为 → control=1。\n"
+        u8"- 普通聊天、解释说明 → control=0。\n"
+        u8"- 明显超出系统能力 → control=2。\n"
         u8"\n"
-        u8"【priority 含义（对话优先度）】\n"
-        u8"0：普通对话，可延后显示，不需要立即打断当前流程。\n"
-        u8"1：重要对话，应尽快向用户说明。\n"
-        u8"2：紧急对话，必须立即说明，可打断当前流程。\n"
-        u8"\n"
-        u8"【判断原则】\n"
-        u8"涉及连接、读取、写入、启动、停止等控制行为 → control=1。\n"
-        u8"普通聊天、解释说明 → control=0。\n"
-        u8"明显超出系统能力 → control=2。\n"
-        u8"\n"
-        u8"系统状态变化、执行失败、无法理解但需要提醒用户的情况 → priority 至少为 1。\n"
-        u8"需要立即提醒用户注意或确认的情况 → priority=2。\n"
-        u8"普通闲聊或背景说明 → priority=0。\n"
+        u8"系统状态变化、执行失败或需要提醒用户 → priority>=1。\n"
+        u8"需要立即提醒或确认 → priority=2。\n"
         u8"\n"
         u8"最终输出必须是纯 JSON。";
+
 }
 
 //读取prompt 
@@ -253,43 +240,54 @@ std::string AIController::callAI(bool readHistory, bool pd, int ai_mode, const s
 
     switch (ai_mode)
     {
+        //云端chat
     case AI_C_C:
         return ai.askChat(readHistory, pd, memkey, user_text, prompt);
+        //本地chat
     case AI_L_C:
         return ai.askChatLocal(readHistory, pd, memkey, user_text, prompt);
+        //云端R
     case AI_C_R:
         return ai.askReason(user_text, prompt);
+        //本地R
     case AI_L_R:
         return ai.askReasonLocal(user_text, prompt);
     default:
         return u8"invalid ai mode";
     }
 }
+//rd:是否读取记忆，wt是否写入记忆，ai_mode:ai模式，memkey:记忆槽，text:用户输入
 // execute AI（执行）
 std::string AIController::execute(bool rd,bool wt,int ai_mode, const std::string& memkey, const std::string& text)
 {
     return callAI(rd,wt, ai_mode, memkey, text, execute_prompt);
 }
+//rd:是否读取记忆，wt是否写入记忆，ai_mode:ai模式，memkey:记忆槽，text:用户输入
 // Chat AI（对话）
 std::string AIController::chat(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
 {
     return callAI(rd,wt,ai_mode, memkey, text, response_prompt);
 }
+//rd:是否读取记忆，wt是否写入记忆，ai_mode:ai模式，memkey:记忆槽，text:用户输入
 // Workspace AI（结构生成）
 std::string AIController::workspace(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
 {
     return callAI(rd,wt,ai_mode,memkey, text, workspace_prompt);
 }
+//rd:是否读取记忆，wt是否写入记忆，ai_mode:ai模式，memkey:记忆槽，text:用户输入
 // Decision AI（决策）
 std::string AIController::decision(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
 {
     return callAI(rd,wt,ai_mode, memkey, text, decision_prompt);
 }
+//rd:是否读取记忆，wt是否写入记忆，ai_mode:ai模式，memkey:记忆槽，text:用户输入
 // judgment AI（判决）
 std::string AIController::judgment(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
 {
     return callAI(rd,wt,ai_mode, memkey, text, Judgment_prompt);
 }
+
+//rd:是否读取记忆，wt是否写入记忆，ai_mode:ai模式，memkey:记忆槽，text:用户输入
 //总接口
 std::string AIController::allairun(bool rd,bool wt,int ai_mode,const std::string& memkey,const std::string& text,const std::string& prompt
 )

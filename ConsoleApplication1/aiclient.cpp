@@ -9,25 +9,21 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::stri
     response->append((char*)contents, totalSize);
     return totalSize;
 }
-
 // 构造函数
 AIClient::AIClient()
 {
     curl_global_init(CURL_GLOBAL_DEFAULT);
 }
-
 // 析构函数
 AIClient::~AIClient()
 {
     curl_global_cleanup();
 }
-
 // 设置云端 API Key
 void AIClient::setAPIKey(const std::string& key)
 {
     apiKey = key;
 }
-
 // 添加一条消息到指定记忆槽
 void AIClient::addMessage(
     const std::string& memkey,
@@ -59,15 +55,12 @@ void AIClient::clearHistory(const std::string& memkey)
 {
     memories[memkey].clear();
 }
-
-
 // 聊天接口
 std::string AIClient::askChat(bool readHistory,bool pd, const std::string& memkey, const std::string& userMessage,
     const std::string& systemPrompt)
 {
     return callChatAPI(readHistory,pd,memkey, userMessage, systemPrompt);
 }
-
 // 本地聊天接口
 std::string AIClient::askChatLocal(bool readHistory,bool pd, const std::string& memkey, const std::string& userMessage,
     const std::string& systemPrompt)

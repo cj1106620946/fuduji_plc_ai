@@ -11,24 +11,8 @@ ChatAI::ChatAI(int AICODE,AIController& aiRef,AITrace& traceRef)
 {
 
 }
-// 对话入口
-std::string ChatAI::runOnce(const std::string& user_input)
-{
-    // 调用开始记录
-    trace.begin("chat", aicode, user_input,ai.chatprompt_get());
-    std::string output;
-    // 调用对话 AI
-    output = callChatAI(user_input);
-    // 调用结束记录
-    trace.end(1,output);
-    return output;
-}
-// 内部：调用对话 AI
-std::string ChatAI::callChatAI(const std::string& user_input)
-{
-    return ai.chatTalk(aicode,user_input);
-}
 
+//读取
 std::string ChatAI::getAiName()
 {
     return r.ainame;
@@ -45,36 +29,27 @@ int ChatAI::getPriority()
 {
     return r.priority;
 }
-
 std::string ChatAI::getEmotion()
 {
     return r.emotion;
 }
-// 执行 chat 并解析 JSON（完整一次执行生命周期）
+//执行ai对话入口
 std::string ChatAI::runExecuteRead(const std::string& user_input)
 {
-    // 1. begin：只记录用户输入 + prompt
     trace.begin(
         "chat_execute",
         aicode,
         user_input,
         ai.chatexecuteprompt_get()
     );
-
-    // 2. 调用执行入口，获取 AI 原始输出
     trace.debug(u8"[STEP] 调用执行入口，获取 AI 原始 JSON");
     std::string jsonOut = runExecuteOnce(user_input);
-
-    // 3. 解析 JSON（中间态）
     if (!parseChatJson(jsonOut))
     {
-        // 解析失败：end 记录“AI 原始输出”
         trace.debug(u8"[PARSE] JSON 解析失败，直接返回原始输出");
         trace.end(false, jsonOut);
         return jsonOut;
     }
-
-    // 4. 生成“对外显示文本”（转义/拼接）
     std::string displayText;
     if (!r.ainame.empty())
         displayText = r.ainame + u8"：" + r.text;
@@ -89,15 +64,14 @@ std::string ChatAI::runExecuteOnce(const std::string& user_input)
 {
     return callChatExecuteAI(user_input);
 }
-
 std::string ChatAI::callChatExecuteAI(const std::string& user_input)
 {
     // 这里使用新的 chatExecute 接口
     return ai.allairun(
-        /* rd */ true,
-        /* wt */true,
+         true,
+         true,
         aicode,
-        "pts",
+        "chat_e",
         user_input,
         ai.chatexecuteprompt_get()
     );
@@ -146,4 +120,20 @@ bool ChatAI::parseChatJson(const std::string& jsonText)
         r.priority = 0;
 
     return true;
+}
+// 普通ai对话入口
+std::string ChatAI::runOnce(const std::string& user_input)
+{
+    // 调用开始记录
+    trace.begin("chat", aicode, user_input, ai.chatprompt_get());
+    std::string output;
+    // 调用对话 AI
+    output = callChatAI(user_input);
+    // 调用结束记录
+    trace.end(1, output);
+    return output;
+}
+std::string ChatAI::callChatAI(const std::string& user_input)
+{
+    return ai.chatTalk(aicode, user_input);
 }

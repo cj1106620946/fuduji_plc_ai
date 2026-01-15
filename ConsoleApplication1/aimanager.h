@@ -44,8 +44,8 @@ public:
 
 private:
     // 初始化
-    void ini();
-
+    void iniwrite();
+    void iniread();
     // 主逻辑线程
     void processLoop();
     void processWorkLoop();
@@ -108,10 +108,13 @@ private:
     std::mutex resultMutex;
     std::condition_variable cv;
     std::condition_variable workcv;
-
+private:
+   //
+    bool uvq = true;//选择语言模式，默认队列
+	bool vie = true;//启用语音输入
+	int ai_mode = 2;//ai模式，默认本地聊天
 private:
     // 其他
     speechagent speech;
-    bool useVoiceQueue = true;
     std::atomic<bool> running{ true };
 };

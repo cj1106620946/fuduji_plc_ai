@@ -49,16 +49,11 @@ std::string GBKtoUTF81(const std::string& gbk)
 
     return utf8;
 }
-
 // 构造函数：初始化各类 AI，对话线程与工作线程稍后启动
 AiManager::AiManager()
     : aiController(ai)
     ,   live2dWriter("live2dstate.json")
 {
-    chat = new ChatAI(2, aiController, aiTrace);
-    judgment = new Judgmentai(2, aiController, aiTrace);
-    execute = new ExecuteAI(2, aiController, aiTrace, plc);
-    workspace = new WorkspaceAI(2, aiController, aiTrace);
 }
 // 析构函数：安全关闭线程并释放资源
 AiManager::~AiManager()
@@ -100,10 +95,23 @@ void AiManager::pushUserInput(const std::string& text)
     }
     cv.notify_one();
 }
-void AiManager::ini()
-{
 
-    HANDLE hEvent = CreateEventW(
+void AiManager::iniwrite()
+{
+    printGBK1("正在初始化写入模块...\n");
+
+    printGBK1("目前不提供检测key是否正确，请正确输入AI Key：\n");
+    std::string key;
+    std::getline(std::cin, key);
+    ai.setAPIKey(key);
+    printGBK1("设置完成，\n");
+
+	printGBK1("写入模块初始化完成。\n");
+}
+
+void AiManager::iniread()
+{
+   /* HANDLE hEvent = CreateEventW(
         nullptr,          // 默认安全属性
         TRUE,             // 手动复位
         FALSE,            // 初始未触发
@@ -115,10 +123,18 @@ void AiManager::ini()
         SetEvent(hEvent);
         CloseHandle(hEvent);
     }
+    uiThread = std::thread(::uiThread, this);
+    */
     printGBK1("\n正在初始化，请等待");
+    //ai初始化
+    chat = new ChatAI(ai_mode, aiController, aiTrace);
+    judgment = new Judgmentai(ai_mode, aiController, aiTrace);
+    execute = new ExecuteAI(ai_mode, aiController, aiTrace, plc);
+    workspace = new WorkspaceAI(ai_mode, aiController, aiTrace);
+    //模型动作输入初始化
     live2dWriter.init();
+    //读取当前工作区并写入
     workspace->loadFromFile("workspace.json");
-
 	chat->runExecuteRead(workspace->getWorkspaceJson());
 
 	// 输入线程：负责读取控制台输入
@@ -127,7 +143,6 @@ void AiManager::ini()
     mainThread = std::thread(&AiManager::processLoop, this);
     // 工作线程：专门执行 Workspace / Execute 等耗时任务
     workThread = std::thread(&AiManager::processWorkLoop, this);
-    uiThread = std::thread(::uiThread, this);
 
     if (!speech.start())
     {
@@ -136,28 +151,26 @@ void AiManager::ini()
         return;
     }
     speech.setDebug(0);
-
     printGBK1("\n初始化完成\n");
     printGBK1("输入：");
 }
-
 // 主运行入口，启动对话线程与后台工作线程
 void AiManager::run()
 {  
-    ini();
+    iniwrite();
+    iniread();
     while (running)
     {
         ;
     }
 }
-
-
+//线程大军
 // 输入线程入口，启动文本与语音输入子线程
 void AiManager::inputLoop()
 {
     // 文本线程始终存在
     textThread = std::thread(&AiManager::textInputLoop, this);
-        if (useVoiceQueue)
+        if (uvq)
         {
             // 队列模式：两个语音线程
             voicepush = std::thread(&AiManager::voicepushloop, this);
@@ -168,10 +181,9 @@ void AiManager::inputLoop()
             // 阻塞模式：一个语音线程
             voiceThread = std::thread(&AiManager::voiceInputLoop, this);
         }
-    // ===== 等待退出 =====
     if (textThread.joinable())
         textThread.join();
-    if (useVoiceQueue)
+    if (uvq)
     {
         if (voicepush.joinable())
             voicepush.join();
@@ -278,7 +290,6 @@ void AiManager::processLoop()
         handleUserInput(rawText);
     }
 }
-
 // 后台工作线程：专门处理耗时的 Workspace / Execute
 void AiManager::processWorkLoop()
 {
@@ -324,7 +335,6 @@ void AiManager::processWorkLoop()
         handleResultInput(resultText);
     }
 }
-
 // 处理一条用户输入：单一 Chat 决策（control），决定是否投递后台任务
 void AiManager::handleUserInput(const std::string& text)
 {
@@ -355,7 +365,6 @@ void AiManager::handleUserInput(const std::string& text)
     // control == 2：当前不投递任务，保持对话即可
     return;
 }
-
 // 工作完成后：由 Chat 统一对用户自然回复
 void AiManager::handleResultInput(const std::string& text)
 {

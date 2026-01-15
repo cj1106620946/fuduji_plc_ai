@@ -43,9 +43,9 @@ private:
 
 private:
     std::string callExecuteAI(const std::string& user_input);
+    std::string newcallExecuteAI(const std::string& user_input);
     ExecutePlan parseExecuteJson(const std::string& json_text);
     std::string executePLC(const ExecutePlan& plan);
-
 private:
     int aicode;
     AIController& ai;
