@@ -96,18 +96,128 @@ void AiManager::pushUserInput(const std::string& text)
     cv.notify_one();
 }
 
-void AiManager::iniwrite()
+void AiManager::iniaiwrite()
 {
-    printGBK1("正在初始化写入模块...\n");
+    while (true)
+    {
+        printGBK1("正在初始化写入模块...\n");
+        printGBK1(
+            "请选择 AI 模式：\n"
+            "  1 云端模式（DeepSeek API，需要 API Key）\n"
+            "    - 稳定可用，无需本地部署\n"
+            "  2 本地模式（Ollama + qwen2.5 模型）\n"
+            "    - 需要提前部署并启动 Ollama\n"
+        );
 
-    printGBK1("目前不提供检测key是否正确，请正确输入AI Key：\n");
-    std::string key;
-    std::getline(std::cin, key);
-    ai.setAPIKey(key);
-    printGBK1("设置完成，\n");
+        std::cin >> ai_mode;
+        std::cin.ignore();
 
-	printGBK1("写入模块初始化完成。\n");
+        if (ai_mode == 1)
+        {
+            // 云端模式
+            printGBK1("当前为云端模式，请输入 AI Key：\n");
+
+            std::string key;
+            std::getline(std::cin, key);
+            ai.setAPIKey(key);
+
+            judgment = new Judgmentai(1, aiController, aiTrace);
+
+            std::string result = judgment->runOnce("");
+
+            if (result == "0" || result == "1")
+            {
+                printUTF81(result);
+                printGBK1("云端 AI 校验成功。\n");
+                break;
+            }
+            else
+            {
+                printGBK1("云端 API 错误，请重新选择模式。\n");
+                delete judgment;
+                judgment = nullptr;
+                continue;
+            }
+        }
+        else
+        {
+            // 本地模式
+            ai_mode = 2;
+            printGBK1("当前为本地模式，正在检测本地 AI...\n");
+
+            judgment = new Judgmentai(2, aiController, aiTrace);
+
+            std::string result = judgment->runOnce("");
+
+            if (result == "0" || result == "1")
+            {
+                printUTF81(result);
+                printGBK1("本地 AI 校验成功。\n");
+                break;
+            }
+            else
+            {
+                printGBK1("本地 AI 未部署或模型不可用，请重新选择模式。\n");
+                delete judgment;
+                judgment = nullptr;
+                continue;
+            }
+        }
+    }
+
+    printGBK1("ai设置初始化完成。\n");
 }
+void AiManager::inimodwrite()
+{
+    printGBK1("模块初始化配置中...\n");
+    printGBK1("是否启用语音功能：1 启用，0 不启用\n");
+
+    int value = 0;
+    std::cin >> value;
+    std::cin.ignore();
+
+    if (value == 1)
+    {
+        envoice = true;
+        printGBK1("语音功能已启用。\n");
+
+        // 仅在启用语音后，询问语音工作模式
+        printGBK1("请选择语音工作模式：\n");
+        printGBK1("  1 队列模式（推送 / 消费 分离）\n");
+        printGBK1("  2 阻塞模式（单线程语音）\n");
+
+        int mode = 0;
+        std::cin >> mode;
+        std::cin.ignore();
+
+        if (mode == 1)
+        {
+            uvq = true;
+            printGBK1("已选择语音队列模式。\n");
+        }
+        else
+        {
+            uvq = false;
+            printGBK1("已选择语音阻塞模式。\n");
+        }
+        //启动语言
+        if (!speech.start())
+        {
+            printUTF81(u8"[Speech] 语音系统启动失败\n");
+            running = false;
+            return;
+        }
+        speech.setDebug(0);
+
+    }
+    else
+    {
+        envoice = false;
+        uvq = false;
+        printGBK1("语音功能未启用，仅使用文本模式。\n");
+    }
+}
+
 
 void AiManager::iniread()
 {
@@ -125,39 +235,34 @@ void AiManager::iniread()
     }
     uiThread = std::thread(::uiThread, this);
     */
-    printGBK1("\n正在初始化，请等待");
+    printGBK1("\n正在初始化，请等待\n");
     //ai初始化
     chat = new ChatAI(ai_mode, aiController, aiTrace);
-    judgment = new Judgmentai(ai_mode, aiController, aiTrace);
     execute = new ExecuteAI(ai_mode, aiController, aiTrace, plc);
     workspace = new WorkspaceAI(ai_mode, aiController, aiTrace);
+    printGBK1(".........ai初始化完成\n");
     //模型动作输入初始化
     live2dWriter.init();
     //读取当前工作区并写入
     workspace->loadFromFile("workspace.json");
 	chat->runExecuteRead(workspace->getWorkspaceJson());
-
+    printGBK1(".........ai读取工作区和记忆完成\n");
 	// 输入线程：负责读取控制台输入
     inputThread = std::thread(&AiManager::inputLoop, this);
     // 对话线程：处理用户输入、Chat、Judgment
     mainThread = std::thread(&AiManager::processLoop, this);
     // 工作线程：专门执行 Workspace / Execute 等耗时任务
     workThread = std::thread(&AiManager::processWorkLoop, this);
+    printGBK1(".........线程初始化完成\n");
 
-    if (!speech.start())
-    {
-        printUTF81(u8"[Speech] 语音系统启动失败\n");
-        running = false;
-        return;
-    }
-    speech.setDebug(0);
     printGBK1("\n初始化完成\n");
     printGBK1("输入：");
 }
 // 主运行入口，启动对话线程与后台工作线程
 void AiManager::run()
 {  
-    iniwrite();
+    iniaiwrite();
+    inimodwrite();
     iniread();
     while (running)
     {
@@ -170,6 +275,8 @@ void AiManager::inputLoop()
 {
     // 文本线程始终存在
     textThread = std::thread(&AiManager::textInputLoop, this);
+    if(envoice)
+    { 
         if (uvq)
         {
             // 队列模式：两个语音线程
@@ -181,19 +288,23 @@ void AiManager::inputLoop()
             // 阻塞模式：一个语音线程
             voiceThread = std::thread(&AiManager::voiceInputLoop, this);
         }
-    if (textThread.joinable())
-        textThread.join();
-    if (uvq)
-    {
-        if (voicepush.joinable())
-            voicepush.join();
-        if (voicepop.joinable())
-            voicepop.join();
     }
-    else
+    if (envoice)
     {
-        if (voiceThread.joinable())
-            voiceThread.join();
+        if (textThread.joinable())
+            textThread.join();
+        if (uvq)
+        {
+            if (voicepush.joinable())
+                voicepush.join();
+            if (voicepop.joinable())
+                voicepop.join();
+        }
+        else
+        {
+            if (voiceThread.joinable())
+                voiceThread.join();
+        }
     }
 }
 // 文本输入线程循环

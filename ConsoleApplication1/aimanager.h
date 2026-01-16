@@ -44,7 +44,9 @@ public:
 
 private:
     // 初始化
-    void iniwrite();
+    void iniaiwrite();
+    void inimodwrite();
+
     void iniread();
     // 主逻辑线程
     void processLoop();
@@ -113,6 +115,7 @@ private:
     bool uvq = true;//选择语言模式，默认队列
 	bool vie = true;//启用语音输入
 	int ai_mode = 2;//ai模式，默认本地聊天
+	bool envoice = true;//启用语音
 private:
     // 其他
     speechagent speech;
