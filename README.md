@@ -14,11 +14,19 @@
 
 这个仓库主要用于记录代码和思路，大模型文件和运行库都保存在本地环境中，没有一并上传（太大了而且可替换所有不上传了其实就是上传不了），整体会作为一个长期的个人开发项目持续维护，并随着学习和实践不断调整方向。
 使用开源库
+
 https://ollama.com/download
+
 https://github.com/open-source-parsers/jsoncpp
+
 https://github.com/curl/curl
+
 https://snap7.sourceforge.net/
+
 https://www.live2d.com/en/sdk/about/
+
 https://github.com/ggml-org/whisper.cpp
+
 https://github.com/rhasspy/piper
+
 https://www.portaudio.com/
