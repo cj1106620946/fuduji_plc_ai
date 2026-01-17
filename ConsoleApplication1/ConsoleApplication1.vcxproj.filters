@@ -13,6 +13,18 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="头文件\ai类">
+      <UniqueIdentifier>{fc4be915-5a81-4786-b57e-0c6918eb043f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\ai类">
+      <UniqueIdentifier>{0016aa05-800b-4ecb-8b31-14d7775adb1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="头文件\底层">
+      <UniqueIdentifier>{21c7340f-30e3-4f24-96de-e1ed5c873c56}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件\底层">
+      <UniqueIdentifier>{f80285e3-5854-4751-a529-db3a93c963ec}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -24,43 +36,16 @@
     <ClCompile Include="jsoncpp.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="plcclient.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="aiclient.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="console.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="aicontroller.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="workspaceai.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="executeai.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="decisionai.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="speechagent.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="piperengine.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="aitrace.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="chatai.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="aimanager.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="judgmentai.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="jsonstatewriter.cpp">
@@ -69,30 +54,60 @@
     <ClCompile Include="aimanagerui.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="workspaceai.cpp">
+      <Filter>源文件\ai类</Filter>
+    </ClCompile>
+    <ClCompile Include="chatai.cpp">
+      <Filter>源文件\ai类</Filter>
+    </ClCompile>
+    <ClCompile Include="decisionai.cpp">
+      <Filter>源文件\ai类</Filter>
+    </ClCompile>
+    <ClCompile Include="executeai.cpp">
+      <Filter>源文件\ai类</Filter>
+    </ClCompile>
+    <ClCompile Include="judgmentai.cpp">
+      <Filter>源文件\ai类</Filter>
+    </ClCompile>
+    <ClCompile Include="aiclient.cpp">
+      <Filter>源文件\底层</Filter>
+    </ClCompile>
+    <ClCompile Include="plcclient.cpp">
+      <Filter>源文件\底层</Filter>
+    </ClCompile>
+    <ClCompile Include="plcprogrammanager.cpp">
+      <Filter>源文件\底层</Filter>
+    </ClCompile>
+    <ClCompile Include="speechagent.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="piperengine.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="sqllient.cpp">
+      <Filter>源文件\底层</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\c-cpp\src\sqlite3.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="sqlschema.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="sqlentity.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="sqlvalue.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\c-cpp\include\snap7.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="plcclient.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="aiclient.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="console.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="aicontroller.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="workspaceai.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="executeai.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="decisionai.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="speechagent.h">
@@ -104,19 +119,49 @@
     <ClInclude Include="aitrace.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="chatai.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="aimanager.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="judgmentai.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="jsonstatewriter.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="aimanagerui.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="chatai.h">
+      <Filter>头文件\ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="decisionai.h">
+      <Filter>头文件\ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="executeai.h">
+      <Filter>头文件\ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="judgmentai.h">
+      <Filter>头文件\ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="workspaceai.h">
+      <Filter>头文件\ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="aiclient.h">
+      <Filter>头文件\底层</Filter>
+    </ClInclude>
+    <ClInclude Include="plcclient.h">
+      <Filter>头文件\底层</Filter>
+    </ClInclude>
+    <ClInclude Include="plcprogrammanager.h">
+      <Filter>头文件\底层</Filter>
+    </ClInclude>
+    <ClInclude Include="sqllient.h">
+      <Filter>头文件\底层</Filter>
+    </ClInclude>
+    <ClInclude Include="sqlschema.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="sqlentity.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="sqlvalue.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

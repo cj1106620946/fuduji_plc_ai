@@ -137,6 +137,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\c-cpp\src\snap7.cpp" />
+    <ClCompile Include="..\..\c-cpp\src\sqlite3.c" />
     <ClCompile Include="aicontroller.cpp" />
     <ClCompile Include="aimanager.cpp" />
     <ClCompile Include="aimanagerui.cpp" />
@@ -152,7 +153,12 @@
     <ClCompile Include="jsoncpp.cpp" />
     <ClCompile Include="piperengine.cpp" />
     <ClCompile Include="plcclient.cpp" />
+    <ClCompile Include="plcprogrammanager.cpp" />
     <ClCompile Include="speechagent.cpp" />
+    <ClCompile Include="sqlentity.cpp" />
+    <ClCompile Include="sqllient.cpp" />
+    <ClCompile Include="sqlschema.cpp" />
+    <ClCompile Include="sqlvalue.cpp" />
     <ClCompile Include="workspaceai.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -170,7 +176,12 @@
     <ClInclude Include="judgmentai.h" />
     <ClInclude Include="piperengine.h" />
     <ClInclude Include="plcclient.h" />
+    <ClInclude Include="plcprogrammanager.h" />
     <ClInclude Include="speechagent.h" />
+    <ClInclude Include="sqlentity.h" />
+    <ClInclude Include="sqllient.h" />
+    <ClInclude Include="sqlschema.h" />
+    <ClInclude Include="sqlvalue.h" />
     <ClInclude Include="workspaceai.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

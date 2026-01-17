@@ -15,24 +15,24 @@ ExecuteAI::ExecuteAI(
     : ai(aiRef), trace(traceRef), plc(plcRef), aicode(AICODE)
 {
 }
-
-// 外部唯一入口
-std::string ExecuteAI::runOnce(const std::string& user_input)
-{
-    trace.begin("execute", aicode, user_input, ai.executeprompt_get());
-
-    std::string json_text = callExecuteAI(user_input);
-    ExecutePlan plan = parseExecuteJson(json_text);
-    std::string output = executePLC(plan);
-
-    trace.end(true, output);
-    return output;
-}
-
 // 调用执行 AI
 std::string ExecuteAI::callExecuteAI(const std::string& user_input)
 {
     return ai.chatExecute(aicode, user_input);
+}
+// 外部唯一入口
+std::string ExecuteAI::runOnce(const std::string& user_input)
+{
+    trace.begin("execute", aicode, user_input, ai.executeprompt_get());
+    std::string json_text = newcallExecuteAI(user_input);
+    ExecutePlan plan = parseExecuteJson(json_text);
+    std::string output = executePLC(plan);
+    trace.end(true, output);
+    return output;
+}
+std::string ExecuteAI::newcallExecuteAI(const std::string& user_input)
+{
+    return ai.execute(true,true,aicode, "execute",user_input);
 }
 
 // 解析执行 JSON
@@ -103,7 +103,6 @@ ExecuteAI::parseExecuteJson(const std::string& json_text)
 
     return plan;
 }
-
 // 执行 PLC 操作
 std::string ExecuteAI::executePLC(const ExecutePlan& plan)
 {

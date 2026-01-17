@@ -71,7 +71,7 @@ bool speechagent::getDebug()
 }
 
 // 全局状态
-static speechagent::SpeechParams speechParams;
+static speechagent::SpeechParams speechparams;
 static std::vector<float> audioBuffer48k;
 static std::mutex audioBufferMutex;
 static std::deque<std::vector<float>> audioQueue;
@@ -110,16 +110,16 @@ static void load_config(const char* path)
         trim(key);
         trim(val);
 
-        if (key == "device_index") speechParams.device_index = std::stoi(val);
-        else if (key == "channels") speechParams.channels = std::stoi(val);
-        else if (key == "sample_rate") speechParams.sample_rate = std::stoi(val);
-        else if (key == "vad_threshold") speechParams.vad_threshold = std::stof(val);
-        else if (key == "start_hit") speechParams.start_hit = std::stoi(val);
-        else if (key == "start_rms_min") speechParams.start_rms_min = std::stof(val);
-        else if (key == "end_silence_ms") speechParams.end_silence_ms = std::stoi(val);
-        else if (key == "check_ms") speechParams.check_ms = std::stoi(val);
-        else if (key == "max_record_ms") speechParams.max_record_ms = std::stoi(val);
-        else if (key == "debug_rms_print_ms") speechParams.debug_rms_print_ms = std::stoi(val);
+        if (key == "device_index") speechparams.device_index = std::stoi(val);
+        else if (key == "channels") speechparams.channels = std::stoi(val);
+        else if (key == "sample_rate") speechparams.sample_rate = std::stoi(val);
+        else if (key == "vad_threshold") speechparams.vad_threshold = std::stof(val);
+        else if (key == "start_hit") speechparams.start_hit = std::stoi(val);
+        else if (key == "start_rms_min") speechparams.start_rms_min = std::stof(val);
+        else if (key == "end_silence_ms") speechparams.end_silence_ms = std::stoi(val);
+        else if (key == "check_ms") speechparams.check_ms = std::stoi(val);
+        else if (key == "max_record_ms") speechparams.max_record_ms = std::stoi(val);
+        else if (key == "debug_rms_print_ms") speechparams.debug_rms_print_ms = std::stoi(val);
         else if (key == "debug") g_debug = (std::stoi(val) != 0);
     }
 }
@@ -138,7 +138,7 @@ static int audioCallback(
     const float* in = (const float*)input;
     std::lock_guard<std::mutex> lock(audioBufferMutex);
 
-    if (speechParams.channels == 1)
+    if (speechparams.channels == 1)
     {
         for (unsigned long i = 0; i < frameCount; ++i)
             audioBuffer48k.push_back(in[i]);
@@ -183,7 +183,7 @@ bool speechagent::start()
 
     whisperContext =
         whisper_init_from_file_with_params(
-            "ggml-small.bin",
+            speechparams.modlname,
             cparams
         );
 
@@ -194,8 +194,8 @@ bool speechagent::start()
         return false;
 
     PaStreamParameters in{};
-    in.device = speechParams.device_index;
-    in.channelCount = speechParams.channels;
+    in.device = speechparams.device_index;
+    in.channelCount = speechparams.channels;
     in.sampleFormat = paFloat32;
 
     const PaDeviceInfo* devInfo = Pa_GetDeviceInfo(in.device);
@@ -208,7 +208,7 @@ bool speechagent::start()
         &audioInputStream,
         &in,
         nullptr,
-        speechParams.sample_rate,
+        speechparams.sample_rate,
         480,
         paClipOff,
         audioCallback,
@@ -252,12 +252,12 @@ bool speechagent::pushtext()
 
     while (true)
     {
-        Sleep(speechParams.check_ms);
+        Sleep(speechparams.check_ms);
 
         DWORD now = GetTickCount();
 
         if (!isRecordingSpeech &&
-            now - t_base > (DWORD)speechParams.max_record_ms)
+            now - t_base > (DWORD)speechparams.max_record_ms)
         {
             if (g_debug)
             {
@@ -272,8 +272,8 @@ bool speechagent::pushtext()
         {
             std::lock_guard<std::mutex> lock(audioBufferMutex);
             size_t need =
-                (size_t)speechParams.sample_rate *
-                (size_t)speechParams.check_ms / 1000;
+                (size_t)speechparams.sample_rate *
+                (size_t)speechparams.check_ms / 1000;
 
             if (audioBuffer48k.size() < need)
                 continue;
@@ -286,13 +286,13 @@ bool speechagent::pushtext()
 
         float rmsValue = calc_rms(chunk);
 
-        if (g_debug && now - last_rms_print >= (DWORD)speechParams.debug_rms_print_ms)
+        if (g_debug && now - last_rms_print >= (DWORD)speechparams.debug_rms_print_ms)
         {
             std::ostringstream oss;
             oss << u8"[" << now_sec() << u8"s][语音] RMS="
                 << rmsValue
-                << u8" threshold=" << speechParams.vad_threshold
-                << u8" start_min=" << speechParams.start_rms_min
+                << u8" threshold=" << speechparams.vad_threshold
+                << u8" start_min=" << speechparams.start_rms_min
                 << u8"\n";
             printUTF81(oss.str());
             last_rms_print = now;
@@ -300,8 +300,8 @@ bool speechagent::pushtext()
 
         if (!isRecordingSpeech)
         {
-            if (rmsValue > speechParams.vad_threshold &&
-                rmsValue >= speechParams.start_rms_min)
+            if (rmsValue > speechparams.vad_threshold &&
+                rmsValue >= speechparams.start_rms_min)
             {
                 speechStartConfirmCount++;
 
@@ -311,12 +311,12 @@ bool speechagent::pushtext()
                     oss << u8"[" << now_sec() << u8"s][语音] 开始命中 "
                         << speechStartConfirmCount
                         << u8"/"
-                        << speechParams.start_hit
+                        << speechparams.start_hit
                         << u8"\n";
                     printUTF81(oss.str());
                 }
 
-                if (speechStartConfirmCount >= speechParams.start_hit)
+                if (speechStartConfirmCount >= speechparams.start_hit)
                 {
                     isRecordingSpeech = true;
                     silenceDurationMs = 0;
@@ -325,9 +325,9 @@ bool speechagent::pushtext()
                         std::lock_guard<std::mutex> lock(audioBufferMutex);
 
                         // 向前回退 200ms，保留语音前导
-                        const int preroll_ms = 200;
+                        const int preroll_ms = speechparams.prerpll;
                         size_t prerollSamples =
-                            (size_t)speechParams.sample_rate * preroll_ms / 1000;
+                            (size_t)speechparams.sample_rate * preroll_ms / 1000;
 
                         if (audioBuffer48k.size() > prerollSamples)
                             speechStartSampleIndex = audioBuffer48k.size() - prerollSamples;
@@ -352,8 +352,8 @@ bool speechagent::pushtext()
         }
         else
         {
-            if (rmsValue < speechParams.vad_threshold)
-                silenceDurationMs += speechParams.check_ms;
+            if (rmsValue < speechparams.vad_threshold)
+                silenceDurationMs += speechparams.check_ms;
             else
                 silenceDurationMs = 0;
 
@@ -366,7 +366,7 @@ bool speechagent::pushtext()
                 printUTF81(oss.str());
             }
 
-            if (silenceDurationMs >= speechParams.end_silence_ms)
+            if (silenceDurationMs >= speechparams.end_silence_ms)
             {
                 if (g_debug)
                 {
@@ -425,18 +425,30 @@ std::string speechagent::poptext()
     whisper_full_params wparams =
         whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
 
-    wparams.language = "auto";
-    wparams.temperature = 0.0f;
-    wparams.suppress_blank = true;
+    // 语言
+    wparams.language = speechparams.language;
 
-    unsigned int hc = std::thread::hardware_concurrency();
-    if (hc == 0) hc = 4;
-    wparams.n_threads = (int)((std::max)(2u, hc / 2));
+    // 随机性
+    wparams.temperature = speechparams.temperature;
 
-    wparams.print_progress = false;
-    wparams.print_special = false;
-    wparams.print_timestamps = false;
+    // 是否抑制空白
+    wparams.suppress_blank = speechparams.suppress_blank;
 
+    // 线程数
+    if (speechparams.n_threads > 0)
+    {
+        wparams.n_threads = speechparams.n_threads;
+    }
+    else
+    {
+        unsigned int hc = std::thread::hardware_concurrency();
+        if (hc == 0) hc = 4;
+        wparams.n_threads = (int)((std::max)(2u, hc / 2));
+    }
+    // Whisper 调试输出
+    wparams.print_progress = speechparams.print_progress;
+    wparams.print_special = speechparams.print_special;
+    wparams.print_timestamps = speechparams.print_timestamps;
     // 执行识别
     whisper_full(
         whisperContext,
@@ -505,12 +517,12 @@ std::string speechagent::getText()
 
     while (true)
     {
-        Sleep(speechParams.check_ms);
+        Sleep(speechparams.check_ms);
 
         DWORD now = GetTickCount();
 
         if (!isRecordingSpeech &&
-            now - t_base > (DWORD)speechParams.max_record_ms)
+            now - t_base > (DWORD)speechparams.max_record_ms)
         {
             if (g_debug)
             {
@@ -527,8 +539,8 @@ std::string speechagent::getText()
         {
             std::lock_guard<std::mutex> lock(audioBufferMutex);
             size_t need =
-                (size_t)speechParams.sample_rate *
-                (size_t)speechParams.check_ms / 1000;
+                (size_t)speechparams.sample_rate *
+                (size_t)speechparams.check_ms / 1000;
 
             if (audioBuffer48k.size() < need)
                 continue;
@@ -541,13 +553,13 @@ std::string speechagent::getText()
 
         float rmsValue = calc_rms(chunk);
 
-        if (g_debug && (now - last_rms_print >= (DWORD)speechParams.debug_rms_print_ms))
+        if (g_debug && (now - last_rms_print >= (DWORD)speechparams.debug_rms_print_ms))
         {
             std::ostringstream oss;
             oss << "[" << now_sec()
                 << "s][" << u8"语音" << "] " << u8"当前RMS=" << rmsValue
-                << " threshold=" << speechParams.vad_threshold
-                << " start_min=" << speechParams.start_rms_min
+                << " threshold=" << speechparams.vad_threshold
+                << " start_min=" << speechparams.start_rms_min
                 << "\n";
             printUTF81(oss.str());
             last_rms_print = now;
@@ -555,8 +567,8 @@ std::string speechagent::getText()
 
         if (!isRecordingSpeech)
         {
-            if (rmsValue > speechParams.vad_threshold &&
-                rmsValue >= speechParams.start_rms_min)
+            if (rmsValue > speechparams.vad_threshold &&
+                rmsValue >= speechparams.start_rms_min)
             {
                 speechStartConfirmCount++;
 
@@ -566,13 +578,13 @@ std::string speechagent::getText()
                     oss << "[" << now_sec()
                         << "s][" << u8"语音" << "] " << u8"开始命中 "
                         << speechStartConfirmCount << "/"
-                        << speechParams.start_hit
+                        << speechparams.start_hit
                         << " RMS=" << rmsValue
                         << "\n";
                     printUTF81(oss.str());
                 }
 
-                if (speechStartConfirmCount >= speechParams.start_hit)
+                if (speechStartConfirmCount >= speechparams.start_hit)
                 {
                     isRecordingSpeech = true;
                     hasDetectedSpeech = true;
@@ -588,9 +600,9 @@ std::string speechagent::getText()
                         std::ostringstream oss;
                         oss << "[" << now_sec() << "s][" << u8"语音" << "] " << u8"检测到开始说话 ";
                         oss << "RMS=" << rmsValue << " ";
-                        oss << "threshold=" << speechParams.vad_threshold << " ";
-                        oss << "start_min=" << speechParams.start_rms_min << " ";
-                        oss << "hit=" << speechParams.start_hit;
+                        oss << "threshold=" << speechparams.vad_threshold << " ";
+                        oss << "start_min=" << speechparams.start_rms_min << " ";
+                        oss << "hit=" << speechparams.start_hit;
                         oss << "\n";
                         printUTF81(oss.str());
                     }
@@ -612,9 +624,9 @@ std::string speechagent::getText()
         }
         else
         {
-            if (rmsValue < speechParams.vad_threshold)
+            if (rmsValue < speechparams.vad_threshold)
             {
-                silenceDurationMs += speechParams.check_ms;
+                silenceDurationMs += speechparams.check_ms;
 
                 if (g_debug)
                 {
@@ -633,7 +645,7 @@ std::string speechagent::getText()
                 silenceDurationMs = 0;
             }
 
-            if (silenceDurationMs >= speechParams.end_silence_ms)
+            if (silenceDurationMs >= speechparams.end_silence_ms)
             {
                 if (g_debug)
                 {
