@@ -84,6 +84,21 @@
     <ClCompile Include="piperengine.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="sqllient.cpp">
+      <Filter>源文件\底层</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\c-cpp\src\sqlite3.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="sqlschema.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="sqlentity.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="sqlvalue.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\c-cpp\include\snap7.h">
@@ -136,6 +151,18 @@
     </ClInclude>
     <ClInclude Include="plcprogrammanager.h">
       <Filter>头文件\底层</Filter>
+    </ClInclude>
+    <ClInclude Include="sqllient.h">
+      <Filter>头文件\底层</Filter>
+    </ClInclude>
+    <ClInclude Include="sqlschema.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="sqlentity.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="sqlvalue.h">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

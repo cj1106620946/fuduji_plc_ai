@@ -3,11 +3,9 @@
 #include <iostream>
 #include <json/json.h>
 #include <sstream>
-
+#include "sqllient.h"
 #include <chrono>
-
 // 输出函数
-
 void Console::printGBK(const std::string& text)
 {
     DWORD w;
@@ -67,7 +65,6 @@ Console::~Console()
     delete decision;
 	delete judgment;
 }
-
 // 主循环
 void Console::run()
 {
@@ -97,6 +94,9 @@ void Console::showMainHeader()
     printGBK("9. 文本转语音测试\n");
     printGBK("10. AI 模块速度测试\n");
     printGBK("11. 模块化 AI 系统测试\n");
+    printGBK("12. 数据库创建测试\n");
+    printGBK("13. 新建表测试\n");
+    printGBK("14. 修改指定表的值\n");
 
     printGBK("0. 退出\n");
     printGBK("-----------------------------------\n");
@@ -118,6 +118,9 @@ void Console::mainMenu()
     else if (cmd == "9") menuTtsTest();
     else if (cmd == "10") menuAiBenchmark();
     else if (cmd == "11") menuAiManagerTest();
+    else if (cmd == "12") menuDatabaseTest();
+    else if (cmd == "13") menuCreateTableTest();
+    else if (cmd == "14") menuUpdateValueTest();
 
     else printGBK("无效输入\n");
 }
@@ -514,4 +517,260 @@ void Console::menuAiManagerTest()
 
     printGBK("\n--- 已退出模块化 AI 系统 ---\n");
     printGBK("返回主菜单\n\n");
+}
+
+void Console::menuDatabaseTest()
+{
+    printGBK("开始数据库创建测试\n");
+
+    Sqllient db("test.db");
+
+    if (!db.open())
+    {
+        printGBK("数据库打开失败：");
+        printGBK(db.getLastError());
+        printGBK("\n");
+        return;
+    }
+
+    printGBK("数据库打开成功\n");
+
+    // 创建测试表
+    const char* createSql =
+        "CREATE TABLE IF NOT EXISTS test_table ("
+        "id INTEGER PRIMARY KEY,"
+        "name TEXT,"
+        "value INTEGER"
+        ");";
+
+    if (!db.execute(createSql))
+    {
+        printGBK("创建表失败：");
+        printGBK(db.getLastError());
+        printGBK("\n");
+        return;
+    }
+
+    printGBK("表创建成功\n");
+
+    // 插入一行
+    const char* insertSql =
+        "INSERT INTO test_table (name, value) "
+        "VALUES ('first', 100);";
+
+    if (!db.execute(insertSql))
+    {
+        printGBK("插入数据失败：");
+        printGBK(db.getLastError());
+        printGBK("\n");
+        return;
+    }
+
+    printGBK("插入数据成功\n");
+
+    // 读取数据
+    printGBK("读取数据：\n");
+
+    sqlite3_stmt* stmt = nullptr;
+    const char* selectSql =
+        "SELECT id, name, value FROM test_table;";
+
+    if (!db.prepare(selectSql, &stmt))
+    {
+        printGBK("查询准备失败：");
+        printGBK(db.getLastError());
+        printGBK("\n");
+        return;
+    }
+
+    while (db.step(stmt))
+    {
+        int id = db.columnInt(stmt, 0);
+        const char* name = db.columnText(stmt, 1);
+        int value = db.columnInt(stmt, 2);
+
+        printGBK("id=");
+        printGBK(std::to_string(id));
+        printGBK(" name=");
+        printGBK(name ? name : "null");
+        printGBK(" value=");
+        printGBK(std::to_string(value));
+        printGBK("\n");
+    }
+
+    db.finalize(stmt);
+
+    // 修改数据
+    const char* updateSql =
+        "UPDATE test_table SET value = 200 WHERE name = 'first';";
+
+    if (!db.execute(updateSql))
+    {
+        printGBK("修改数据失败：");
+        printGBK(db.getLastError());
+        printGBK("\n");
+        return;
+    }
+
+    printGBK("修改数据成功\n");
+
+    // 再次读取验证
+    printGBK("再次读取验证：\n");
+
+    if (!db.prepare(selectSql, &stmt))
+    {
+        printGBK("查询准备失败：");
+        printGBK(db.getLastError());
+        printGBK("\n");
+        return;
+    }
+
+    while (db.step(stmt))
+    {
+        int id = db.columnInt(stmt, 0);
+        const char* name = db.columnText(stmt, 1);
+        int value = db.columnInt(stmt, 2);
+
+        printGBK("id=");
+        printGBK(std::to_string(id));
+        printGBK(" name=");
+        printGBK(name ? name : "null");
+        printGBK(" value=");
+        printGBK(std::to_string(value));
+        printGBK("\n");
+    }
+
+    db.finalize(stmt);
+
+    printGBK("数据库创建测试完成\n");
+}
+void Console::menuCreateTableTest()
+{
+    printGBK("开始新建表测试\n");
+
+    Sqllient db("test.db");
+    if (!db.open())
+    {
+        printGBK("数据库打开失败：");
+        printGBK(db.getLastError());
+        printGBK("\n");
+        return;
+    }
+
+    const char* createSql =
+        "CREATE TABLE IF NOT EXISTS workspace_test ("
+        "id INTEGER PRIMARY KEY,"
+        "name TEXT,"
+        "desc TEXT"
+        ");";
+
+    if (!db.execute(createSql))
+    {
+        printGBK("新建表失败：");
+        printGBK(db.getLastError());
+        printGBK("\n");
+        return;
+    }
+
+    printGBK("workspace_test 表创建成功\n");
+
+    const char* insertSql =
+        "INSERT INTO workspace_test (name, desc) "
+        "VALUES ('工厂水泵系统', '用于测试的工作区');";
+
+    if (!db.execute(insertSql))
+    {
+        printGBK("插入初始数据失败：");
+        printGBK(db.getLastError());
+        printGBK("\n");
+        return;
+    }
+
+    printGBK("初始数据插入成功\n");
+}
+void Console::menuUpdateValueTest()
+{
+    printGBK("开始修改指定表值测试\n");
+
+    Sqllient db("test.db");
+    if (!db.open())
+    {
+        printGBK("数据库打开失败：");
+        printGBK(db.getLastError());
+        printGBK("\n");
+        return;
+    }
+
+    printGBK("修改前读取数据\n");
+
+    sqlite3_stmt* stmt = nullptr;
+    const char* selectSql =
+        "SELECT id, name, desc FROM workspace_test;";
+
+    if (!db.prepare(selectSql, &stmt))
+    {
+        printGBK("查询失败：");
+        printGBK(db.getLastError());
+        printGBK("\n");
+        return;
+    }
+
+    while (db.step(stmt))
+    {
+        int id = db.columnInt(stmt, 0);
+        const char* name = db.columnText(stmt, 1);
+        const char* desc = db.columnText(stmt, 2);
+
+        printGBK("id=");
+        printGBK(std::to_string(id));
+        printGBK(" name=");
+        printGBK(name ? name : "null");
+        printGBK(" desc=");
+        printGBK(desc ? desc : "null");
+        printGBK("\n");
+    }
+
+    db.finalize(stmt);
+
+    const char* updateSql =
+        "UPDATE workspace_test "
+        "SET desc = '已修改的工作区描述' "
+        "WHERE name = '工厂水泵系统';";
+
+    if (!db.execute(updateSql))
+    {
+        printGBK("修改失败：");
+        printGBK(db.getLastError());
+        printGBK("\n");
+        return;
+    }
+
+    printGBK("修改完成，再次读取验证\n");
+
+    if (!db.prepare(selectSql, &stmt))
+    {
+        printGBK("查询失败：");
+        printGBK(db.getLastError());
+        printGBK("\n");
+        return;
+    }
+
+    while (db.step(stmt))
+    {
+        int id = db.columnInt(stmt, 0);
+        const char* name = db.columnText(stmt, 1);
+        const char* desc = db.columnText(stmt, 2);
+
+        printGBK("id=");
+        printGBK(std::to_string(id));
+        printGBK(" name=");
+        printGBK(name ? name : "null");
+        printGBK(" desc=");
+        printGBK(desc ? desc : "null");
+        printGBK("\n");
+    }
+
+    db.finalize(stmt);
+
+    printGBK("修改测试完成\n");
 }

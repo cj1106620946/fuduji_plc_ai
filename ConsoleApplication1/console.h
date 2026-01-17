@@ -15,6 +15,7 @@
 #include"decisionai.h"
 #include"judgmentai.h"
 
+
 class PLCClient;
 class AIClient;
 class AIController;
@@ -51,7 +52,9 @@ private:
     void menuTtsTest();
     void menuAiBenchmark();
     void menuAiManagerTest();
-
+    void menuDatabaseTest();
+    void menuCreateTableTest();
+	void menuUpdateValueTest();
 private:
     PLCClient plc;
     AIClient ai;

@@ -314,7 +314,6 @@ bool PLCClient::getPlcIdentity(PlcIdentity& info)
 
     return true;
 }
-
 // 读取 PLC 当前系统时间
 bool PLCClient::getPlcTime(PlcTime& time)
 {
