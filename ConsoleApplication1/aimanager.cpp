@@ -95,7 +95,6 @@ void AiManager::pushUserInput(const std::string& text)
     }
     cv.notify_one();
 }
-
 void AiManager::iniaiwrite()
 {
     while (true)
@@ -246,6 +245,7 @@ void AiManager::iniread()
     //读取当前工作区并写入
     workspace->loadFromFile("workspace.json");
 	chat->runExecuteRead(workspace->getWorkspaceJson());
+    execute->newcallExecuteAI(workspace->getWorkspaceJson());
     printGBK1(".........ai读取工作区和记忆完成\n");
 	// 输入线程：负责读取控制台输入
     inputThread = std::thread(&AiManager::inputLoop, this);
@@ -324,7 +324,11 @@ void AiManager::textInputLoop()
             workcv.notify_all();
             break;
         }
-
+        if (input == "daying")
+        {
+            ai.showHistory("chat_e");
+            continue;
+        }
         pushUserInput(GBKtoUTF81(input));
     }
 }
@@ -402,6 +406,7 @@ void AiManager::processLoop()
     }
 }
 // 后台工作线程：专门处理耗时的 Workspace / Execute
+// 后台工作线程：专门处理耗时的 Workspace / Execute
 void AiManager::processWorkLoop()
 {
     while (running)
@@ -413,26 +418,41 @@ void AiManager::processWorkLoop()
 
         if (!running)
             break;
+
         WorkItem item = workQueue.front();
         workQueue.pop();
         lock.unlock();
+
+        std::string executeText = item.text;
+
+        // ===== 拆分用户输入 + Chat 执行上下文 =====
+        std::string userText;
+        std::string chatContext;
+
+        size_t pos = executeText.find("chatai：");
+        if (pos != std::string::npos)
+        {
+            userText = executeText.substr(0, pos);
+            chatContext = executeText.substr(
+                pos + std::strlen("chatai：")
+            );
+        }
+        else
+        {
+            // 兼容旧逻辑：只有用户输入
+            userText = executeText;
+            chatContext.clear();
+        }
+
         std::string resultText;
+
         // 任务类型：1 = Execute
         if (item.type == 1)
         {
-            resultText = execute->runOnce(item.text);
+            // 当前阶段：仍然传完整字符串给 Execute
+            // Execute 内部如果需要，可以再次按相同分隔符解析
+            resultText = execute->runOnce(executeText);
         }
-        // 任务类型：2 = Workspace（以后打开）
-        /*
-        else if (item.type == 2)
-        {
-            bool ok = workspace->runOnce(item.text);
-            if (ok)
-                resultText = workspace->getWorkspaceJson();
-            else
-                resultText = workspace->getAiRawOutput();
-        }
-        */
         else
         {
             continue;
@@ -446,6 +466,7 @@ void AiManager::processWorkLoop()
         handleResultInput(resultText);
     }
 }
+
 // 处理一条用户输入：单一 Chat 决策（control），决定是否投递后台任务
 void AiManager::handleUserInput(const std::string& text)
 {

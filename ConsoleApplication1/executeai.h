@@ -13,6 +13,8 @@ class ExecuteAI
 public:
     ExecuteAI(int aicode, AIController& aiRef, AITrace& traceRef,PLCClient& plcRef);
     std::string runOnce(const std::string& user_input);
+    std::string newcallExecuteAI(const std::string& user_input);
+
 private:
     struct ActionItem
     {
@@ -40,10 +42,8 @@ private:
         std::string raw_json;
         std::vector<ActionItem> actions;
     };
-
 private:
     std::string callExecuteAI(const std::string& user_input);
-    std::string newcallExecuteAI(const std::string& user_input);
     ExecutePlan parseExecuteJson(const std::string& json_text);
     std::string executePLC(const ExecutePlan& plan);
 private:

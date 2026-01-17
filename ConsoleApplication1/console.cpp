@@ -4,6 +4,8 @@
 #include <json/json.h>
 #include <sstream>
 
+#include <chrono>
+
 // 输出函数
 
 void Console::printGBK(const std::string& text)
@@ -52,7 +54,7 @@ Console::Console() :ai(),plc(),aiController(ai),aiTrace()
 {
     chat = new ChatAI(2,aiController,aiTrace);
     execute = new ExecuteAI(2,aiController, aiTrace,plc);
-    workspace = new WorkspaceAI(2,aiController, aiTrace);
+    workspace = new WorkspaceAI(1,aiController, aiTrace);
     decision = new DecisionAI(4,aiController, aiTrace);
 	judgment = new Judgmentai(2, aiController, aiTrace);
 
@@ -253,9 +255,6 @@ void Console::menuChat()
 
         // 4 调试输出：原始 AI 返回（JSON 或普通文本）
         printGBK("[DEBUG] 原始 AI 返回内容：\n");
-
-        // 这里再次调用一次“仅执行、不拼接显示”的内部逻辑
-        // ⚠ 注意：Console 仍然不解析 JSON，只做原样打印
         std::string raw = chat->runExecuteOnce(utf8);
 
         printUTF8(raw);
@@ -420,8 +419,6 @@ void Console::menuTtsTest()
     }
 }
 
-#include <chrono>
-
 void Console::menuAiBenchmark()
 {
     printGBK("\n--- AI 模块测速模式 ---\n");
@@ -512,9 +509,6 @@ void Console::menuAiManagerTest()
     printGBK("\n--- 模块化 AI 系统测试模式 ---\n");
     printGBK("此模式将进入 AiManager\n");
     printGBK("由系统接管输入输出\n");
-    printGBK("输入 exit 返回主菜单\n\n");
-
-    // 创建并运行 AiManager
     AiManager manager;
     manager.run();
 

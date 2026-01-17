@@ -1,7 +1,7 @@
 ﻿#include "aiclient.h"
 #include <sstream>
 #include <curl/curl.h>
-
+#include <fstream>
 // cURL 写入回调
 static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* response)
 {
@@ -44,12 +44,24 @@ void AIClient::showHistory(const std::string& memkey)
     if (it == memories.end())
         return;
 
-    for (auto& msg : it->second)
+    // 文件名：memkey.txt
+    std::string filename = memkey + ".txt";
+
+    std::ofstream out(filename.c_str(), std::ios::out | std::ios::trunc);
+    if (!out.is_open())
+        return;
+
+    for (const auto& msg : it->second)
     {
-        // 这里只遍历，不输出，由你现有的打印逻辑决定
-        (void)msg;
+        // 每条消息固定格式写入，便于后续解析或人工查看
+        out << "[" << msg.role << "]\n";
+        out << msg.content << "\n";
+        out << "\n";
     }
+
+    out.close();
 }
+
 // 清空指定记忆槽
 void AIClient::clearHistory(const std::string& memkey)
 {
@@ -100,7 +112,7 @@ std::string AIClient::callChatAPI(
 
     curl_easy_setopt(curl, CURLOPT_URL, "https://api.deepseek.com/v1/chat/completions");
     curl_easy_setopt(curl, CURLOPT_POST, 1L);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
 
     Json::Value root;
     Json::Value messages(Json::arrayValue);

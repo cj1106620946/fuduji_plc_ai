@@ -15,7 +15,11 @@ ExecuteAI::ExecuteAI(
     : ai(aiRef), trace(traceRef), plc(plcRef), aicode(AICODE)
 {
 }
-
+// 调用执行 AI
+std::string ExecuteAI::callExecuteAI(const std::string& user_input)
+{
+    return ai.chatExecute(aicode, user_input);
+}
 // 外部唯一入口
 std::string ExecuteAI::runOnce(const std::string& user_input)
 {
@@ -26,15 +30,9 @@ std::string ExecuteAI::runOnce(const std::string& user_input)
     trace.end(true, output);
     return output;
 }
-// 调用执行 AI
-std::string ExecuteAI::callExecuteAI(const std::string& user_input)
-{
-    return ai.chatExecute(aicode, user_input);
-}
-
 std::string ExecuteAI::newcallExecuteAI(const std::string& user_input)
 {
-    return ai.execute(true,false,aicode, "chat_e",user_input);
+    return ai.execute(true,true,aicode, "execute",user_input);
 }
 
 // 解析执行 JSON

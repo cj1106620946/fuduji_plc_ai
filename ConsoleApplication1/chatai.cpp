@@ -40,7 +40,7 @@ std::string ChatAI::runExecuteRead(const std::string& user_input)
         "chat_execute",
         aicode,
         user_input,
-        ai.chatexecuteprompt_get()
+     ai.chatexecuteprompt_get()
     );
     trace.debug(u8"[STEP] 调用执行入口，获取 AI 原始 JSON");
     std::string jsonOut = runExecuteOnce(user_input);
@@ -64,10 +64,11 @@ std::string ChatAI::runExecuteOnce(const std::string& user_input)
 {
     return callChatExecuteAI(user_input);
 }
+
 std::string ChatAI::callChatExecuteAI(const std::string& user_input)
 {
     // 这里使用新的 chatExecute 接口
-    return ai.allairun( true, true, aicode, "chat_e",user_input, ai.chatexecuteprompt_get()
+    return ai.allairun( true, true, aicode,"chat_e",user_input, ai.chatexecuteprompt_get()
     );
 }
 bool ChatAI::parseChatJson(const std::string& jsonText)
