@@ -19,7 +19,7 @@ public:
     // ¥ÌŒÛ–≈œ¢
     const char* getLastErrorText() const;
 
-
+    bool initMemorySnapshots();
     bool createWorkspace(
         const std::string& taskDesc,
         const std::string& taskDomain,
