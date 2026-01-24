@@ -4,6 +4,7 @@
 #include <json/json.h>
 #include <sstream>
 #include "sqllient.h"
+#include"sqlstore.h"
 #include <chrono>
 // 输出函数
 void Console::printGBK(const std::string& text)
@@ -97,6 +98,7 @@ void Console::showMainHeader()
     printGBK("12. 数据库创建测试\n");
     printGBK("13. 新建表测试\n");
     printGBK("14. 修改指定表的值\n");
+    printGBK("15. 数据库指令测试\n");
 
     printGBK("0. 退出\n");
     printGBK("-----------------------------------\n");
@@ -121,6 +123,7 @@ void Console::mainMenu()
     else if (cmd == "12") menuDatabaseTest();
     else if (cmd == "13") menuCreateTableTest();
     else if (cmd == "14") menuUpdateValueTest();
+    else if (cmd == "15") menuDatabaseSqlConsole();
 
     else printGBK("无效输入\n");
 }
@@ -657,7 +660,7 @@ void Console::menuCreateTableTest()
         return;
     }
 
-    const char* createSql =
+    const char* createSql = 
         "CREATE TABLE IF NOT EXISTS workspace_test ("
         "id INTEGER PRIMARY KEY,"
         "name TEXT,"
@@ -774,3 +777,71 @@ void Console::menuUpdateValueTest()
 
     printGBK("修改测试完成\n");
 }
+void Console::menuDatabaseSqlConsole()
+{
+        printGBK("=== 手动创建 Workspace（数据库测试）===\n");
+
+        std::string taskDesc;
+        std::string taskDomain;
+        std::string sourceText;
+
+        printGBK("请输入 task_desc（任务描述，必填）：\n> ");
+        std::getline(std::cin, taskDesc);
+        if (taskDesc.empty())
+        {
+            printGBK("task_desc 不能为空\n");
+            return;
+        }
+
+        printGBK("请输入 task_domain（任务领域，可为空）：\n> ");
+        std::getline(std::cin, taskDomain);
+
+        printGBK("请输入 source_text（原始输入，必填）：\n> ");
+        std::getline(std::cin, sourceText);
+        if (sourceText.empty())
+        {
+            printGBK("source_text 不能为空\n");
+            return;
+        }
+
+        Sqllient db("test.db");
+
+        if (!db.open())
+        {
+            printGBK("打开数据库失败\n");
+            return;
+        }
+
+        SqlStore* store = new SqlStore(&db);
+
+        if (!store->open())
+        {
+            printGBK("初始化数据库结构失败：");
+            printGBK(store->getLastErrorText());
+            printGBK("\n");
+            return;
+        }
+
+        if (!store || !store->isAvailable())
+        {
+            printGBK("数据库未初始化或不可用\n");
+            return;
+        }
+
+        bool ok = store->createWorkspace(
+            taskDesc,
+            taskDomain,
+            sourceText
+        );
+
+        if (ok)
+        {
+            printGBK("Workspace 创建成功\n");
+        }
+        else
+        {
+            printGBK("Workspace 创建失败：");
+            printGBK(store->getLastErrorText());
+            printGBK("\n");
+        }
+    }

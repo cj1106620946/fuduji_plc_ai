@@ -79,7 +79,6 @@ std::string AIClient::askChatLocal(bool readHistory,bool pd, const std::string& 
 {
     return callChatLocalAPI(readHistory,pd,memkey, userMessage, systemPrompt);
 }
-
 // 推理接口
 std::string AIClient::askReason(const std::string& userMessage,
     const std::string& systemPrompt)

@@ -19,11 +19,12 @@ static bool checkLaunchToken(int argc, char* argv[])
     return false;
 }
 static void hideConsoleWindow()
-{
+{ 
     HWND h = GetConsoleWindow();
     if (h)
         ShowWindow(h, SW_HIDE);
 }
+
 int main(int argc, char* argv[])
 {
     // 启动即校验令牌

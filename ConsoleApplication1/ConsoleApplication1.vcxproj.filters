@@ -1,10 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="源文件">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
     <Filter Include="头文件">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
@@ -16,14 +12,12 @@
     <Filter Include="头文件\ai类">
       <UniqueIdentifier>{fc4be915-5a81-4786-b57e-0c6918eb043f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
     <Filter Include="源文件\ai类">
       <UniqueIdentifier>{0016aa05-800b-4ecb-8b31-14d7775adb1d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="头文件\底层">
-      <UniqueIdentifier>{21c7340f-30e3-4f24-96de-e1ed5c873c56}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="源文件\底层">
-      <UniqueIdentifier>{f80285e3-5854-4751-a529-db3a93c963ec}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -69,34 +63,28 @@
     <ClCompile Include="judgmentai.cpp">
       <Filter>源文件\ai类</Filter>
     </ClCompile>
-    <ClCompile Include="aiclient.cpp">
-      <Filter>源文件\底层</Filter>
-    </ClCompile>
-    <ClCompile Include="plcclient.cpp">
-      <Filter>源文件\底层</Filter>
-    </ClCompile>
-    <ClCompile Include="plcprogrammanager.cpp">
-      <Filter>源文件\底层</Filter>
-    </ClCompile>
     <ClCompile Include="speechagent.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="piperengine.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="sqllient.cpp">
-      <Filter>源文件\底层</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\c-cpp\src\sqlite3.c">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="sqlschema.cpp">
+    <ClCompile Include="sqlstore.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="sqlentity.cpp">
+    <ClCompile Include="aiclient.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="sqlvalue.cpp">
+    <ClCompile Include="plcclient.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="plcprogrammanager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="sqllient.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -143,25 +131,19 @@
     <ClInclude Include="workspaceai.h">
       <Filter>头文件\ai类</Filter>
     </ClInclude>
-    <ClInclude Include="aiclient.h">
-      <Filter>头文件\底层</Filter>
-    </ClInclude>
-    <ClInclude Include="plcclient.h">
-      <Filter>头文件\底层</Filter>
-    </ClInclude>
-    <ClInclude Include="plcprogrammanager.h">
-      <Filter>头文件\底层</Filter>
+    <ClInclude Include="sqlstore.h">
+      <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="sqllient.h">
-      <Filter>头文件\底层</Filter>
-    </ClInclude>
-    <ClInclude Include="sqlschema.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="sqlentity.h">
+    <ClInclude Include="aiclient.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="sqlvalue.h">
+    <ClInclude Include="plcclient.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plcprogrammanager.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

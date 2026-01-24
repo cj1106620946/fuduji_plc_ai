@@ -1,6 +1,5 @@
 #include "sqllient.h"
 #include "sqlite3.h"
-
 #include <windows.h>
 
 // ¹¹Ôìº¯Êý
@@ -23,9 +22,7 @@ bool Sqllient::open()
 {
     if (available)
         return true;
-
     CreateDirectoryA("sqlite", NULL);
-
     char fullPath[MAX_PATH] = { 0 };
     lstrcpyA(fullPath, "sqlite\\");
     lstrcatA(fullPath, dbName);

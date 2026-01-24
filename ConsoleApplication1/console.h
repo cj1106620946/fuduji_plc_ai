@@ -55,6 +55,7 @@ private:
     void menuDatabaseTest();
     void menuCreateTableTest();
 	void menuUpdateValueTest();
+    void menuDatabaseSqlConsole();
 private:
     PLCClient plc;
     AIClient ai;
