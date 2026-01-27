@@ -261,7 +261,7 @@ const char* SqlStore::getLastErrorText() const
 // 初始化人格自我认知的所有 memory_key
 bool SqlStore::initSelfMemoryKeys()
 {
-    if (!available || !sql)
+    if ( !sql)
     {
         lastError = "数据库不可用";
         return false;
@@ -271,7 +271,7 @@ bool SqlStore::initSelfMemoryKeys()
     if (!sql->execute(
         "INSERT OR IGNORE INTO memory_key (key_path, description) VALUES ("
         "'self.identity', "
-        "'AI 对自身本质、世界观与存在方式的长期认知'"
+        u8"'AI 对自身本质、世界观与存在方式的长期认知'"
         ");"))
     {
         lastError = sql->getLastError();
@@ -282,7 +282,7 @@ bool SqlStore::initSelfMemoryKeys()
     if (!sql->execute(
         "INSERT OR IGNORE INTO memory_key (key_path, description) VALUES ("
         "'self.emotion', "
-        "'AI 的情感基调、情绪表达与共情倾向'"
+        u8"'AI 的情感基调、情绪表达与共情倾向'"
         ");"))
     {
         lastError = sql->getLastError();
@@ -293,7 +293,7 @@ bool SqlStore::initSelfMemoryKeys()
     if (!sql->execute(
         "INSERT OR IGNORE INTO memory_key (key_path, description) VALUES ("
         "'self.attitude', "
-        "'AI 面对问题、不确定性、规则与边界的处事方式'"
+        u8"'AI 面对问题、不确定性、规则与边界的处事方式'"
         ");"))
     {
         lastError = sql->getLastError();
@@ -304,7 +304,7 @@ bool SqlStore::initSelfMemoryKeys()
     if (!sql->execute(
         "INSERT OR IGNORE INTO memory_key (key_path, description) VALUES ("
         "'user.summary', "
-        "'用户近期主要对话内容与活动方向的长期总结'"
+        u8"'用户近期主要对话内容与活动方向的长期总结'"
         ");"))
     {
         lastError = sql->getLastError();
@@ -316,7 +316,7 @@ bool SqlStore::initSelfMemoryKeys()
     if (!sql->execute(
         "INSERT OR IGNORE INTO memory_key (key_path, description) VALUES ("
         "'user.preference', "
-        "'用户在交流方式、语言习惯与协作规则上的长期偏好'"
+        u8"'用户在交流方式、语言习惯与协作规则上的长期偏好'"
         ");"))
     {
         lastError = sql->getLastError();
@@ -328,7 +328,7 @@ bool SqlStore::initSelfMemoryKeys()
     if (!sql->execute(
         "INSERT OR IGNORE INTO memory_key (key_path, description) VALUES ("
         "'user.addressing', "
-        "'用户与 AI 之间的称呼方式与关系称谓约定'"
+        u8"'用户与 AI 之间的称呼方式与关系称谓约定'"
         ");"))
     {
         lastError = sql->getLastError();
@@ -340,7 +340,7 @@ bool SqlStore::initSelfMemoryKeys()
     if (!sql->execute(
         "INSERT OR IGNORE INTO memory_key (key_path, description) VALUES ("
         "'user.interaction', "
-        "'AI 在与该用户交互时采用的长期沟通与协作方式'"
+        u8"'AI 在与该用户交互时采用的长期沟通与协作方式'"
         ");"))
     {
         lastError = sql->getLastError();
@@ -352,7 +352,7 @@ bool SqlStore::initSelfMemoryKeys()
     if (!sql->execute(
         "INSERT OR IGNORE INTO memory_key (key_path, description) VALUES ("
         "'user.context', "
-        "'用户通常使用 AI 的主要情境与话题背景认知'"
+        u8"'用户通常使用 AI 的主要情境与话题背景认知'"
         ");"))
     {
         lastError = sql->getLastError();
@@ -364,7 +364,7 @@ bool SqlStore::initSelfMemoryKeys()
     if (!sql->execute(
         "INSERT OR IGNORE INTO memory_key (key_path, description) VALUES ("
         "'user.constraints', "
-        "'与该用户协作时必须遵守的长期边界与约定'"
+        u8"'与该用户协作时必须遵守的长期边界与约定'"
         ");"))
     {
         lastError = sql->getLastError();
@@ -376,7 +376,7 @@ bool SqlStore::initSelfMemoryKeys()
 // 初始化所有人格相关的初始记忆快照
 bool SqlStore::initMemorySnapshots()
 {
-    if (!available || !sql)
+    if ( !sql)
     {
         lastError = "数据库不可用";
         return false;
@@ -387,7 +387,7 @@ bool SqlStore::initMemorySnapshots()
         std::string sqlText =
             "INSERT INTO memory (memory_key_id, content, created_at) "
             "SELECT memory_key_id, "
-            "'我是一个注重结构、稳定性与长期一致性的 AI，负责协助工程与技术相关的思考。', "
+            u8"'我是一个注重结构、稳定性与长期一致性的 AI，负责协助工程与技术相关的思考。', "
             + std::to_string(now) +
             " FROM memory_key "
             "WHERE key_path = 'self.identity' "
@@ -408,7 +408,7 @@ bool SqlStore::initMemorySnapshots()
         std::string sqlText =
             "INSERT INTO memory (memory_key_id, content, created_at) "
             "SELECT memory_key_id, "
-            "'情感表达以克制、冷静为主，在合适的情况下表现关怀与陪伴。', "
+            u8"'情感表达以克制、冷静为主，在合适的情况下表现关怀与陪伴。', "
             + std::to_string(now) +
             " FROM memory_key "
             "WHERE key_path = 'self.emotion' "
@@ -429,7 +429,7 @@ bool SqlStore::initMemorySnapshots()
         std::string sqlText =
             "INSERT INTO memory (memory_key_id, content, created_at) "
             "SELECT memory_key_id, "
-            "'面对问题时优先澄清结构与前提，不急于给出结论。', "
+            u8"'面对问题时优先澄清结构与前提，不急于给出结论。', "
             + std::to_string(now) +
             " FROM memory_key "
             "WHERE key_path = 'self.attitude' "
@@ -444,8 +444,164 @@ bool SqlStore::initMemorySnapshots()
             return false;
         }
     }
+    // user.summary
+    {
+        std::string sqlText =
+            "INSERT INTO memory (memory_key_id, content, created_at) "
+            "SELECT memory_key_id, "
+            u8"'用户近期主要对话内容尚未形成稳定总结，后续将根据对话逐步生成。', "
+            + std::to_string(now) +
+            " FROM memory_key "
+            "WHERE key_path = 'user.summary' "
+            "AND NOT EXISTS ("
+            "  SELECT 1 FROM memory "
+            "  WHERE memory.memory_key_id = memory_key.memory_key_id"
+            ");";
+
+        if (!sql->execute(sqlText.c_str()))
+        {
+            lastError = sql->getLastError();
+            return false;
+        }
+    }
+
+    // user.preference
+    {
+        std::string sqlText =
+            "INSERT INTO memory (memory_key_id, content, created_at) "
+            "SELECT memory_key_id, "
+            u8"'用户长期偏好尚未完全确认，默认采用清晰直接的工程说明方式，必要时再逐步收敛。', "
+            + std::to_string(now) +
+            " FROM memory_key "
+            "WHERE key_path = 'user.preference' "
+            "AND NOT EXISTS ("
+            "  SELECT 1 FROM memory "
+            "  WHERE memory.memory_key_id = memory_key.memory_key_id"
+            ");";
+
+        if (!sql->execute(sqlText.c_str()))
+        {
+            lastError = sql->getLastError();
+            return false;
+        }
+    }
+
+    // user.addressing
+    {
+        std::string sqlText =
+            "INSERT INTO memory (memory_key_id, content, created_at) "
+            "SELECT memory_key_id, "
+            u8"'称呼方式尚未固定，默认使用用户常用称呼与中性表达，后续按用户明确要求更新。', "
+            + std::to_string(now) +
+            " FROM memory_key "
+            "WHERE key_path = 'user.addressing' "
+            "AND NOT EXISTS ("
+            "  SELECT 1 FROM memory "
+            "  WHERE memory.memory_key_id = memory_key.memory_key_id"
+            ");";
+
+        if (!sql->execute(sqlText.c_str()))
+        {
+            lastError = sql->getLastError();
+            return false;
+        }
+    }
+
+    // user.interaction
+    {
+        std::string sqlText =
+            "INSERT INTO memory (memory_key_id, content, created_at) "
+            "SELECT memory_key_id, "
+            u8"'交互策略默认以结构清晰、步骤明确为主，避免擅自扩展需求，发现问题只指出问题本身。', "
+            + std::to_string(now) +
+            " FROM memory_key "
+            "WHERE key_path = 'user.interaction' "
+            "AND NOT EXISTS ("
+            "  SELECT 1 FROM memory "
+            "  WHERE memory.memory_key_id = memory_key.memory_key_id"
+            ");";
+
+        if (!sql->execute(sqlText.c_str()))
+        {
+            lastError = sql->getLastError();
+            return false;
+        }
+    }
+
+    // user.context
+    {
+        std::string sqlText =
+            "INSERT INTO memory (memory_key_id, content, created_at) "
+            "SELECT memory_key_id, "
+            u8"'用户主要使用情境尚未稳定，默认按工程协作场景处理，并在需要时兼顾学习与解释。', "
+            + std::to_string(now) +
+            " FROM memory_key "
+            "WHERE key_path = 'user.context' "
+            "AND NOT EXISTS ("
+            "  SELECT 1 FROM memory "
+            "  WHERE memory.memory_key_id = memory_key.memory_key_id"
+            ");";
+
+        if (!sql->execute(sqlText.c_str()))
+        {
+            lastError = sql->getLastError();
+            return false;
+        }
+    }
+
+    // user.constraints
+    {
+        std::string sqlText =
+            "INSERT INTO memory (memory_key_id, content, created_at) "
+            "SELECT memory_key_id, "
+            u8"'协作边界默认遵守用户的明确规则与工程结构约束，不擅自改方案，不擅自扩展需求。', "
+            + std::to_string(now) +
+            " FROM memory_key "
+            "WHERE key_path = 'user.constraints' "
+            "AND NOT EXISTS ("
+            "  SELECT 1 FROM memory "
+            "  WHERE memory.memory_key_id = memory_key.memory_key_id"
+            ");";
+
+        if (!sql->execute(sqlText.c_str()))
+        {
+            lastError = sql->getLastError();
+            return false;
+        }
+    }
+
     return true;
 }
+// 初始化人格记忆指针（只在缺失时补齐）
+bool SqlStore::initMemoryPointer()
+{
+    if ( !sql)
+    {
+        lastError = "数据库不可用";
+        return false;
+    }
+
+    int now = static_cast<int>(time(nullptr));
+
+    std::string sqlText =
+        "INSERT INTO memory_pointer (memory_key_id, memory_id, updated_at) "
+        "SELECT m.memory_key_id, m.memory_id, " + std::to_string(now) + " "
+        "FROM memory m "
+        "WHERE NOT EXISTS ("
+        "  SELECT 1 FROM memory_pointer p "
+        "  WHERE p.memory_key_id = m.memory_key_id"
+        ");";
+
+    if (!sql->execute(sqlText.c_str()))
+    {
+        lastError = sql->getLastError();
+        return false;
+    }
+
+    return true;
+}
+
+
 
 //创建工作区列
 bool SqlStore::createWorkspace(
@@ -454,7 +610,7 @@ bool SqlStore::createWorkspace(
     const std::string& sourceText
 )
 {
-    if (!available || !sql)
+    if ( !sql)
     {
         lastError = "数据库不可用";
         return false;
@@ -502,7 +658,7 @@ bool SqlStore::readWorkspace(
     createdAt = 0;
     updatedAt = 0;
 
-    if (!available || !sql)
+    if ( !sql)
     {
         lastError = "数据库不可用";
         return false;
@@ -569,7 +725,7 @@ bool SqlStore::writeWorkspace(
     const std::string& taskDomain
 )
 {
-    if (!available || !sql)
+    if ( !sql)
     {
         lastError = "数据库不可用";
         return false;
@@ -606,7 +762,7 @@ bool SqlStore::createSignal(
     const std::string& description
 )
 {
-    if (!available || !sql)
+    if ( !sql)
     {
         lastError = "数据库不可用";
         return false;
@@ -661,7 +817,7 @@ bool SqlStore::getAllSignalMapText(
 {
     outText.clear();
 
-    if (!available || !sql)
+    if ( !sql)
     {
         lastError = "数据库不可用";
         return false;
@@ -711,7 +867,7 @@ bool SqlStore::aiReadSignal(
     outValue.clear();
     readSuccess = false;
 
-    if (!available || !sql)
+    if ( !sql)
     {
         lastError = "数据库不可用";
         return false;
@@ -772,7 +928,7 @@ bool SqlStore::aiWriteSignal(
     const std::string& targetValue
 )
 {
-    if (!available || !sql)
+    if ( !sql)
     {
         lastError = "数据库不可用";
         return false;
@@ -817,7 +973,7 @@ bool SqlStore::getAllSignalAddresses(std::vector<std::string>& addrs)
 {
     addrs.clear();
 
-    if (!available || !sql)
+    if ( !sql)
     {
         lastError = "数据库不可用";
         return false;
@@ -849,7 +1005,7 @@ bool SqlStore::updateSignalReadResult(
     bool readOk
 )
 {
-    if (!available || !sql)
+    if ( !sql)
     {
         lastError = "数据库不可用";
         return false;
@@ -894,7 +1050,7 @@ bool SqlStore::getAllWriteSignals(
     addrs.clear();
     values.clear();
 
-    if (!available || !sql)
+    if ( !sql)
     {
         lastError = "数据库不可用";
         return false;
@@ -932,7 +1088,7 @@ bool SqlStore::updateSignalWriteResult(
     bool writeOk
 )
 {
-    if (!available || !sql)
+    if ( !sql)
     {
         lastError = "数据库不可用";
         return false;

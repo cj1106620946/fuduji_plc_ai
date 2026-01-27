@@ -77,6 +77,7 @@ public:
         bool writeOk
     );
     bool initSelfMemoryKeys();
+    bool initMemoryPointer();
 private:
     // ½ûÖ¹¿½±´
     SqlStore(const SqlStore&) = delete;

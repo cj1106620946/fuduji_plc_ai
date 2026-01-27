@@ -7,7 +7,7 @@ Sqllient::Sqllient(const char* databaseName)
     : dbName(databaseName),
     dbHandle(nullptr),
     available(false),
-    lastError(nullptr)
+    lastError()
 {
 }
 
@@ -22,7 +22,10 @@ bool Sqllient::open()
 {
     if (available)
         return true;
+
+    // 创建数据库目录
     CreateDirectoryA("sqlite", NULL);
+
     char fullPath[MAX_PATH] = { 0 };
     lstrcpyA(fullPath, "sqlite\\");
     lstrcatA(fullPath, dbName);
@@ -30,22 +33,30 @@ bool Sqllient::open()
     int result = sqlite3_open(fullPath, &dbHandle);
     if (result != SQLITE_OK)
     {
-        lastError = sqlite3_errmsg(dbHandle);
-        sqlite3_close(dbHandle);
-        dbHandle = nullptr;
+        if (dbHandle)
+        {
+            lastError = sqlite3_errmsg(dbHandle);
+            sqlite3_close(dbHandle);
+            dbHandle = nullptr;
+        }
+        else
+        {
+            lastError = "sqlite3_open 失败";
+        }
+
         available = false;
         return false;
     }
 
     available = true;
-    lastError = nullptr;
+    lastError.clear();
     return true;
 }
 
 // 关闭数据库
 void Sqllient::close()
 {
-    if (dbHandle != nullptr)
+    if (dbHandle)
     {
         sqlite3_close(dbHandle);
         dbHandle = nullptr;
@@ -63,33 +74,46 @@ bool Sqllient::isAvailable() const
 // 获取最近一次错误
 const char* Sqllient::getLastError() const
 {
-    return lastError;
+    return lastError.c_str();
 }
 
 // 执行不返回结果的 SQL
 bool Sqllient::execute(const char* sql)
 {
-    if (!available)
+    if (!available || !dbHandle)
+    {
+        lastError = "数据库未打开";
         return false;
+    }
 
     char* errorMsg = nullptr;
     int result = sqlite3_exec(dbHandle, sql, nullptr, nullptr, &errorMsg);
     if (result != SQLITE_OK)
     {
-        lastError = errorMsg;
-        sqlite3_free(errorMsg);
+        if (errorMsg)
+        {
+            lastError = errorMsg;
+            sqlite3_free(errorMsg);
+        }
+        else
+        {
+            lastError = "sqlite3_exec 执行失败";
+        }
         return false;
     }
 
-    lastError = nullptr;
+    lastError.clear();
     return true;
 }
 
 // 准备查询语句
 bool Sqllient::prepare(const char* sql, sqlite3_stmt** stmt)
 {
-    if (!available)
+    if (!available || !dbHandle)
+    {
+        lastError = "数据库未打开";
         return false;
+    }
 
     int result = sqlite3_prepare_v2(dbHandle, sql, -1, stmt, nullptr);
     if (result != SQLITE_OK)
@@ -98,6 +122,7 @@ bool Sqllient::prepare(const char* sql, sqlite3_stmt** stmt)
         return false;
     }
 
+    lastError.clear();
     return true;
 }
 
@@ -111,7 +136,7 @@ bool Sqllient::step(sqlite3_stmt* stmt)
 // 释放查询语句
 void Sqllient::finalize(sqlite3_stmt* stmt)
 {
-    if (stmt != nullptr)
+    if (stmt)
     {
         sqlite3_finalize(stmt);
     }
