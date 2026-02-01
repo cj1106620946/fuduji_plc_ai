@@ -61,6 +61,25 @@ void AIClient::showHistory(const std::string& memkey)
 
     out.close();
 }
+std::string AIClient::getHistory(const std::string& memkey)
+{
+    auto it = memories.find(memkey);
+    if (it == memories.end())
+        return "";  // 如果没有找到对应的记忆槽位，返回空字符串
+
+    // 构建返回的字符串
+    std::string history;
+
+    for (const auto& msg : it->second)
+    {
+        // 每条消息按照指定格式拼接
+        history += "[" + msg.role + "]\n";
+        history += msg.content + "\n";
+        history += "\n";  // 保证每条消息后面有一个换行符
+    }
+
+    return history;  // 返回拼接的历史内容
+}
 
 // 清空指定记忆槽
 void AIClient::clearHistory(const std::string& memkey)

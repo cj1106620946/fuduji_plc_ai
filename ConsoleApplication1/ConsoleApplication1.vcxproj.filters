@@ -21,15 +21,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\c-cpp\src\snap7.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="jsoncpp.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="console.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -69,9 +60,6 @@
     <ClCompile Include="piperengine.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\c-cpp\src\sqlite3.c">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="sqlstore.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -87,11 +75,26 @@
     <ClCompile Include="sqllient.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\c-cpp\src\snap7.cpp">
+      <Filter>资源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\c-cpp\src\sqlite3.c">
+      <Filter>资源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>资源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="jsoncpp.cpp">
+      <Filter>资源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="memoryai.cpp">
+      <Filter>源文件\ai类</Filter>
+    </ClCompile>
+    <ClCompile Include="uppermachine.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\c-cpp\include\snap7.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="console.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -144,6 +147,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="plcprogrammanager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\c-cpp\include\snap7.h">
+      <Filter>资源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="memoryai.h">
+      <Filter>头文件\ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="uppermachine.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -47,6 +47,7 @@ public:
     std::string judgment(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
     std::string allairun(bool rd,bool wt,int ai_mode,const std::string& memkey,const std::string& text,const std::string& prompt
     );
+
     //读取prompt 
     std::string executeprompt_get();
     std::string chatprompt_get();
@@ -54,6 +55,7 @@ public:
     std::string decisionprompt_get();
     std::string judgmentprompt_get();
     std::string chatexecuteprompt_get();
+    std::string memoryprompt_get();
 
 private:
     // 统一 AI 调用入口
@@ -80,6 +82,7 @@ private:
     void buildWorkspacePrompt();
     void buildDecisionPrompt();
 	void buildJudgmentPrompt();
+    void buildMemoryaiPrompt();
 private:
     AIClient& ai;
     // Prompt 模板（只存字符串）
@@ -89,4 +92,7 @@ private:
     std::string decision_prompt;
     std::string Judgment_prompt;
     std::string chatexecute_prompt;
+    std::string memoryjudge_prompt;
+    std::string memorywrite_prompt;
+    std::string memorymanage_prompt;
 };

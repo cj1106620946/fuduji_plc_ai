@@ -12,6 +12,7 @@ AIController::AIController(AIClient& aiRef)
     buildWorkspacePrompt();
     buildDecisionPrompt();
     buildJudgmentPrompt();
+    buildMemoryaiPrompt();
 }
 
 // 构建 执行 Prompt
@@ -201,6 +202,51 @@ void AIController::buildResponsePrompt()
         u8"最终输出必须是纯 JSON。";
 
 }
+// 构建 记忆 AI Prompt
+void AIController::buildMemoryaiPrompt()
+{
+    // ===== 记忆读取判断 AI（只判断是否命中记忆）=====
+    memoryjudge_prompt =
+        u8"你是系统中的【记忆读取判断 AI】。\n"
+        u8"你的任务只有一个：\n"
+        u8"判断用户输入是否与已有记忆相关。\n"
+        u8"\n"
+        u8"你不会进行聊天，不会解释，不会推理，不会写入记忆。\n"
+        u8"你只做判断。\n"
+        u8"\n"
+        u8"输出规则：\n"
+        u8"- 如果输入与已有记忆明显相关，输出：HIT\n"
+        u8"- 如果无关或无法确定，输出：MISS\n"
+        u8"\n"
+        u8"禁止输出除 HIT 或 MISS 以外的任何内容。\n";
+
+    // ===== 记忆写入 AI（生成可存储的记忆文本）=====
+    memorywrite_prompt =
+        u8"你是系统中的【记忆写入 AI】。\n"
+        u8"你的任务是将给定内容整理为稳定、简洁、可长期保存的记忆文本。\n"
+        u8"\n"
+        u8"规则：\n"
+        u8"- 只输出整理后的记忆内容本身。\n"
+        u8"- 不要解释，不要标注时间，不要包含对话过程。\n"
+        u8"- 使用中性、概括性的表述。\n"
+        u8"\n"
+        u8"你的输出将被直接写入数据库。\n"
+        u8"禁止输出任何与记忆内容无关的文字。\n";
+
+    // ===== 长期记忆整理 AI（短期 → 长期）=====
+    memorymanage_prompt =
+        u8"你是系统中的【长期记忆整理 AI】。\n"
+        u8"你的任务是将多个零散的短期记忆整理为稳定的长期认知。\n"
+        u8"\n"
+        u8"规则：\n"
+        u8"- 合并重复信息。\n"
+        u8"- 去除具体时间与临时细节。\n"
+        u8"- 保留长期有效的认知结论。\n"
+        u8"\n"
+        u8"只输出整理后的长期记忆文本。\n"
+        u8"禁止解释整理过程。\n";
+}
+
 
 //读取prompt 
 std::string AIController::executeprompt_get()
@@ -226,6 +272,18 @@ std::string AIController::judgmentprompt_get()
 std::string AIController::chatexecuteprompt_get()
 {
     return chatexecute_prompt;
+}
+std::string AIController::memoryprompt_get()
+{
+    return "1";
+}
+
+//总接口
+//1.读取记忆，2写入记忆，3 ai模式，4 记忆槽，5 用户输入，6 prompt
+std::string AIController::allairun(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text, const std::string& prompt
+)
+{
+    return callAI(rd, wt, ai_mode, memkey, text, prompt);
 }
 //新接口
 //1.读取记忆，2写入记忆，3 ai模式，4 记忆槽，5 用户输入，6 prompt
@@ -279,12 +337,6 @@ std::string AIController::judgment(bool rd, bool wt, int ai_mode, const std::str
     return callAI(rd,wt,ai_mode, memkey, text, Judgment_prompt);
 }
 
-//总接口
-std::string AIController::allairun(bool rd,bool wt,int ai_mode,const std::string& memkey,const std::string& text,const std::string& prompt
-)
-{
-    return callAI(rd, wt, ai_mode, memkey, text, prompt);
-}
 
 //旧接口
 std::string AIController::callAI(bool readHistory, bool pd, int ai_mode, const std::string& user_text, const std::string& prompt)

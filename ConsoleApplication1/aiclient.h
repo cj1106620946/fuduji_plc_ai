@@ -48,7 +48,7 @@ public:
     void showHistory(const std::string& memkey);
     // 清空聊天历史
     void clearHistory(const std::string& memkey);
-
+    std::string getHistory(const std::string& memkey);
 private:
     // 云 API Key
     std::string apiKey;

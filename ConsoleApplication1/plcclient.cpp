@@ -3,7 +3,8 @@ using namespace std;
 PLCClient::PLCClient()
 {
     client = new TS7Client();  // 创建 Snap7 客户端
-    connected = false;         // 默认未连接
+
+    lastError = 0;
 }
 PLCClient::~PLCClient()
 {
@@ -11,28 +12,21 @@ PLCClient::~PLCClient()
     delete client;             // 释放 Snap7 客户端对象
 }
 //连接plc
-bool PLCClient::connectPLC(const  string& plc_ip, int rack, int slot)
+bool PLCClient::connectPLC(const std::string& plc_ip, int rack, int slot)
 {
-    int result = client->ConnectTo(plc_ip.c_str(), rack, slot);
-    if (result == 0) {       
-        connected = true;
+    lastError = client->ConnectTo(plc_ip.c_str(), rack, slot);
+    if (lastError == 0)
+    {
         return true;
     }
-    connected = false;
     return false;
 }
 //断开连接
 void PLCClient::disconnectPLC()
 {
-    if (connected) {
-        client->Disconnect(); 
-        connected = false;
-    }
-}
-//查询是否连接
-bool PLCClient::isConnected() const
-{
-    return connected;
+    if (!client)
+        return;
+    lastError = client->Disconnect();
 }
 //判断区域代码
 int areaCode(char c)
@@ -100,235 +94,171 @@ bool PLCClient::parseAddress(const  string& addr,int& area, int& dbNumber, int& 
     }
     return false;  // 解析失败
 }
-//读操作
-bool PLCClient::readAddress(const  string& addr, int32_t& value)
+//读
+bool PLCClient::readAddress(const std::string& addr, int32_t& value)
 {
-    if (!connected) return false;
     int area, dbNumber, start, bitIndex, dataSize;
+
     if (!parseAddress(addr, area, dbNumber, start, bitIndex, dataSize))
+    {
+        lastError = -1;
         return false;
-    uint8_t buffer[4] = { 0 };   // 最大读4字节
-    // DB区读取 or 普通区读取
-    int result = (area == S7AreaDB)
+    }
+
+    uint8_t buffer[4] = { 0 };
+
+    lastError = (area == S7AreaDB)
         ? client->DBRead(dbNumber, start, dataSize, buffer)
         : client->ReadArea(area, 0, start, dataSize, S7WLByte, buffer);
-    if (result != 0)
+
+    if (lastError != 0)
         return false;
-    //  位访问
-    if (bitIndex >= 0) {
+
+    if (bitIndex >= 0)
+    {
         value = (buffer[0] >> bitIndex) & 1;
         return true;
     }
-    //  字节访问B  
-    if (dataSize == 1) {
+
+    if (dataSize == 1)
         value = buffer[0];
-    }
-    //  字访问W
-    else if (dataSize == 2) {
-        value = (buffer[0] << 8) | buffer[1];  // 大端
-    }
-    //  双字访问D 
-    else if (dataSize == 4) {
+    else if (dataSize == 2)
+        value = (buffer[0] << 8) | buffer[1];
+    else if (dataSize == 4)
         value = (buffer[0] << 24) | (buffer[1] << 16)
-            | (buffer[2] << 8) | buffer[3];
-    }
+        | (buffer[2] << 8) | buffer[3];
+
     return true;
 }
-//写操作
-bool PLCClient::writeAddress(const  string& addr, int32_t value)
+//写
+bool PLCClient::writeAddress(const std::string& addr, int32_t value)
 {
-    if (!connected) return false;
     int area, dbNumber, start, bitIndex, dataSize;
+
     if (!parseAddress(addr, area, dbNumber, start, bitIndex, dataSize))
+    {
+        lastError = -1;
         return false;
+    }
+
     uint8_t buffer[4] = { 0 };
+
     if (bitIndex >= 0)
     {
-        // 1) 先读出当前 1 字节（避免写一个位把其他位清零）
         uint8_t b = 0;
-        int r = (area == S7AreaDB)
+
+        lastError = (area == S7AreaDB)
             ? client->DBRead(dbNumber, start, 1, &b)
             : client->ReadArea(area, 0, start, 1, S7WLByte, &b);
 
-        if (r != 0) return false;
+        if (lastError != 0)
+            return false;
 
-        // 2) 修改目标 bit，其它 bit 保持不变
         if (value)
             b |= (uint8_t)(1u << bitIndex);
         else
             b &= (uint8_t)~(1u << bitIndex);
 
-        // 3) 写回这个字节
-        int w = (area == S7AreaDB)
+        lastError = (area == S7AreaDB)
             ? client->DBWrite(dbNumber, start, 1, &b)
             : client->WriteArea(area, 0, start, 1, S7WLByte, &b);
 
-        return w == 0;
+        return lastError == 0;
     }
 
-
-    // ---------- 字节 ----------
-    if (dataSize == 1) {
+    if (dataSize == 1)
         buffer[0] = (uint8_t)value;
-    }
-    // ---------- 字 ----------
-    else if (dataSize == 2) {
+    else if (dataSize == 2)
+    {
         buffer[0] = (value >> 8) & 0xFF;
         buffer[1] = value & 0xFF;
     }
-    // ---------- 双字 ----------
-    else if (dataSize == 4) {
+    else if (dataSize == 4)
+    {
         buffer[0] = (value >> 24) & 0xFF;
         buffer[1] = (value >> 16) & 0xFF;
         buffer[2] = (value >> 8) & 0xFF;
         buffer[3] = value & 0xFF;
     }
 
-    int result = (area == S7AreaDB)
+    lastError = (area == S7AreaDB)
         ? client->DBWrite(dbNumber, start, dataSize, buffer)
         : client->WriteArea(area, 0, start, dataSize, S7WLByte, buffer);
 
-    return result == 0;
+    return lastError == 0;
 }
 //运行状态
 bool PLCClient::getCpuStatus(int& cpuStatus)
 {
-    if (!connected)
+    lastError = client->PlcStatus();
+
+    if (lastError < 0)
+    {
+        cpuStatus = 0;
+        return false;
+    }
+    cpuStatus = lastError;
+    return true;
+}
+bool PLCClient::setPlcRun()
+{
+    lastError = client->PlcHotStart();
+
+    if (lastError < 0)
         return false;
 
-    int result = client->PlcStatus();
-    cpuStatus = result; // Snap7 的 PlcStatus() 返回 CPU 状态（0x08=RUN, 0x04=STOP, 0x00=未知）
-if (result < 0) {
-    lastError = result;
-    return false;
+    return true;
 }
-return true;
+bool PLCClient::setPlcStop()
+{
+    lastError = client->PlcStop();
+
+    if (lastError < 0)
+        return false;
+
+    return true;
 }
-//返回错误文本
+// 返回最近一次 Snap7 错误文本
 std::string PLCClient::getLastErrorText() const
 {
     if (!client)
         return std::string();
-    // 使用 Snap7 提供的全局函数 CliErrorText 获取错误文本
+
     return CliErrorText(lastError);
 }
 
-// 读取 PLC 的 DB 块数据（快照读取）
-// dbNumber: DB 块号，例如 DB1
-// start: DB 内起始字节偏移
-// size: 需要读取的字节数
-// buffer: 输出缓冲区，返回时包含读取到的原始字节数据
-bool PLCClient::readDbBlock(int dbNumber,int start,int size,std::vector<uint8_t>& buffer
-)
-{
-    // 未连接 PLC，直接失败
-    if (!connected)
-        return false;
-
-    // 根据读取大小调整缓冲区长度
-    buffer.resize(size);
-
-    // 调用 Snap7 接口读取 DB 区域
-    // 该操作一次性读取指定范围，保证数据来自同一时刻
-    int result = client->DBRead(dbNumber, start, size, buffer.data());
-
-    // 返回值不为 0 表示读取失败
-    if (result != 0)
-    {
-        // 记录最近一次错误码，供外部查询错误原因
-        lastError = result;
-        return false;
-    }
-
-    // 读取成功
-    return true;
-}
-// 将 PLC 切换到 RUN 状态
-// 返回 true 表示指令发送成功
-bool PLCClient::setPlcRun()
-{
-    // 未连接 PLC，直接失败
-    if (!connected)
-        return false;
-
-    // HotStart：不清除数据区，直接启动 CPU
-    int result = client->PlcHotStart();
-
-    // 小于 0 表示发生错误
-    if (result < 0)
-    {
-        lastError = result;
-        return false;
-    }
-
-    return true;
-}
-// 将 PLC 切换到 STOP 状态
-bool PLCClient::setPlcStop()
-{
-    // 未连接 PLC，直接失败
-    if (!connected)
-        return false;
-
-    // 停止 PLC CPU 运行
-    int result = client->PlcStop();
-
-    // 小于 0 表示发生错误
-    if (result < 0)
-    {
-        lastError = result;
-        return false;
-    }
-
-    return true;
-}
 // 读取 PLC 的身份信息（模块信息与固件版本）
 bool PLCClient::getPlcIdentity(PlcIdentity& info)
 {
-    // 未连接 PLC，直接失败
-    if (!connected)
-        return false;
     TS7OrderCode order{};
     TS7CpuInfo cpuInfo{};
-    // 读取 PLC 订货号与模块信息
-    int r1 = client->GetOrderCode(&order);
-    if (r1 != 0)
-    {
-        lastError = r1;
+
+    lastError = client->GetOrderCode(&order);
+    if (lastError != 0)
         return false;
-    }
-    // 读取 PLC CPU 固件版本信息
-    int r2 = client->GetCpuInfo(&cpuInfo);
-    if (r2 != 0)
-    {
-        lastError = r2;
+
+    lastError = client->GetCpuInfo(&cpuInfo);
+    if (lastError != 0)
         return false;
-    }
-    // 填充身份信息结构体
+
     info.orderCode = order.Code;
     info.moduleName = cpuInfo.ModuleTypeName;
-    // 使用订货号中的 V1/V2/V3 作为版本号
     info.versionMajor = order.V1;
     info.versionMinor = order.V2;
     info.versionPatch = order.V3;
 
     return true;
 }
+
 // 读取 PLC 当前系统时间
 bool PLCClient::getPlcTime(PlcTime& time)
 {
-    if (!connected)
-        return false;
-
     tm plcTime{};
-    int result = client->GetPlcDateTime(&plcTime);
-    if (result != 0)
-    {
-        lastError = result;
-        return false;
-    }
 
-    // Snap7 返回的是标准 tm 结构
+    lastError = client->GetPlcDateTime(&plcTime);
+    if (lastError != 0)
+        return false;
+
     time.year = plcTime.tm_year + 1900;
     time.month = plcTime.tm_mon + 1;
     time.day = plcTime.tm_mday;
@@ -338,13 +268,10 @@ bool PLCClient::getPlcTime(PlcTime& time)
 
     return true;
 }
+
 // 将 PLC 系统时间同步为当前本机时间
 bool PLCClient::syncPlcTimeWithLocal()
 {
-    if (!connected)
-        return false;
-
-    // 获取当前本机时间
     time_t now = time(nullptr);
     tm localTime{};
 
@@ -354,13 +281,27 @@ bool PLCClient::syncPlcTimeWithLocal()
     localtime_r(&now, &localTime);
 #endif
 
-    // 将本机时间写入 PLC
-    int result = client->SetPlcDateTime(&localTime);
-    if (result != 0)
-    {
-        lastError = result;
+    lastError = client->SetPlcDateTime(&localTime);
+    if (lastError != 0)
         return false;
-    }
 
     return true;
 }
+
+// 读取 PLC 的 DB 块数据（快照读取）
+bool PLCClient::readDbBlock(
+    int dbNumber,
+    int start,
+    int size,
+    std::vector<uint8_t>& buffer
+)
+{
+    buffer.resize(size);
+
+    lastError = client->DBRead(dbNumber, start, size, buffer.data());
+    if (lastError != 0)
+        return false;
+
+    return true;
+}
+

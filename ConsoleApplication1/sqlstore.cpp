@@ -16,7 +16,7 @@ bool SqlStore::open()
 {
     if (!sql)
     {
-        lastError = "Sqllient 指针为空";
+        lastError = u8"Sqllient 指针为空";
         available = false;
         return false;
     }
@@ -66,7 +66,7 @@ bool SqlStore::initmeta()
 
     if (!sql->execute(createmeta))
     {
-        lastError = "创建 meta 表失败";
+        lastError = u8"创建 meta 表失败";
         return false;
     }
 
@@ -77,7 +77,7 @@ bool SqlStore::initmeta()
     sqlite3_stmt* stmt = nullptr;
     if (!sql->prepare(checkexist, &stmt))
     {
-        lastError = "检查 meta 表状态失败";
+        lastError = u8"检查 meta 表状态失败";
         return false;
     }
 
@@ -102,7 +102,7 @@ bool SqlStore::initmeta()
 
         if (!sql->execute(insertmeta))
         {
-            lastError = "初始化 meta 信息失败";
+            lastError = u8"初始化 meta 信息失败";
             return false;
         }
 
@@ -115,7 +115,7 @@ bool SqlStore::initmeta()
 
     if (!sql->prepare(checkappid, &stmt))
     {
-        lastError = "读取 meta.app_id 失败";
+        lastError = u8"读取 meta.app_id 失败";
         return false;
     }
 
@@ -132,7 +132,7 @@ bool SqlStore::initmeta()
 
     if (!valid)
     {
-        lastError = "数据库不是本程序创建的";
+        lastError = u8"数据库不是本程序创建的";
         return false;
     }
 
@@ -141,58 +141,83 @@ bool SqlStore::initmeta()
 //创建表
 bool SqlStore::inittables()
 {
-    const char* cursor =
-        "CREATE TABLE IF NOT EXISTS cursor ("
-        "id INTEGER PRIMARY KEY CHECK (id = 1),"   // 只允许一行
-        "workspace_id INTEGER,"                    // 当前使用的 workspace.id
-        "updated_at INTEGER"                      // 指针更新时间
-        ");";
+// PLC 控制上下文表（唯一根：原 workspace + plc_info 融合）
+const char* plcInfo =
+    "CREATE TABLE IF NOT EXISTS plc_info ("
+    "plc_id INTEGER PRIMARY KEY AUTOINCREMENT,"  // 控制上下文唯一 ID
 
-    if (!sql->execute(cursor))
-    {
-        lastError = "cursor 表失败";
-        return false;
-    }
+    // ---------- 控制任务语义 ----------
+    "task_desc TEXT,"                            // AI 解析后的控制任务描述
+    "task_domain TEXT,"                          // 控制任务领域
+    "source_text TEXT,"                          // 用户原始自然语言输入
 
-    // 工作区表：记录用户多次自然语言设计得到的 PLC 控制任务语义
-    const char* workspace =
-        "CREATE TABLE IF NOT EXISTS workspace ("
-        "id INTEGER PRIMARY KEY AUTOINCREMENT,"   // 每一次设计一行
-        "task_desc TEXT,"                          // AI 解析后的当前控制任务描述
-        "task_domain TEXT,"                        // 控制任务所属领域（可选分类）
-        "source_text TEXT,"                       // 用户原始自然语言输入
-        "created_at INTEGER,"                     // 创建时间
-        "updated_at INTEGER"                      // 更新时间
-        ");";
+    // ---------- PLC 工程信息 ----------
+    "plc_model TEXT,"                            // PLC 型号
+    "order_code TEXT,"                           // 订货号
 
-    if (!sql->execute(workspace))
-    {
-        lastError = "创建 workspace 表失败";
-        return false;
-    }
+    "ip_address TEXT NOT NULL,"                  // PLC IP
+    "rack INTEGER,"                              // 机架号
+    "slot INTEGER,"                              // 插槽号
+
+    "signal_root_id INTEGER,"                    // signal 根指针
+
+    // ---------- 状态与时间 ----------
+    "is_active INTEGER,"                         // 是否为当前激活上下文
+    "created_at INTEGER,"                        // 创建时间
+    "updated_at INTEGER"                         // 更新时间
+    ");";
+
+if (!sql->execute(plcInfo))
+{
+    lastError = u8"创建 plc_info 表失败";
+    return false;
+}
+
+// 当前激活 PLC 控制上下文指针
+const char* plcPointer =
+    "CREATE TABLE IF NOT EXISTS plc_pointer ("
+    "id INTEGER PRIMARY KEY CHECK (id = 1),"     // 永远只有一行
+    "plc_id INTEGER NOT NULL,"                   // 当前激活的 plc_info.plc_id
+    "updated_at INTEGER"                         // 指针更新时间
+    ");";
+
+if (!sql->execute(plcPointer))
+{
+    lastError = u8"创建 plc_pointer 表失败";
+    return false;
+}
+
     // PLC 信号定义表：变量定义 + 状态 + 写入意图（融合）
     const char* signaldef =
         "CREATE TABLE IF NOT EXISTS signal_def ("
-        "name TEXT PRIMARY KEY,"          // 变量名，如 水泵1
-        "plc_address TEXT,"               // PLC 地址，如 M0.0
-        "workspace_name TEXT,"            // 定义该变量时的工作区语义名称
-        "description TEXT,"               // 自然语言说明（可选）
-        "created_at INTEGER,"             // 创建时间
+        "signal_id INTEGER PRIMARY KEY AUTOINCREMENT,"   // 内部唯一 ID
 
-        "current_value TEXT,"             // 当前读取变量值
-        "read_ok INTEGER,"                // 读取判断是否成功：1 成功 / 0 失败
-        "target_value TEXT,"              // 期望写入值
-        "write_flag INTEGER,"             // 写入状态：0 无操作 / 1 存在操作
-        "last_op_at INTEGER,"             // 上一次操作时间（读或写）
+        "name TEXT NOT NULL,"                             // 变量名（如 水泵1）
+        "plc_address TEXT NOT NULL,"                      // PLC 地址（如 M0.0）
 
-        "is_available INTEGER"            // 当前变量是否可用：1 可用 / 0 不可用
+        "plc_id INTEGER NOT NULL,"                        // PLC 的 ID（来自 plc_info）
+
+        "description TEXT,"                               // 自然语言说明
+        "created_at INTEGER,"                             // 创建时间
+
+        "current_value TEXT,"                             // 当前值
+        "read_ok INTEGER,"                                // 最近一次读取是否成功：1 成功 / 0 失败
+
+        "target_value TEXT,"                              // 目标值
+        "write_flag INTEGER,"                             // 写入标记：0 无 / 1 等待写入
+
+        "last_op_at INTEGER,"                             // 上一次读或写时间戳
+
+        "is_available INTEGER"                            // 是否可用：1 可用 / 0 不可用
         ");";
 
+    // 执行表创建
     if (!sql->execute(signaldef))
     {
-        lastError = "创建 signal_def 表失败";
+        lastError = u8"创建 signal_def 表失败";
         return false;
     }
+
 
     // 长期记忆表（人格 / 状态 快照存储）
     const char* memory =
@@ -204,7 +229,7 @@ bool SqlStore::inittables()
         ");";
     if (!sql->execute(memory))
     {
-        lastError = "创建 memory 表失败";
+        lastError = u8"创建 memory 表失败";
         return false;
     }
     // 记忆流定义表（人格自我认知 key）
@@ -217,7 +242,7 @@ bool SqlStore::inittables()
 
     if (!sql->execute(memoryKey))
     {
-        lastError = "创建 memory_key 表失败";
+        lastError = u8"创建 memory_key 表失败";
         return false;
     }
     // 人格记忆指针表（当前生效快照）
@@ -232,7 +257,7 @@ bool SqlStore::inittables()
 
     if (!sql->execute(memoryPointer))
     {
-        lastError = "创建 memory_pointer 表失败";
+        lastError = u8"创建 memory_pointer 表失败";
         return false;
     }
 
@@ -263,7 +288,7 @@ bool SqlStore::initSelfMemoryKeys()
 {
     if ( !sql)
     {
-        lastError = "数据库不可用";
+        lastError = u8"数据库不可用";
         return false;
     }
 
@@ -378,7 +403,7 @@ bool SqlStore::initMemorySnapshots()
 {
     if ( !sql)
     {
-        lastError = "数据库不可用";
+        lastError = u8"数据库不可用";
         return false;
     }
     int now = static_cast<int>(time(nullptr));
@@ -577,7 +602,7 @@ bool SqlStore::initMemoryPointer()
 {
     if ( !sql)
     {
-        lastError = "数据库不可用";
+        lastError = u8"数据库不可用";
         return false;
     }
 
@@ -600,39 +625,269 @@ bool SqlStore::initMemoryPointer()
 
     return true;
 }
-
-
-
-//创建工作区列
-bool SqlStore::createWorkspace(
-    const std::string& taskDesc,
-    const std::string& taskDomain,
-    const std::string& sourceText
+// 写入人格记忆并切换指针
+bool SqlStore::writeMemory(
+    int memoryKeyId,                 // 只允许 user 端 4-9
+    const std::string& content       // 长期成立的记忆内容
 )
 {
-    if ( !sql)
+    if (!sql)
     {
-        lastError = "数据库不可用";
+        lastError = u8"数据库不可用";
         return false;
     }
 
-    if (taskDesc.empty() || sourceText.empty())
+    if (content.empty())
     {
-        lastError = "workspace 必填字段为空";
+        lastError = u8"memory 内容为空";
+        return false;
+    }
+
+    int now = static_cast<int>(time(nullptr));
+
+    // 1. 插入新的 memory 记录
+    // 这里应当生成一条新的 memory_id
+    std::string insertMemorySql =
+        "INSERT INTO memory (memory_key_id, content, created_at) VALUES ("
+        + std::to_string(memoryKeyId) + ", '"
+        + content + "', "
+        + std::to_string(now) + ");";
+
+    if (!sql->execute(insertMemorySql.c_str()))
+    {
+        lastError = sql->getLastError();
+        return false;
+    }
+
+    // 2. 更新 memory_pointer 指向最新的 memory
+    // 此处逻辑是：明确切换当前生效的记忆
+    std::string updatePointerSql =
+        "UPDATE memory_pointer SET "
+        "memory_id = (SELECT MAX(memory_id) FROM memory WHERE memory_key_id = "
+        + std::to_string(memoryKeyId) + "), "
+        "updated_at = " + std::to_string(now) +
+        " WHERE memory_key_id = " + std::to_string(memoryKeyId) + ";";
+
+    if (!sql->execute(updatePointerSql.c_str()))
+    {
+        lastError = sql->getLastError();
+        return false;
+    }
+    return true;
+}
+
+// 读取当前指针指向的记忆内容
+bool SqlStore::readMemory(
+    int memoryKeyId,
+    std::string& outContent
+)
+{
+    if (!sql || !sql->isAvailable())
+    {
+        lastError = u8"数据库不可用";
+        return false;
+    }
+
+    outContent.clear();
+
+    std::string sqlText =
+        "SELECT m.content "
+        "FROM memory m "
+        "JOIN memory_pointer p ON m.memory_id = p.memory_id "
+        "WHERE p.memory_key_id = " + std::to_string(memoryKeyId) + " "
+        "LIMIT 1;";
+
+    sqlite3_stmt* stmt = nullptr;
+
+    // 1. prepare
+    if (!sql->prepare(sqlText.c_str(), &stmt))
+    {
+        lastError = sql->getLastError();
+        return false;
+    }
+
+    // 2. step（是否有一行）
+    if (!sql->step(stmt))
+    {
+        sql->finalize(stmt);
+        lastError = u8"未找到对应的记忆内容";
+        return false;
+    }
+
+    // 3. 读取 content
+    const char* text = sql->columnText(stmt, 0);
+    if (text)
+    {
+        outContent = text;
+    }
+    else
+    {
+        outContent.clear();
+    }
+
+    // 4. finalize
+    sql->finalize(stmt);
+    return true;
+}
+
+//创建plc
+bool SqlStore::createPlcInfo(const plcinfo& in)
+{
+    if (!sql)
+    {
+        lastError = u8"数据库不可用";
+        return false;
+    }
+
+    if (in.ipAddress.empty())
+    {
+        lastError = u8"PLC IP 地址为空";
+        return false;
+    }
+
+    if (in.taskDesc.empty() || in.sourceText.empty())
+    {
+        lastError = u8"控制任务语义为空";
+        return false;
+    }
+
+    int now = static_cast<int>(time(nullptr));
+
+    // 清空之前激活的上下文
+    if (!sql->execute("UPDATE plc_info SET is_active = 0;"))
+    {
+        lastError = sql->getLastError();
+        return false;
+    }
+
+    // 创建新的 plc_info
+    std::string insertSql =
+        "INSERT INTO plc_info ("
+        "task_desc, task_domain, source_text, "
+        "plc_model, order_code, ip_address, rack, slot, signal_root_id, "
+        "is_active, created_at, updated_at"
+        ") VALUES ('" +
+        in.taskDesc + "', '" +
+        in.taskDomain + "', '" +
+        in.sourceText + "', '" +
+        in.plcModel + "', '" +
+        in.orderCode + "', '" +
+        in.ipAddress + "', " +
+        std::to_string(in.rack) + ", " +
+        std::to_string(in.slot) + ", " +
+        std::to_string(in.signalRootId) + ", "
+        "1, " +
+        std::to_string(now) + ", " +
+        std::to_string(now) +
+        ");";
+
+    if (!sql->execute(insertSql.c_str()))
+    {
+        lastError = sql->getLastError();
+        return false;
+    }
+
+    // 切换 plc_pointer 指向最新 plc_info
+    std::string pointerSql =
+        "INSERT OR REPLACE INTO plc_pointer (id, plc_id, updated_at) "
+        "VALUES (1, (SELECT MAX(plc_id) FROM plc_info), " +
+        std::to_string(now) + ");";
+
+    if (!sql->execute(pointerSql.c_str()))
+    {
+        lastError = sql->getLastError();
+        return false;
+    }
+
+    return true;
+}
+//读取变量
+bool SqlStore::readPlcInfo(plcinfo& out)
+{
+    out = plcinfo();
+
+    if (!sql)
+    {
+        lastError = u8"数据库不可用";
+        return false;
+    }
+
+    const char* sqlText =
+        "SELECT "
+        "i.task_desc, "
+        "i.task_domain, "
+        "i.source_text, "
+        "i.plc_model, "
+        "i.order_code, "
+        "i.ip_address, "
+        "i.rack, "
+        "i.slot, "
+        "i.signal_root_id, "
+        "i.is_active, "
+        "i.created_at, "
+        "i.updated_at "
+        "FROM plc_info i "
+        "JOIN plc_pointer p ON i.plc_id = p.plc_id "
+        "WHERE p.id = 1;";
+
+    sqlite3_stmt* stmt = nullptr;
+    if (!sql->prepare(sqlText, &stmt))
+    {
+        lastError = sql->getLastError();
+        return false;
+    }
+
+    if (!sql->step(stmt))
+    {
+        lastError = u8"当前 plc 指针未设置";
+        sql->finalize(stmt);
+        return false;
+    }
+
+    if (const char* t = sql->columnText(stmt, 0)) out.taskDesc = t;
+    if (const char* t = sql->columnText(stmt, 1)) out.taskDomain = t;
+    if (const char* t = sql->columnText(stmt, 2)) out.sourceText = t;
+    if (const char* t = sql->columnText(stmt, 3)) out.plcModel = t;
+    if (const char* t = sql->columnText(stmt, 4)) out.orderCode = t;
+    if (const char* t = sql->columnText(stmt, 5)) out.ipAddress = t;
+
+    out.rack = sql->columnInt(stmt, 6);
+    out.slot = sql->columnInt(stmt, 7);
+    out.signalRootId = sql->columnInt(stmt, 8);
+    out.isActive = sql->columnInt(stmt, 9);
+    out.createdAt = sql->columnInt(stmt, 10);
+    out.updatedAt = sql->columnInt(stmt, 11);
+
+    sql->finalize(stmt);
+    return true;
+}
+//写入变量
+bool SqlStore::writePlcInfo(const plcinfo& in)
+{
+    if (!sql)
+    {
+        lastError = u8"数据库不可用";
         return false;
     }
 
     int now = static_cast<int>(time(nullptr));
 
     std::string sqlText =
-        "INSERT INTO workspace ("
-        "task_desc, task_domain, source_text, created_at, updated_at"
-        ") VALUES ('" +
-        taskDesc + "', '" +
-        taskDomain + "', '" +
-        sourceText + "', " +
-        std::to_string(now) + ", " +
-        std::to_string(now) + ");";
+        "UPDATE plc_info SET "
+        "task_desc = '" + in.taskDesc + "', "
+        "task_domain = '" + in.taskDomain + "', "
+        "source_text = '" + in.sourceText + "', "
+        "plc_model = '" + in.plcModel + "', "
+        "order_code = '" + in.orderCode + "', "
+        "ip_address = '" + in.ipAddress + "', "
+        "rack = " + std::to_string(in.rack) + ", "
+        "slot = " + std::to_string(in.slot) + ", "
+        "signal_root_id = " + std::to_string(in.signalRootId) + ", "
+        "is_active = " + std::to_string(in.isActive) + ", "
+        "updated_at = " + std::to_string(now) +
+        " WHERE plc_id = ("
+        "SELECT plc_id FROM plc_pointer WHERE id = 1"
+        ");";
 
     if (!sql->execute(sqlText.c_str()))
     {
@@ -642,109 +897,23 @@ bool SqlStore::createWorkspace(
 
     return true;
 }
-//工作区读取
-bool SqlStore::readWorkspace(
-    int workspaceId,
-    std::string& taskDesc,
-    std::string& taskDomain,
-    std::string& sourceText,
-    int& createdAt,
-    int& updatedAt
-)
+//修改plc指针
+bool SqlStore::setCurrentPlcPointer(int plcId)
 {
-    taskDesc.clear();
-    taskDomain.clear();
-    sourceText.clear();
-    createdAt = 0;
-    updatedAt = 0;
-
-    if ( !sql)
+    if (!sql)
     {
-        lastError = "数据库不可用";
-        return false;
-    }
-
-    const char* sqlText =
-        "SELECT "
-        "task_desc, "
-        "task_domain, "
-        "source_text, "
-        "created_at, "
-        "updated_at "
-        "FROM workspace WHERE id = ?;";
-
-    sqlite3_stmt* stmt = nullptr;
-    if (!sql->prepare(sqlText, &stmt))
-    {
-        lastError = sql->getLastError();
-        return false;
-    }
-
-    // 注意：Sqllient 没有 bind，只能通过 execute 或固定 id
-    // 所以这里改为直接拼 id 的 SQL（保持一致性）
-
-    sql->finalize(stmt);
-
-    std::string sqlText2 =
-        "SELECT "
-        "task_desc, task_domain, source_text, created_at, updated_at "
-        "FROM workspace WHERE id = " +
-        std::to_string(workspaceId) + ";";
-
-    if (!sql->prepare(sqlText2.c_str(), &stmt))
-    {
-        lastError = sql->getLastError();
-        return false;
-    }
-
-    if (!sql->step(stmt))
-    {
-        lastError = "未找到指定 workspace";
-        sql->finalize(stmt);
-        return false;
-    }
-
-    const char* t0 = sql->columnText(stmt, 0);
-    const char* t1 = sql->columnText(stmt, 1);
-    const char* t2 = sql->columnText(stmt, 2);
-
-    if (t0) taskDesc = t0;
-    if (t1) taskDomain = t1;
-    if (t2) sourceText = t2;
-
-    createdAt = sql->columnInt(stmt, 3);
-    updatedAt = sql->columnInt(stmt, 4);
-
-    sql->finalize(stmt);
-    return true;
-}
-//写入
-bool SqlStore::writeWorkspace(
-    int workspaceId,
-    const std::string& taskDesc,
-    const std::string& taskDomain
-)
-{
-    if ( !sql)
-    {
-        lastError = "数据库不可用";
-        return false;
-    }
-
-    if (taskDesc.empty())
-    {
-        lastError = "task_desc 为空";
+        lastError = u8"数据库不可用";
         return false;
     }
 
     int now = static_cast<int>(time(nullptr));
 
     std::string sqlText =
-        "UPDATE workspace SET "
-        "task_desc = '" + taskDesc + "', "
-        "task_domain = '" + taskDomain + "', "
-        "updated_at = " + std::to_string(now) +
-        " WHERE id = " + std::to_string(workspaceId) + ";";
+        "INSERT OR REPLACE INTO plc_pointer (id, plc_id, updated_at) "
+        "VALUES (1, " +
+        std::to_string(plcId) + ", " +
+        std::to_string(now) +
+        ");";
 
     if (!sql->execute(sqlText.c_str()))
     {
@@ -758,29 +927,61 @@ bool SqlStore::writeWorkspace(
 bool SqlStore::createSignal(
     const std::string& name,
     const std::string& plcAddress,
-    const std::string& workspaceName,
     const std::string& description
 )
 {
-    if ( !sql)
+    // 1. 数据库可用性检查
+    if (!sql)
     {
-        lastError = "数据库不可用";
+        lastError = u8"数据库不可用";
         return false;
     }
 
+    // 2. 参数合法性检查
     if (name.empty() || plcAddress.empty())
     {
-        lastError = "变量名或 PLC 地址为空";
+        lastError = u8"变量名或 PLC 地址为空";
         return false;
     }
 
+    // 3. 读取当前 PLC 指针
+    int plcId = 0;
+    {
+        const char* sqlText =
+            "SELECT plc_id FROM plc_pointer WHERE id = 1;";
+
+        sqlite3_stmt* stmt = nullptr;
+        if (!sql->prepare(sqlText, &stmt))
+        {
+            lastError = sql->getLastError();
+            return false;
+        }
+
+        if (!sql->step(stmt))
+        {
+            sql->finalize(stmt);
+            lastError = u8"当前 PLC 指针不存在";
+            return false;
+        }
+
+        plcId = sql->columnInt(stmt, 0);
+        sql->finalize(stmt);
+
+        if (plcId <= 0)
+        {
+            lastError = u8"当前 plc_id 非法";
+            return false;
+        }
+    }
+
+    // 4. 创建 signal（只关联 PLC）
     int now = static_cast<int>(time(nullptr));
 
     std::string sqlText =
         "INSERT INTO signal_def ("
         "name, "
         "plc_address, "
-        "workspace_name, "
+        "plc_id, "
         "description, "
         "created_at, "
         "current_value, "
@@ -791,16 +992,16 @@ bool SqlStore::createSignal(
         "is_available"
         ") VALUES ('" +
         name + "', '" +
-        plcAddress + "', '" +
-        workspaceName + "', '" +
+        plcAddress + "', " +
+        std::to_string(plcId) + ", '" +
         description + "', " +
         std::to_string(now) + ", "
-        "NULL, "          // current_value
-        "0, "             // read_ok
-        "NULL, "          // target_value
-        "0, "             // write_flag
-        "0, "             // last_op_at
-        "1"               // is_available
+        "NULL, "
+        "0, "
+        "NULL, "
+        "0, "
+        "0, "
+        "1"
         ");";
 
     if (!sql->execute(sqlText.c_str()))
@@ -817,14 +1018,18 @@ bool SqlStore::getAllSignalMapText(
 {
     outText.clear();
 
-    if ( !sql)
+    if (!sql)
     {
-        lastError = "数据库不可用";
+        lastError = u8"数据库不可用";
         return false;
     }
 
     const char* sqlText =
-        "SELECT name, plc_address FROM signal_def;";
+        "SELECT name, plc_address "
+        "FROM signal_def "
+        "WHERE plc_id = ("
+        "SELECT plc_id FROM plc_pointer WHERE id = 1"
+        ");";
 
     sqlite3_stmt* stmt = nullptr;
     if (!sql->prepare(sqlText, &stmt))
@@ -852,7 +1057,6 @@ bool SqlStore::getAllSignalMapText(
     sql->finalize(stmt);
     return true;
 }
-
 bool SqlStore::aiReadSignal(
     const std::string& queryName,
     const std::string& queryAddress,
@@ -867,15 +1071,15 @@ bool SqlStore::aiReadSignal(
     outValue.clear();
     readSuccess = false;
 
-    if ( !sql)
+    if (!sql)
     {
-        lastError = "数据库不可用";
+        lastError = u8"数据库不可用";
         return false;
     }
 
     if (queryName.empty() && queryAddress.empty())
     {
-        lastError = "查询条件为空";
+        lastError = u8"查询条件为空";
         return false;
     }
 
@@ -884,15 +1088,15 @@ bool SqlStore::aiReadSignal(
         "FROM signal_def WHERE ";
 
     if (!queryName.empty())
-    {
         sqlText += "name = '" + queryName + "'";
-    }
     else
-    {
         sqlText += "plc_address = '" + queryAddress + "'";
-    }
 
-    sqlText += ";";
+    // 替换 workspace_id 为 plc_pointer 指向的 plc_id
+    sqlText +=
+        " AND plc_id = ("
+        "SELECT plc_id FROM plc_pointer WHERE id = 1"
+        ");";
 
     sqlite3_stmt* stmt = nullptr;
     if (!sql->prepare(sqlText.c_str(), &stmt))
@@ -903,7 +1107,7 @@ bool SqlStore::aiReadSignal(
 
     if (!sql->step(stmt))
     {
-        lastError = "未找到变量";
+        lastError = u8"未找到变量";
         sql->finalize(stmt);
         return false;
     }
@@ -921,22 +1125,21 @@ bool SqlStore::aiReadSignal(
     sql->finalize(stmt);
     return true;
 }
-
 bool SqlStore::aiWriteSignal(
     const std::string& queryName,
     const std::string& queryAddress,
     const std::string& targetValue
 )
 {
-    if ( !sql)
+    if (!sql)
     {
-        lastError = "数据库不可用";
+        lastError = u8"数据库不可用";
         return false;
     }
 
     if (queryName.empty() && queryAddress.empty())
     {
-        lastError = "查询条件为空";
+        lastError = u8"查询条件为空";
         return false;
     }
 
@@ -950,15 +1153,76 @@ bool SqlStore::aiWriteSignal(
         " WHERE ";
 
     if (!queryName.empty())
-    {
         sqlText += "name = '" + queryName + "'";
-    }
     else
-    {
         sqlText += "plc_address = '" + queryAddress + "'";
+
+    // 替换 workspace_id 为 plc_pointer 指向的 plc_id
+    sqlText +=
+        " AND plc_id = ("
+        "SELECT plc_id FROM plc_pointer WHERE id = 1"
+        ");";
+
+    if (!sql->execute(sqlText.c_str()))
+    {
+        lastError = sql->getLastError();
+        return false;
     }
 
-    sqlText += ";";
+    return true;
+}
+// 创建变量（绑定当前 PLC）
+bool SqlStore::createSignalInfo(const signalinfo& in)
+{
+    if (!sql)
+    {
+        lastError = u8"数据库不可用";
+        return false;
+    }
+
+    if (in.name.empty() || in.plcAddress.empty())
+    {
+        lastError = u8"变量名或 PLC 地址为空";
+        return false;
+    }
+
+    int plcId = 0;
+    {
+        const char* q =
+            "SELECT plc_id FROM plc_pointer WHERE id = 1;";
+        sqlite3_stmt* stmt = nullptr;
+
+        if (!sql->prepare(q, &stmt))
+        {
+            lastError = sql->getLastError();
+            return false;
+        }
+
+        if (!sql->step(stmt))
+        {
+            sql->finalize(stmt);
+            lastError = u8"当前 PLC 指针未设置";
+            return false;
+        }
+
+        plcId = sql->columnInt(stmt, 0);
+        sql->finalize(stmt);
+    }
+
+    int now = static_cast<int>(time(nullptr));
+
+    std::string sqlText =
+        "INSERT INTO signal_def ("
+        "name, plc_address, plc_id, description, created_at, "
+        "current_value, read_ok, target_value, write_flag, last_op_at, is_available"
+        ") VALUES ('" +
+        in.name + "', '" +
+        in.plcAddress + "', " +
+        std::to_string(plcId) + ", '" +
+        in.description + "', " +
+        std::to_string(now) + ", "
+        "NULL, 0, NULL, 0, 0, 1"
+        ");";
 
     if (!sql->execute(sqlText.c_str()))
     {
@@ -969,18 +1233,250 @@ bool SqlStore::aiWriteSignal(
     return true;
 }
 
-bool SqlStore::getAllSignalAddresses(std::vector<std::string>& addrs)
+// 读取当前 PLC 下的全部变量（init 专用）
+bool SqlStore::readAllSignalInfo(std::vector<signalinfo>& out)
 {
-    addrs.clear();
+    out.clear();
 
-    if ( !sql)
+    if (!sql)
     {
-        lastError = "数据库不可用";
+        lastError = u8"数据库不可用";
         return false;
     }
 
     const char* sqlText =
-        "SELECT plc_address FROM signal_def;";
+        "SELECT "
+        "signal_id, name, plc_address, plc_id, description, created_at, "
+        "current_value, read_ok, target_value, write_flag, last_op_at, is_available "
+        "FROM signal_def WHERE plc_id = ("
+        "SELECT plc_id FROM plc_pointer WHERE id = 1"
+        ");";
+
+    sqlite3_stmt* stmt = nullptr;
+    if (!sql->prepare(sqlText, &stmt))
+    {
+        lastError = sql->getLastError();
+        return false;
+    }
+
+    while (sql->step(stmt))
+    {
+        signalinfo s;
+
+        s.signalId = sql->columnInt(stmt, 0);
+        if (const char* t = sql->columnText(stmt, 1)) s.name = t;
+        if (const char* t = sql->columnText(stmt, 2)) s.plcAddress = t;
+        s.plcId = sql->columnInt(stmt, 3);
+        if (const char* t = sql->columnText(stmt, 4)) s.description = t;
+        s.createdAt = sql->columnInt(stmt, 5);
+        if (const char* t = sql->columnText(stmt, 6)) s.currentValue = t;
+        s.readOk = sql->columnInt(stmt, 7);
+        if (const char* t = sql->columnText(stmt, 8)) s.targetValue = t;
+        s.writeFlag = sql->columnInt(stmt, 9);
+        s.lastOpAt = sql->columnInt(stmt, 10);
+        s.isAvailable = sql->columnInt(stmt, 11);
+
+        out.push_back(s);
+    }
+
+    sql->finalize(stmt);
+    return true;
+}
+
+// 按变量名读取
+bool SqlStore::readSignalInfoByName(const std::string& name, signalinfo& out)
+{
+    out = signalinfo();
+
+    if (!sql)
+    {
+        lastError = u8"数据库不可用";
+        return false;
+    }
+
+    if (name.empty())
+    {
+        lastError = u8"变量名为空";
+        return false;
+    }
+
+    std::string sqlText =
+        "SELECT "
+        "signal_id, name, plc_address, plc_id, description, created_at, "
+        "current_value, read_ok, target_value, write_flag, last_op_at, is_available "
+        "FROM signal_def WHERE name = '" + name + "' AND plc_id = ("
+        "SELECT plc_id FROM plc_pointer WHERE id = 1"
+        ");";
+
+    sqlite3_stmt* stmt = nullptr;
+    if (!sql->prepare(sqlText.c_str(), &stmt))
+    {
+        lastError = sql->getLastError();
+        return false;
+    }
+
+    if (!sql->step(stmt))
+    {
+        lastError = u8"未找到变量";
+        sql->finalize(stmt);
+        return false;
+    }
+
+    out.signalId = sql->columnInt(stmt, 0);
+    if (const char* t = sql->columnText(stmt, 1)) out.name = t;
+    if (const char* t = sql->columnText(stmt, 2)) out.plcAddress = t;
+    out.plcId = sql->columnInt(stmt, 3);
+    if (const char* t = sql->columnText(stmt, 4)) out.description = t;
+    out.createdAt = sql->columnInt(stmt, 5);
+    if (const char* t = sql->columnText(stmt, 6)) out.currentValue = t;
+    out.readOk = sql->columnInt(stmt, 7);
+    if (const char* t = sql->columnText(stmt, 8)) out.targetValue = t;
+    out.writeFlag = sql->columnInt(stmt, 9);
+    out.lastOpAt = sql->columnInt(stmt, 10);
+    out.isAvailable = sql->columnInt(stmt, 11);
+
+    sql->finalize(stmt);
+    return true;
+}
+
+// 按 PLC 地址读取
+bool SqlStore::readSignalInfoByAddress(const std::string& plcAddress, signalinfo& out)
+{
+    out = signalinfo();
+
+    if (!sql)
+    {
+        lastError = u8"数据库不可用";
+        return false;
+    }
+
+    if (plcAddress.empty())
+    {
+        lastError = u8"PLC 地址为空";
+        return false;
+    }
+
+    std::string sqlText =
+        "SELECT "
+        "signal_id, name, plc_address, plc_id, description, created_at, "
+        "current_value, read_ok, target_value, write_flag, last_op_at, is_available "
+        "FROM signal_def WHERE plc_address = '" + plcAddress + "' AND plc_id = ("
+        "SELECT plc_id FROM plc_pointer WHERE id = 1"
+        ");";
+
+    sqlite3_stmt* stmt = nullptr;
+    if (!sql->prepare(sqlText.c_str(), &stmt))
+    {
+        lastError = sql->getLastError();
+        return false;
+    }
+
+    if (!sql->step(stmt))
+    {
+        lastError = u8"未找到变量";
+        sql->finalize(stmt);
+        return false;
+    }
+
+    out.signalId = sql->columnInt(stmt, 0);
+    if (const char* t = sql->columnText(stmt, 1)) out.name = t;
+    if (const char* t = sql->columnText(stmt, 2)) out.plcAddress = t;
+    out.plcId = sql->columnInt(stmt, 3);
+    if (const char* t = sql->columnText(stmt, 4)) out.description = t;
+    out.createdAt = sql->columnInt(stmt, 5);
+    if (const char* t = sql->columnText(stmt, 6)) out.currentValue = t;
+    out.readOk = sql->columnInt(stmt, 7);
+    if (const char* t = sql->columnText(stmt, 8)) out.targetValue = t;
+    out.writeFlag = sql->columnInt(stmt, 9);
+    out.lastOpAt = sql->columnInt(stmt, 10);
+    out.isAvailable = sql->columnInt(stmt, 11);
+
+    sql->finalize(stmt);
+    return true;
+}
+
+// 修改变量定义信息（非运行态）
+bool SqlStore::writeSignalInfo(const signalinfo& in)
+{
+    if (!sql)
+    {
+        lastError = u8"数据库不可用";
+        return false;
+    }
+
+    if (in.plcAddress.empty())
+    {
+        lastError = u8"PLC 地址为空";
+        return false;
+    }
+
+    std::string sqlText =
+        "UPDATE signal_def SET "
+        "name = '" + in.name + "', "
+        "description = '" + in.description + "', "
+        "is_available = " + std::to_string(in.isAvailable) +
+        " WHERE plc_address = '" + in.plcAddress + "' AND plc_id = ("
+        "SELECT plc_id FROM plc_pointer WHERE id = 1"
+        ");";
+
+    if (!sql->execute(sqlText.c_str()))
+    {
+        lastError = sql->getLastError();
+        return false;
+    }
+
+    return true;
+}
+
+// 删除变量
+bool SqlStore::removeSignalInfo(const std::string& plcAddress)
+{
+    if (!sql)
+    {
+        lastError = u8"数据库不可用";
+        return false;
+    }
+
+    if (plcAddress.empty())
+    {
+        lastError = u8"PLC 地址为空";
+        return false;
+    }
+
+    std::string sqlText =
+        "DELETE FROM signal_def WHERE plc_address = '" + plcAddress + "' "
+        "AND plc_id = (SELECT plc_id FROM plc_pointer WHERE id = 1);";
+
+    if (!sql->execute(sqlText.c_str()))
+    {
+        lastError = sql->getLastError();
+        return false;
+    }
+
+    return true;
+}
+
+
+
+
+/*
+bool SqlStore::getAllSignalAddresses(
+    std::vector<std::string>& addrs
+)
+{
+    addrs.clear();
+
+    if (!sql)
+    {
+        lastError = u8"数据库不可用";
+        return false;
+    }
+
+    const char* sqlText =
+        "SELECT plc_address FROM signal_def "
+        "WHERE plc_id = ("
+        "SELECT plc_id FROM plc_pointer WHERE id = 1"
+        ");";
 
     sqlite3_stmt* stmt = nullptr;
     if (!sql->prepare(sqlText, &stmt))
@@ -1005,9 +1501,9 @@ bool SqlStore::updateSignalReadResult(
     bool readOk
 )
 {
-    if ( !sql)
+    if (!sql)
     {
-        lastError = "数据库不可用";
+        lastError = u8"数据库不可用";
         return false;
     }
 
@@ -1030,7 +1526,10 @@ bool SqlStore::updateSignalReadResult(
 
     sqlText +=
         "last_op_at = " + std::to_string(now) +
-        " WHERE plc_address = '" + addr + "';";
+        " WHERE plc_address = '" + addr + "' "
+        "AND plc_id = ("
+        "SELECT plc_id FROM plc_pointer WHERE id = 1"
+        ");";
 
     if (!sql->execute(sqlText.c_str()))
     {
@@ -1040,8 +1539,6 @@ bool SqlStore::updateSignalReadResult(
 
     return true;
 }
-
-
 bool SqlStore::getAllWriteSignals(
     std::vector<std::string>& addrs,
     std::vector<int32_t>& values
@@ -1050,16 +1547,19 @@ bool SqlStore::getAllWriteSignals(
     addrs.clear();
     values.clear();
 
-    if ( !sql)
+    if (!sql)
     {
-        lastError = "数据库不可用";
+        lastError = u8"数据库不可用";
         return false;
     }
 
     const char* sqlText =
         "SELECT plc_address, target_value "
         "FROM signal_def "
-        "WHERE write_flag = 1;";
+        "WHERE write_flag = 1 "
+        "AND plc_id = ("
+        "SELECT plc_id FROM plc_pointer WHERE id = 1"
+        ");";
 
     sqlite3_stmt* stmt = nullptr;
     if (!sql->prepare(sqlText, &stmt))
@@ -1088,9 +1588,9 @@ bool SqlStore::updateSignalWriteResult(
     bool writeOk
 )
 {
-    if ( !sql)
+    if (!sql)
     {
-        lastError = "数据库不可用";
+        lastError = u8"数据库不可用";
         return false;
     }
 
@@ -1100,13 +1600,14 @@ bool SqlStore::updateSignalWriteResult(
         "UPDATE signal_def SET ";
 
     if (writeOk)
-    {
         sqlText += "write_flag = 0, ";
-    }
 
     sqlText +=
         "last_op_at = " + std::to_string(now) +
-        " WHERE plc_address = '" + addr + "';";
+        " WHERE plc_address = '" + addr + "' "
+        "AND plc_id = ("
+        "SELECT plc_id FROM plc_pointer WHERE id = 1"
+        ");";
 
     if (!sql->execute(sqlText.c_str()))
     {
@@ -1116,3 +1617,4 @@ bool SqlStore::updateSignalWriteResult(
 
     return true;
 }
+*/

@@ -5,6 +5,7 @@
 #include <sstream>
 #include "sqllient.h"
 #include"sqlstore.h"
+#include"uppermachine.h"
 #include <chrono>
 // 输出函数
 void Console::printGBK(const std::string& text)
@@ -78,69 +79,73 @@ void Console::run()
 // UI
 void Console::showMainHeader()
 {
-    printUTF8(u8"        PLC + AI 控制台\n");
-    printGBK("PLC：");
-    printGBK(plc.isConnected() ? "已连接\n" : "未连接\n");
-    printGBK("AI Key：");
-    printGBK(hasAIKey ? "已设置\n" : "未设置\n");
+    printUTF8(u8"        PLC + AI 调试控制台\n");
     printGBK("-----------------------------------\n");
-    printGBK("1. 连接 PLC\n");
-    printGBK("2. 设置 AI Key\n");
-    printGBK("3. 手动 PLC 控制\n");
-    printGBK("4. 创建 Workspace\n");
-    printGBK("5. AI 对话（键盘）\n");
-    printGBK("6. AI 对话（语音）\n");
-    printGBK("7. 语音识别测试\n");
-    printGBK("8. 决策 AI 测试\n");
-    printGBK("9. 文本转语音测试\n");
-    printGBK("10. AI 模块速度测试\n");
-    printGBK("11. 模块化 AI 系统测试\n");
-    printGBK("12. 数据库创建测试\n");
-    printGBK("13. 新建表测试\n");
-    printGBK("14. 修改指定表的值\n");
-    printGBK("15. 数据库指令测试\n");
-
-    printGBK("0. 退出\n");
+    printGBK("输入调试指令：A1 ~ A30\n");
+    printGBK("输入 break0 返回 / 退出当前测试\n");
+    printGBK("输入 0 直接退出程序\n");
     printGBK("-----------------------------------\n");
 }
+
 void Console::mainMenu()
 {
     printGBK("> ");
     std::string cmd;
     std::getline(std::cin, cmd);
-    if (cmd == "0") exit(0);
-    else if (cmd == "1") menuPLCConnect();
-    else if (cmd == "2") menuAIKey();
-    else if (cmd == "3") menuPLCManual();
-    else if (cmd == "4") menuWorkspace();
-    else if (cmd == "5") menuChat();
-    else if (cmd == "6") menuVoiceChat();
-    else if (cmd == "7") menuSpeechTest();
-    else if (cmd == "8") menuDecisionTest();
-    else if (cmd == "9") menuTtsTest();
-    else if (cmd == "10") menuAiBenchmark();
-    else if (cmd == "11") menuAiManagerTest();
-    else if (cmd == "12") menuDatabaseTest();
-    else if (cmd == "13") menuCreateTableTest();
-    else if (cmd == "14") menuUpdateValueTest();
-    else if (cmd == "15") menuDatabaseSqlConsole();
 
-    else printGBK("无效输入\n");
+    if (cmd == "0")
+    {
+        exit(0);
+    }
+    else if (cmd == "A1") menuTestA1();
+    else if (cmd == "A2") menuTestA2();
+    else if (cmd == "A3") menuTestA3();
+    else if (cmd == "A4") menuTestA4();
+    else if (cmd == "A5") menuTestA5();
+    else if (cmd == "A6") menuTestA6();
+    else if (cmd == "A7") menuTestA7();
+    else if (cmd == "A8") menuTestA8();
+    else if (cmd == "A9") menuTestA9();
+    else if (cmd == "A10") menuTestA10();
+    else if (cmd == "A11") menuTestA11();
+    else if (cmd == "A12") menuTestA12();
+    else if (cmd == "A13") menuTestA13();
+    else if (cmd == "A14") menuTestA14();
+    else if (cmd == "A15") menuTestA15();
+    else if (cmd == "A16") menuTestA16();
+    else if (cmd == "A17") menuTestA17();
+    else if (cmd == "A18") menuTestA18();
+    else if (cmd == "A19") menuTestA19();
+    else if (cmd == "A20") menuTestA20();
+    else if (cmd == "A21") menuTestA21();
+    else if (cmd == "A22") menuTestA22();
+    else if (cmd == "A23") menuTestA23();
+    else if (cmd == "A24") menuTestA24();
+    else if (cmd == "A25") menuTestA25();
+    else if (cmd == "A26") menuTestA26();
+    else if (cmd == "A27") menuTestA27();
+    else if (cmd == "A28") menuTestA28();
+    else if (cmd == "A29") menuTestA29();
+    else if (cmd == "A30") menuTestA30();
+    else
+    {
+        printGBK("无效输入，仅支持 A1-A30 或 0\n");
+    }
 }
-// 1. PLC 连接
-void Console::menuPLCConnect()
+
+// A1:连接 PLC。提示用户输入 PLC IP，调用 plc.connectPLC 并显示连接结果。
+void Console::menuTestA1()
 {
     printGBK("PLC IP> ");
     std::string ip;
     std::getline(std::cin, ip);
-
-    if (plc.connectPLC(ip, 0, 1))
-        printGBK("PLC 连接成功\n");
+    if (plc.connectPLC(ip,0,1))
+        printGBK("PLC连接成功\n");
     else
-        printGBK("PLC 连接失败\n");
+        printGBK("PLC连接失败\n");
 }
-// 2. AI Key
-void Console::menuAIKey()
+// A2: 设置 AI Key。提示用户输入并保存到 ai 对象。
+void Console::menuTestA2()
 {
     printGBK("请输入 AI Key：\n");
     std::string key;
@@ -150,15 +155,10 @@ void Console::menuAIKey()
     hasAIKey = true;
     printGBK("AI Key 设置完成\n");
 }
-// 3. PLC 手动
-void Console::menuPLCManual()
+// A3:进入 PLC 手动控制模式，支持 read/write 命令和 break0退出。
+void Console::menuTestA3()
 {
-    if (!plc.isConnected())
-    {
-        printGBK("PLC 未连接\n");
-        return;
-    }
-    printGBK("read I0.0 | write Q0.0 1 | break0\n");
+    printGBK("read I0.0 | write Q0.01 | break0\n");
     while (true)
     {
         printGBK("plc> ");
@@ -175,7 +175,7 @@ void Console::menuPLCManual()
         {
             std::string addr;
             ss >> addr;
-            int v = 0;
+            int v =0;
             plc.readAddress(addr, v);
             std::cout << addr << " = " << v << "\n";
         }
@@ -189,8 +189,8 @@ void Console::menuPLCManual()
         }
     }
 }
-// 4. Workspace 创建（最终版）
-void Console::menuWorkspace()
+// A4:交互式创建 Workspace。读取用户输入（GBK），转换为 UTF-8，调用 WorkspaceAI生成并可保存为文件。
+void Console::menuTestA4()
 {
     printGBK("\n--- Workspace 创建模式 ---\n");
     printGBK("输入自然语言创建工作区\n");
@@ -231,8 +231,8 @@ void Console::menuWorkspace()
         printGBK("\n你可以继续补充需求，或输入 break0 返回菜单。\n");
     }
 }
-// 5. AI 对话（键盘）
-void Console::menuChat()
+// A5: 键盘交互式 AI 聊天，支持 break0结束并在退出时显示历史。
+void Console::menuTestA5()
 {
     printGBK("\n进入 AI 对话模式（调试）\n");
     printGBK("输入 break0 返回主菜单\n\n");
@@ -240,36 +240,32 @@ void Console::menuChat()
     while (true)
     {
         printGBK("chat> ");
-
         std::string input;
         std::getline(std::cin, input);
+
         if (checkBreak(input))
+        {
+            ai.showHistory("chat_e");
             return;
+        }
 
         // GBK -> UTF8
         std::string utf8 = GBKtoUTF8(input);
 
-        // 1 提示 AI 正在处理
+        // 提示 AI 正在处理
         printGBK("[AI] 正在解析...\n");
 
-        // 2 调用 Chat 的“执行入口”（唯一入口）
+        // 唯一一次执行入口（会写入 chat_e）
         std::string reply = chat->runExecuteRead(utf8);
-        // 3 正常输出（给用户看的）
+
+        // 正常输出（给用户看的）
         printGBK("[AI] 输出：\n");
         printUTF8(reply);
-        printGBK("\n");
-
-        // 4 调试输出：原始 AI 返回（JSON 或普通文本）
-        printGBK("[DEBUG] 原始 AI 返回内容：\n");
-        std::string raw = chat->runExecuteOnce(utf8);
-
-        printUTF8(raw);
         printGBK("\n\n");
     }
 }
-
-// 6. AI 对话（语音）
-void Console::menuVoiceChat()
+// A6: 使用语音识别进行交互，识别结果发送给 AI 并由 TTS 播放回复，输入 break0 可退出。
+void Console::menuTestA6()
 {
     printGBK("\n进入 AI 对话模式（语音）\n");
     printGBK("说完一句话自动发送给 AI\n");
@@ -297,7 +293,7 @@ void Console::menuVoiceChat()
             }
         }
         printGBK("voice> ");
-        // 语音识别结果
+        //语音识别结果
         std::string text = speech.getText();
         if (text == "nosl")
         {
@@ -322,8 +318,8 @@ void Console::menuVoiceChat()
         }
     }
 }
-// 7. 语音识别测试（调试）
-void Console::menuSpeechTest()
+// A7:仅测试麦克风语音识别，打印识别到的文本，输入 break0 返回。
+void Console::menuTestA7()
 {
     printGBK("\n--- 麦克风语音识别测试 ---\n");
     printGBK("仅用于语音调试\n");
@@ -349,56 +345,23 @@ void Console::menuSpeechTest()
         {
             continue;
         }
-        printGBK("[Speech] 识别结果：\n");
+        printGBK("[Speech]识别结果：\n");
         printUTF8(text);
         printGBK("\n\n");
     }
 }
-// 8. 决策 AI
-void Console::menuDecisionTest()
+// A8: 占位函数，当前未实现具体逻辑。
+void Console::menuTestA8()
 {
-    if (!hasAIKey)
-    {
-        printGBK("请先设置 AI Key\n");
-        return;
-    }
-
-    printGBK("\n--- 决策 AI 测试模式 ---\n");
-    printGBK("输入 1 执行一次决策\n");
-    printGBK("输入 break0 返回\n\n");
-
-    while (true)
-    {
-        // 每 100 ms 检查一次是否有输入
-        for (int i = 0; i < 100; ++i)
-        {
-            // 非阻塞检查输入
-            if (_kbhit())
-            {
-                std::string cmd;
-                std::getline(std::cin, cmd);
-
-                if (checkBreak(cmd))
-                    return;
-            }
-
-            Sleep(100);
-        }
-
-        // 每 10 秒执行一次决策
-        printGBK("[Decision] 正在执行...\n");
-        printGBK("[Decision AI 输出]\n");
-        printGBK("\n");
-    }
-
+    ;
 }
-// 9. 文本转语音测试
-void Console::menuTtsTest()
+// A9: 使用 Piper TTS 将输入文本合成为语音并播放。
+void Console::menuTestA9()
 {
     printUTF8(u8"\n--- 文本转语音测试（Piper）---\n");
     // 创建 TTS 实例（只在这个模式用）
     PiperEngine tts;
-    tts.init("\\piper");   
+    tts.init("\\piper"); 
     while (true)
     {
         printUTF8(u8"tts> ");
@@ -424,7 +387,8 @@ void Console::menuTtsTest()
         }
     }
 }
-void Console::menuAiBenchmark()
+//A10：测速
+void Console::menuTestA10()
 {
     printGBK("\n--- AI 模块测速模式 ---\n");
     printGBK("输入一句话，将依次测速各 AI\n");
@@ -465,18 +429,16 @@ void Console::menuAiBenchmark()
         std::string judgeReply = judgment->runOnce(utf8);
         t2 = clock::now();
         auto judgeCost = std::chrono::duration_cast<ms>(t2 - t1).count();
-
         printGBK("[JudgmentAI]\n");
         printGBK("耗时(ms): ");
         printGBK(std::to_string(judgeCost));
         printGBK("\n");
         printUTF8(judgeReply);
         printGBK("\n\n");
-
         int decisionValue = std::atoi(judgeReply.c_str());
 
         // WorkspaceAI 测速（不保存文件）
-        if (decisionValue == 2)
+        if (decisionValue ==2)
         {
             t1 = clock::now();
             bool ok = workspace->runOnce(utf8);
@@ -491,7 +453,7 @@ void Console::menuAiBenchmark()
         }
 
         // ExecuteAI 测速（不真实操作 PLC）
-        if (decisionValue == 1)
+        if (decisionValue ==1)
         {
             t1 = clock::now();
             std::string execReply = execute->runOnce(utf8);
@@ -508,7 +470,8 @@ void Console::menuAiBenchmark()
         printGBK("测速完成，可继续输入\n\n");
     }
 }
-void Console::menuAiManagerTest()
+//A11:简单模块测试
+void Console::menuTestA11()
 {
     printGBK("\n--- 模块化 AI 系统测试模式 ---\n");
     printGBK("此模式将进入 AiManager\n");
@@ -519,86 +482,250 @@ void Console::menuAiManagerTest()
     printGBK("\n--- 已退出模块化 AI 系统 ---\n");
     printGBK("返回主菜单\n\n");
 }
-
-void Console::menuDatabaseTest()
+void Console::menuTestA12()
 {
-    printGBK("开始数据库创建与初始化测试...\n");
+    printGBK("[A12] 创建数据库测试开始\n");
 
-    // 创建数据库客户端
-    Sqllient* client = new Sqllient("test.db");
-    if (!client)
+    sqlClient = new Sqllient("plc.db");
+    store = new SqlStore(sqlClient);
+	upper = new uppermachine(plc, *store);
+    if (!store->open())
     {
-        printGBK("创建 Sqllient 失败\n");
-        return;
-    }
-
-    // 创建数据库存储对象
-    SqlStore store(client);
-
-    // 打开数据库（内部会完成 meta / 表结构初始化）
-    if (!store.open())
-    {
-        printGBK("数据库打开失败：");
-        printGBK(store.getLastErrorText());
+        printGBK("[A12] 数据库创建失败: ");
+        printUTF8(store->getLastErrorText());
         printGBK("\n");
-
-        delete client;
+        delete store;
+        delete sqlClient;
         return;
     }
+    printGBK("[A12] 数据库创建并初始化成功\n");
+}
+void Console::menuTestA13()
+{
+    printGBK("[A13] 创建上位机（数据库直连）\n");
 
-    printGBK("数据库打开成功\n");
-
-    // 初始化人格结构 key
-    if (!store.initSelfMemoryKeys())
+    if (!store)
     {
-        printGBK("初始化 memory_key 失败：");
-        printGBK(store.getLastErrorText());
-        printGBK("\n");
-        delete client;
+        printGBK("[A13] 数据库未初始化\n");
         return;
     }
 
-    printGBK("memory_key 初始化完成\n");
+    plcinfo info;
 
-    // 初始化人格记忆快照
-    if (!store.initMemorySnapshots())
+    printGBK("请输入 PLC IP 地址: ");
+    std::cin >> info.ipAddress;
+
+    printGBK("请输入 rack: ");
+    std::cin >> info.rack;
+
+    printGBK("请输入 slot: ");
+    std::cin >> info.slot;
+
+    std::cin.ignore();
+
+    std::string input;
+
+    printGBK("请输入任务描述(taskDesc): ");
+    std::getline(std::cin, input);
+    info.taskDesc = input;   // 直接使用 GBK
+
+    printGBK("请输入任务领域(taskDomain): ");
+    std::getline(std::cin, input);
+    info.taskDomain = input; // 直接使用 GBK
+
+    printGBK("请输入原始输入(sourceText): ");
+    std::getline(std::cin, input);
+    info.sourceText = input; // 直接使用 GBK
+
+    printGBK("请输入 PLC 型号(plcModel): ");
+    std::getline(std::cin, input);
+    info.plcModel = input;   // 直接使用 GBK（临时）
+
+    printGBK("请输入订货号(orderCode): ");
+    std::getline(std::cin, input);
+    info.orderCode = input;  // 直接使用 GBK（临时）
+
+    info.signalRootId = 0;
+    info.isActive = 1;
+
+    if (!store->createPlcInfo(info))
     {
-        printGBK("初始化 memory 快照失败：");
-        printGBK(store.getLastErrorText());
+        printGBK("[A13] 创建失败: ");
+        printUTF8(store->getLastErrorText());
         printGBK("\n");
-
-        delete client;
         return;
     }
 
-    printGBK("memory 快照初始化完成\n");
+    printGBK("[A13] 上位机创建成功\n");
+}
+void Console::menuTestA14()
+{
+    printGBK("[A14] 创建变量（数据库直连）\n");
 
-    // 初始化人格记忆指针
-    if (!store.initMemoryPointer())
+    if (!store)
     {
-        printGBK("初始化 memory_pointer 失败：");
-        printGBK(store.getLastErrorText());
-        printGBK("\n");
-
-        delete client;
+        printGBK("[A14] 数据库未初始化\n");
         return;
     }
 
-    printGBK("memory_pointer 初始化完成\n");
-    printGBK("数据库初始化测试完成\n");
+    signalinfo sig;
+    std::string input;
 
-    delete client;
+    std::cin.ignore();
+
+    printGBK("请输入变量名(name): ");
+    std::getline(std::cin, input);
+    sig.name = input;              // GBK 原样
+
+    printGBK("请输入 PLC 地址(plcAddress): ");
+    std::getline(std::cin, input);
+    sig.plcAddress = input;        // GBK 原样
+
+    printGBK("请输入变量说明(description): ");
+    std::getline(std::cin, input);
+    sig.description = input;       // GBK 原样
+
+    sig.isAvailable = 1;
+
+    if (!store->createSignalInfo(sig))
+    {
+        printGBK("[A14] 创建变量失败: ");
+        printUTF8(store->getLastErrorText());
+        printGBK("\n");
+        return;
+    }
+
+    printGBK("[A14] 变量创建成功\n");
 }
 
-void Console::menuCreateTableTest()
+void Console::menuTestA15()
 {
- 
+    printGBK("[A15] 通过上位机创建 PLC\n");
+
+    plcinfo info;
+    std::string input;
+
+    printGBK("请输入 PLC IP 地址: ");
+    std::cin >> info.ipAddress;
+
+    printGBK("请输入 rack: ");
+    std::cin >> info.rack;
+
+    printGBK("请输入 slot: ");
+    std::cin >> info.slot;
+
+    std::cin.ignore();
+
+    printGBK("请输入任务描述(taskDesc): ");
+    std::getline(std::cin, input);
+    info.taskDesc = input;      // GBK
+
+    printGBK("请输入任务领域(taskDomain): ");
+    std::getline(std::cin, input);
+    info.taskDomain = input;    // GBK
+
+    printGBK("请输入原始输入(sourceText): ");
+    std::getline(std::cin, input);
+    info.sourceText = input;    // GBK
+
+    info.signalRootId = 0;
+    info.isActive = 1;
+
+    if (!upper->createPlcInfoRow(info))
+    {
+        printGBK("[A15] 创建 PLC 失败: ");
+        printUTF8(upper->getLastError());
+        printGBK("\n");
+        return;
+    }
+
+    printGBK("[A15] PLC 创建成功\n");
 }
-void Console::menuUpdateValueTest()
+void Console::menuTestA16()
 {
-   
+    printGBK("[A16] 通过上位机创建变量\n");
+
+    plcinfo current;
+    if (!upper->getCurrentPlcInfo(current))
+    {
+        printGBK("[A16] 当前 PLC 不存在: ");
+        printUTF8(upper->getLastError());
+        printGBK("\n");
+        return;
+    }
+
+    signalinfo sig;
+    std::string input;
+
+    std::cin.ignore();
+
+    printGBK("请输入变量名(name): ");
+    std::getline(std::cin, input);
+    sig.name = input;            // GBK
+
+    printGBK("请输入 PLC 地址(plcAddress): ");
+    std::getline(std::cin, input);
+    sig.plcAddress = input;      // GBK
+
+    printGBK("请输入变量说明(description): ");
+    std::getline(std::cin, input);
+    sig.description = input;     // GBK
+
+    int plcId = current.signalRootId;
+
+    if (!upper->createSignalRow(
+        sig.name,
+        sig.plcAddress,
+        plcId,
+        sig.description))
+    {
+        printGBK("[A16] 创建变量失败: ");
+        printUTF8(upper->getLastError());
+        printGBK("\n");
+        return;
+    }
+
+    printGBK("[A16] 变量创建成功\n");
 }
-void Console::menuDatabaseSqlConsole()
+
+void Console::menuTestA17()
 {
-   
+    printGBK("[A17] 启动上位机 run\n");
+
+    if (!upper)
+    {
+        printGBK("[A17] 上位机未初始化\n");
+        return;
+    }
+
+    if (!upper->run())
+    {
+        printGBK("[A17] 上位机启动失败: ");
+        printUTF8(upper->getLastError());
+        printGBK("\n");
+        return;
+    }
+
+    printGBK("[A17] 上位机已启动，进入运行状态\n");
 }
+
+void Console::menuTestA18()
+{
+
+}
+
+void Console::menuTestA19()
+{
+}
+
+void Console::menuTestA20() { printGBK("测试 A20\n"); }
+void Console::menuTestA21() { printGBK("测试 A21\n"); }
+void Console::menuTestA22() { printGBK("测试 A22\n"); }
+void Console::menuTestA23() { printGBK("测试 A23\n"); }
+void Console::menuTestA24() { printGBK("测试 A24\n"); }
+void Console::menuTestA25() { printGBK("测试 A25\n"); }
+void Console::menuTestA26() { printGBK("测试 A26\n"); }
+void Console::menuTestA27() { printGBK("测试 A27\n"); }
+void Console::menuTestA28() { printGBK("测试 A28\n"); }
+void Console::menuTestA29() { printGBK("测试 A29\n"); }
+void Console::menuTestA30() { printGBK("测试 A30\n"); }

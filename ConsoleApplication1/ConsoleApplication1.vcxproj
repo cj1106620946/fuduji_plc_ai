@@ -151,12 +151,14 @@
     <ClCompile Include="judgmentai.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="jsoncpp.cpp" />
+    <ClCompile Include="memoryai.cpp" />
     <ClCompile Include="piperengine.cpp" />
     <ClCompile Include="plcclient.cpp" />
     <ClCompile Include="plcprogrammanager.cpp" />
     <ClCompile Include="speechagent.cpp" />
     <ClCompile Include="sqlstore.cpp" />
     <ClCompile Include="sqllient.cpp" />
+    <ClCompile Include="uppermachine.cpp" />
     <ClCompile Include="workspaceai.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -172,12 +174,14 @@
     <ClInclude Include="aiclient.h" />
     <ClInclude Include="jsonstatewriter.h" />
     <ClInclude Include="judgmentai.h" />
+    <ClInclude Include="memoryai.h" />
     <ClInclude Include="piperengine.h" />
     <ClInclude Include="plcclient.h" />
     <ClInclude Include="plcprogrammanager.h" />
     <ClInclude Include="speechagent.h" />
     <ClInclude Include="sqlstore.h" />
     <ClInclude Include="sqllient.h" />
+    <ClInclude Include="uppermachine.h" />
     <ClInclude Include="workspaceai.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
