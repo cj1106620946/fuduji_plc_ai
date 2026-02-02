@@ -1,21 +1,92 @@
 #include "decisionai.h"
-DecisionAI::DecisionAI(int AICODE,AIController& aiRef,AITrace& traceRef)
-    :ai(aiRef), trace(traceRef), aicode(AICODE)
+#include "aicontroller.h"
+#include "aitrace.h"
+
+#include <json/json.h>
+#include <string>
+
+// 构造
+DecisionAI::DecisionAI(
+    int AICODE,
+    AIController& aiRef,
+    AITrace& traceRef
+)
+    : aicode(AICODE),
+    ai(aiRef),
+    trace(traceRef)
 {
 }
-// 修正：实现函数时需加上返回类型 std::string，且不能有分号
-std::string DecisionAI::runOnce(const std::string& user_input)
+
+// 唯一执行入口
+std::string DecisionAI::runOnce(
+    const std::string& snapshot,
+    const std::string& user_input
+)
 {
-    return "no";
+	std::string trace_in = snapshot+"|" + user_input;
+    // 开始 trace 记录
+    trace.begin(
+        "decision",
+        aicode,
+        trace_in,
+        ai.decisionprompt_get()
+    );
+    trace.debug(u8"[STEP] 调用决策 AI，获取原始 JSON");
+    // 调用 AI
+    std::string jsonOut = callDecisionAI(snapshot, user_input);
+
+    // 解析 JSON
+    std::string content;
+    if (!parseDecisionJson(jsonOut, content))
+    {
+        trace.debug(u8"[PARSE] decision JSON 解析失败，直接返回原始输出");
+        trace.end(false, jsonOut);
+        return jsonOut;
+    }
+    trace.debug(u8"[PARSE] decision JSON 解析成功");
+    trace.debug(u8"[CONTENT]");
+    trace.debug(content);
+    trace.end(true, jsonOut);
+    return content;
 }
-// 外部数据接口（占位，不实现）
-void DecisionAI::feedExternalData(const std::string& data)
+
+// 调用 AIController
+std::string DecisionAI::callDecisionAI(
+    const std::string& snapshot,
+    const std::string& user_input
+)
 {
-    // 预留：
-    // - 爬虫结果
-    // - HTTP / MQTT
-    // - 传感器聚合数据
-    // - 第三方系统输入
-    // 后续可以通过协议发送给 ChatAI，例如：
-    // chat.query_once("DECISION_EXTERNAL_DATA\n" + data);
+    // snapshot + user_input 作为输入上下文
+    std::string input;
+    input.reserve(snapshot.size() + user_input.size() + 16);
+    input.append(snapshot);
+    input.append("\n");
+    input.append(user_input);
+
+    return ai.allairun(
+        true,
+        true,
+        aicode,
+        "decision",
+        input,
+        ai.decisionprompt_get()
+    );
+}
+
+// 解析 decision JSON，只提取 content
+bool DecisionAI::parseDecisionJson(
+    const std::string& jsonText,
+    std::string& outContent
+)
+{
+    Json::Value root;
+    Json::Reader reader;
+    if (!reader.parse(jsonText, root))
+        return false;
+    if (root.isMember("content") && root["content"].isString())
+    {
+        outContent = root["content"].asString();
+        return true;
+    }
+    return false;
 }

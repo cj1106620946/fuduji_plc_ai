@@ -1,54 +1,65 @@
 ﻿#pragma once
 #include <string>
+#include <json/json.h>
 
 class AIController;
 class AITrace;
-// WorkspaceAI
-// 职责：
-// - 管理 Workspace 生命周期
-// - 调用 Workspace AI 生成结构 JSON
-// - 保存 / 加载 workspace
-// 不解析 PLC、不做执行、不做决策
+
+struct PlcWorkspaceData
+{
+    std::string plc_name;
+    std::string ip_address;
+    int rack;
+    int slot;
+    std::string description;
+};
+
+struct SignalWorkspaceData
+{
+    std::string name;
+    std::string plc_address;
+    std::string description;
+};
+
 class WorkspaceAI
 {
 public:
-    explicit WorkspaceAI(int aicode, AIController& aiRef, AITrace& traceRef);
-    // 生命周期
-    void reset();
-    bool hasWorkspace() const;
-    // 构建 Workspace入口
-    bool runOnce(const std::string& userInput);
-    // 状态判断
-    bool isReadyForDecision() const;
-    bool isReadyForPLC() const;
-    // 读取接口
-    const std::string& getUserInput() const;
-    const std::string& getAiRawOutput() const;
-    const std::string& getWorkspaceJson() const;
-    const std::string& getErrorMessage() const;
-    // 文件
-    bool saveToFile(const std::string& path) const;
-    bool loadFromFile(const std::string& path);
-private:
+    explicit WorkspaceAI(int AICODE, AIController& aiRef, AITrace& traceRef);
 
-    bool callWorkspaceAI(const std::string& userInput);
-
-    // JSON 提取
-    bool extractWorkspaceJson(const std::string& aiText);
-    static bool extractFirstJsonObject(
-        const std::string& s,
-        size_t startPos,
-        std::string& outJson
+    std::string runPlcOnce(
+        const std::string& user_input,
+        std::string& plc_name,
+        std::string& ip_address,
+        int& rack,
+        int& slot,
+        std::string& description
     );
+
+    std::string runSignalOnce(
+        const std::string& user_input,
+        std::vector<SignalWorkspaceData>& signals
+    );
+    std::string callPlcAI(const std::string& user_input);
+    std::string callSignalAI(const std::string& user_input);
+
+private:
+    std::string parsePlcJson(
+        const std::string& jsonText,
+        std::string& plc_name,
+        std::string& ip_address,
+        int& rack,
+        int& slot,
+        std::string& description
+    );
+
+    std::string parseSignalJson(
+        const std::string& jsonText,
+        std::vector<SignalWorkspaceData>& signals
+    );
+
 
 private:
     int aicode;
     AIController& ai;
     AITrace& trace;
-    std::string user_input;
-    std::string ai_output;
-    std::string workspace_json;
-    std::string error_message;
-
-    bool workspace_ready = false;
 };

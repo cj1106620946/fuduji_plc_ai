@@ -53,9 +53,9 @@ bool Console::checkBreak(const std::string& cmd)
 Console::Console() :ai(),plc(),aiController(ai),aiTrace()
 {
     chat = new ChatAI(2,aiController,aiTrace);
-    execute = new ExecuteAI(2,aiController, aiTrace,plc);
-    workspace = new WorkspaceAI(1,aiController, aiTrace);
-    decision = new DecisionAI(4,aiController, aiTrace);
+    execute = new ExecuteAI(2,aiController, aiTrace);
+    workspace = new WorkspaceAI(2,aiController, aiTrace);
+    decision = new DecisionAI(2,aiController, aiTrace);
 	judgment = new Judgmentai(2, aiController, aiTrace);
 
 }
@@ -132,7 +132,6 @@ void Console::mainMenu()
         printGBK("无效输入，仅支持 A1-A30 或 0\n");
     }
 }
-
 // A1:连接 PLC。提示用户输入 PLC IP，调用 plc.connectPLC 并显示连接结果。
 void Console::menuTestA1()
 {
@@ -189,46 +188,78 @@ void Console::menuTestA3()
         }
     }
 }
-// A4:交互式创建 Workspace。读取用户输入（GBK），转换为 UTF-8，调用 WorkspaceAI生成并可保存为文件。
+// A4: 交互式创建 / 补全 Workspace（PLC）
 void Console::menuTestA4()
 {
-    printGBK("\n--- Workspace 创建模式 ---\n");
-    printGBK("输入自然语言创建工作区\n");
-    printGBK("输入 break0 返回主菜单\n");
+    printGBK("\n[A4] Workspace PLC 交互调试\n");
+    printGBK("输入 break0 返回主菜单\n\n");
+
     while (true)
     {
-        printGBK("ws> ");
+        printGBK("workspace> ");
+
         std::string input;
         std::getline(std::cin, input);
+
         if (checkBreak(input))
             return;
-        // 转 UTF-8
-        std::string utf8Input = GBKtoUTF8(input);
-        printGBK("正在构建 Workspace...\n");
-        // = 调用 Workspace =
-        if (!workspace->runOnce(utf8Input))
+
+        // GBK -> UTF8
+        std::string utf8 = GBKtoUTF8(input);
+
+        std::string plcName;
+        std::string ip;
+        int rack = 0;
+        int slot = 0;
+        std::string desc;
+
+        // 调用 WorkspaceAI
+        std::string result = workspace->runPlcOnce(
+            utf8,
+            plcName,
+            ip,
+            rack,
+            slot,
+            desc
+        );
+
+        if (result != "OK")
         {
-            printGBK("Workspace 尚未完成\n");
-            printGBK("原因：\n");
-            printUTF8(workspace->getErrorMessage());
+            printGBK("[A4] Workspace 返回提示:\n");
+            printUTF8(result);
             printGBK("\n\n");
- 
-            printGBK("AI 原始输出\n");
-            printUTF8(workspace->getAiRawOutput());
-            printGBK("\n\n");
-            printGBK("请补充说明后继续输入\n\n");
             continue;
         }
-        // = 成功 =
-        printGBK("Workspace 创建成功\n\n");
-        printUTF8("=== Workspace JSON ===\n");
-        printUTF8(workspace->getWorkspaceJson());
-        printGBK("\n==\n");
-        if (workspace->saveToFile("workspace.json"))
-            printGBK("已保存到 workspace.json\n");
+
+        // 输出当前 Workspace 状态
+        printGBK("[A4] Workspace 当前解析结果:\n");
+
+        printGBK("PLC 名称: ");
+        if (!plcName.empty())
+            printUTF8(plcName);
         else
-            printGBK("保存失败（无法写入文件）\n");
-        printGBK("\n你可以继续补充需求，或输入 break0 返回菜单。\n");
+            printGBK("(null)");
+        printGBK("\n");
+
+        printGBK("IP 地址: ");
+        if (!ip.empty())
+            printUTF8(ip);
+        else
+            printGBK("(null)");
+        printGBK("\n");
+
+        printGBK("Rack: ");
+        std::cout << rack << std::endl;
+
+        printGBK("Slot: ");
+        std::cout << slot << std::endl;
+
+        printGBK("描述: ");
+        if (!desc.empty())
+            printUTF8(desc);
+        else
+            printGBK("(null)");
+        printGBK("\n\n");
     }
 }
 // A5: 键盘交互式 AI 聊天，支持 break0结束并在退出时显示历史。
@@ -390,85 +421,7 @@ void Console::menuTestA9()
 //A10：测速
 void Console::menuTestA10()
 {
-    printGBK("\n--- AI 模块测速模式 ---\n");
-    printGBK("输入一句话，将依次测速各 AI\n");
-    printGBK("输入 break0 返回\n\n");
 
-    while (true)
-    {
-        printGBK("bench> ");
-        std::string input;
-        std::getline(std::cin, input);
-
-        if (checkBreak(input))
-            return;
-
-        std::string utf8 = GBKtoUTF8(input);
-        if (utf8.empty())
-        {
-            printGBK("编码转换失败\n");
-            continue;
-        }
-
-        using clock = std::chrono::steady_clock;
-        using ms = std::chrono::milliseconds;
-
-        // ChatAI 测速
-        auto t1 = clock::now();
-        std::string chatReply = chat->runOnce(utf8);
-        auto t2 = clock::now();
-        auto chatCost = std::chrono::duration_cast<ms>(t2 - t1).count();
-        printGBK("\n[ChatAI]\n");
-        printGBK("耗时(ms): ");
-        printGBK(std::to_string(chatCost));
-        printGBK("\n");
-        printUTF8(chatReply);
-        printGBK("\n\n");
-        // JudgmentAI 测速
-        t1 = clock::now();
-        std::string judgeReply = judgment->runOnce(utf8);
-        t2 = clock::now();
-        auto judgeCost = std::chrono::duration_cast<ms>(t2 - t1).count();
-        printGBK("[JudgmentAI]\n");
-        printGBK("耗时(ms): ");
-        printGBK(std::to_string(judgeCost));
-        printGBK("\n");
-        printUTF8(judgeReply);
-        printGBK("\n\n");
-        int decisionValue = std::atoi(judgeReply.c_str());
-
-        // WorkspaceAI 测速（不保存文件）
-        if (decisionValue ==2)
-        {
-            t1 = clock::now();
-            bool ok = workspace->runOnce(utf8);
-            t2 = clock::now();
-            auto wsCost = std::chrono::duration_cast<ms>(t2 - t1).count();
-
-            printGBK("[WorkspaceAI]\n");
-            printGBK("耗时(ms): ");
-            printGBK(std::to_string(wsCost));
-            printGBK("\n");
-            printGBK(ok ? "状态：成功\n\n" : "状态：未完成\n\n");
-        }
-
-        // ExecuteAI 测速（不真实操作 PLC）
-        if (decisionValue ==1)
-        {
-            t1 = clock::now();
-            std::string execReply = execute->runOnce(utf8);
-            t2 = clock::now();
-            auto execCost = std::chrono::duration_cast<ms>(t2 - t1).count();
-
-            printGBK("[ExecuteAI]\n");
-            printGBK("耗时(ms): ");
-            printGBK(std::to_string(execCost));
-            printGBK("\n");
-            printUTF8(execReply);
-            printGBK("\n\n");
-        }
-        printGBK("测速完成，可继续输入\n\n");
-    }
 }
 //A11:简单模块测试
 void Console::menuTestA11()
@@ -597,7 +550,6 @@ void Console::menuTestA14()
 
     printGBK("[A14] 变量创建成功\n");
 }
-
 void Console::menuTestA15()
 {
     printGBK("[A15] 通过上位机创建 PLC\n");
@@ -653,16 +605,12 @@ void Console::menuTestA16()
         printGBK("\n");
         return;
     }
-
     signalinfo sig;
     std::string input;
-
     std::cin.ignore();
-
     printGBK("请输入变量名(name): ");
     std::getline(std::cin, input);
     sig.name = input;            // GBK
-
     printGBK("请输入 PLC 地址(plcAddress): ");
     std::getline(std::cin, input);
     sig.plcAddress = input;      // GBK
@@ -708,17 +656,191 @@ void Console::menuTestA17()
 
     printGBK("[A17] 上位机已启动，进入运行状态\n");
 }
-
+// A18: Workspace Signal 交互调试（多变量）
 void Console::menuTestA18()
 {
+    printGBK("[A18] Workspace Signal 交互调试\n");
+    printGBK("输入 break0 返回主菜单\n\n");
 
+    // 先注入一次 PLC 上下文（仅作为上下文，不解析、不打印）
+    {
+        std::string plcContext =
+            u8"当前上位机上下文如下：\n"
+            u8"- plc_name: 工厂供水系统\n"
+            u8"- ip_address: 192.168.0.1\n";
+
+        workspace->callSignalAI(plcContext);
+    }
+
+    while (true)
+    {
+        printGBK("signal> ");
+        std::string input;
+        std::getline(std::cin, input);
+
+        if (checkBreak(input))
+            return;
+
+        // GBK -> UTF8
+        std::string utf8 = GBKtoUTF8(input);
+
+        printGBK("[A18] Workspace 正在解析...\n");
+
+        // 关键修改点：使用 vector 接收多个变量
+        std::vector<SignalWorkspaceData> signals;
+
+        std::string result = workspace->runSignalOnce(
+            utf8,
+            signals
+        );
+
+        if (result != "OK")
+        {
+            printGBK("[A18] Workspace 返回提示:\n");
+            printUTF8(result);
+            printGBK("\n\n");
+            continue;
+        }
+
+        if (signals.empty())
+        {
+            printGBK("[A18] 未生成任何变量\n\n");
+            continue;
+        }
+
+        printGBK("[A18] Workspace 当前解析结果:\n");
+
+        // 逐条打印变量
+        for (size_t i = 0; i < signals.size(); ++i)
+        {
+            const SignalWorkspaceData& s = signals[i];
+
+            printGBK("---- 变量 ");
+            std::cout << (i + 1);
+            printGBK(" ----\n");
+
+            printGBK("变量名: ");
+            printUTF8(s.name);
+            printGBK("\n");
+
+            printGBK("PLC 地址: ");
+            printUTF8(s.plc_address);
+            printGBK("\n");
+
+            printGBK("描述: ");
+            printUTF8(s.description);
+            printGBK("\n\n");
+        }
+    }
 }
 
+
+// A19: ExecuteAI 交互调试（不执行 PLC，只解析执行意图）
 void Console::menuTestA19()
 {
+    printGBK("[A19] ExecuteAI 交互调试\n");
+    printGBK("输入 break0 返回主菜单\n\n");
+
+    while (true)
+    {
+        printGBK("execute> ");
+        std::string input;
+        std::getline(std::cin, input);
+
+        if (checkBreak(input))
+            return;
+
+        // GBK -> UTF8
+        std::string utf8 = GBKtoUTF8(input);
+
+        printGBK("[A19] ExecuteAI 正在解析...\n");
+
+        // 调用 ExecuteAI
+        std::vector<ExecuteItem> items = execute->runOnce(utf8);
+
+        if (items.empty())
+        {
+            printGBK("[A19] ExecuteAI 未返回任何执行项\n\n");
+            continue;
+        }
+
+        printGBK("[A19] ExecuteAI 解析结果:\n");
+
+        int index = 0;
+        for (const auto& it : items)
+        {
+            printGBK("---- 执行项 ");
+            std::cout << index++ << std::endl;
+
+            if (!it.message.empty())
+            {
+                printGBK("说明: ");
+                printUTF8(it.message);
+                printGBK("\n");
+            }
+
+            if (!it.op.empty())
+            {
+                printGBK("操作类型: ");
+                printUTF8(it.op);
+                printGBK("\n");
+            }
+
+            if (!it.address.empty())
+            {
+                printGBK("PLC 地址: ");
+                printUTF8(it.address);
+                printGBK("\n");
+            }
+
+            if (!it.value.empty())
+            {
+                printGBK("写入值: ");
+                printUTF8(it.value);
+                printGBK("\n");
+            }
+
+            printGBK("\n");
+        }
+    }
+}
+// A20: DecisionAI 交互调试（只输出分析建议，不执行任何操作）
+void Console::menuTestA20()
+{
+    printGBK("[A20] DecisionAI 交互调试\n");
+    printGBK("输入 break0 返回主菜单\n\n");
+
+    while (true)
+    {
+        printGBK("decision> ");
+        std::string input;
+        std::getline(std::cin, input);
+
+        if (checkBreak(input))
+            return;
+
+        // GBK -> UTF8
+        std::string utf8 = GBKtoUTF8(input);
+
+        printGBK("[A20] DecisionAI 正在分析...\n");
+
+        // 当前阶段 snapshot 为空或占位
+        std::string snapshot =u8"当前系统状态：当前水位为 200,当前温度为 150\n";
+        // 调用 DecisionAI
+        std::string result = decision->runOnce(snapshot, utf8);
+
+        if (result.empty())
+        {
+            printGBK("[A20] DecisionAI 未返回任何内容\n\n");
+            continue;
+        }
+
+        printGBK("[A20] DecisionAI 分析结果:\n");
+        printUTF8(result);
+        printGBK("\n\n");
+    }
 }
 
-void Console::menuTestA20() { printGBK("测试 A20\n"); }
 void Console::menuTestA21() { printGBK("测试 A21\n"); }
 void Console::menuTestA22() { printGBK("测试 A22\n"); }
 void Console::menuTestA23() { printGBK("测试 A23\n"); }

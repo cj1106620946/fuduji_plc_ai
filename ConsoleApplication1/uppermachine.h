@@ -1,17 +1,18 @@
 #pragma once
+#include <unordered_map>
 
 #include <string>
 #include <thread>
 #include <atomic>
 #include <vector>
 #include <ctime>
-
+#include <fstream>
+#include <chrono>
 #include "sqlstore.h"
 #include "PLCClient.h"
 // 前向声明
 class PLCClient;
 class SqlStore;
-
 struct RunState
 {
     int life;        // 上位机运行生命周期状态
@@ -87,7 +88,15 @@ public:
     );
     // 读取当前 PLC 上位机上下文
     bool getCurrentPlcInfo(plcinfo& out);
-
+    bool readplc(
+        const std::string& plcAddress,
+        std::string& outResult
+    );
+    bool writeplc(
+        const std::string& plcAddress,
+        const std::string& value,
+        std::string& outResult
+    );
     // 执行一轮上位机逻辑（启动线程）
     bool run();
     // 最近一次错误
@@ -101,14 +110,20 @@ private:
 
     // 写入线程函数
     void writeThreadProc();
-
+    void logOp(
+        const std::string& fromFunc,   // 函数名（例如 init / readThreadProc）
+        const std::string& action      // 执行的操作（例如 初始化开始）
+    );
 private:
     PLCClient& plc;
     SqlStore& store;
     std::thread readThread;
     std::thread writeThread;
     std::string lastError;
-    std::vector<std::string> cachedSignalAddrs;
+    bool boolread;
+    bool boolwrite;
+    // PLC 地址 -> signals 中的索引位置
+    std::unordered_map<std::string, size_t> signalIndexByAddr;
 
     RunState runState;
     plcinfo currentPlc;

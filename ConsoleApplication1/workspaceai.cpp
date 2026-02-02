@@ -1,217 +1,195 @@
-﻿#include "Workspaceai.h"
+﻿#include "workspaceai.h"
 #include "aicontroller.h"
+#include "aitrace.h"
 
-#include <fstream>
-#include <sstream>
-
-// 构造 / 重置
-WorkspaceAI::WorkspaceAI(int AICODE,AIController& aiRef, AITrace& traceRef)
-    :ai(aiRef), trace(traceRef),aicode(AICODE)
+// 构造
+WorkspaceAI::WorkspaceAI(int AICODE, AIController& aiRef, AITrace& traceRef)
+    : aicode(AICODE),
+    ai(aiRef),
+    trace(traceRef)
 {
 }
-void WorkspaceAI::reset()
+std::string WorkspaceAI::runPlcOnce(
+    const std::string& user_input,
+    std::string& plc_name,
+    std::string& ip_address,
+    int& rack,
+    int& slot,
+    std::string& description
+)
 {
-    user_input.clear();
-    ai_output.clear();
-    workspace_json.clear();
-    error_message.clear();
-    workspace_ready = false;
+    trace.begin(
+        "workspace_plc",
+        aicode,
+        user_input,
+        ai.workspaceplcprompt_get()
+    );
+
+    std::string output = callPlcAI(user_input);
+
+    std::string err = parsePlcJson(
+        output,
+        plc_name,
+        ip_address,
+        rack,
+        slot,
+        description
+    );
+
+    trace.end(err == "OK", output);
+    return err;
+}
+std::string WorkspaceAI::runSignalOnce(
+    const std::string& user_input,
+    std::vector<SignalWorkspaceData>& signals
+)
+{
+    trace.begin(
+        "workspace_signal",
+        aicode,
+        user_input,
+        ai.workspacesigprompt_get()
+    );
+    std::string output = callSignalAI(user_input);
+    std::string err = parseSignalJson(output, signals);
+    trace.end(err == "OK", output);
+    return err;
 }
 
-bool WorkspaceAI::hasWorkspace() const
+std::string WorkspaceAI::parsePlcJson(
+    const std::string& jsonText,
+    std::string& plc_name,
+    std::string& ip_address,
+    int& rack,
+    int& slot,
+    std::string& description
+)
 {
-    return workspace_ready && !workspace_json.empty();
-}
-bool WorkspaceAI::runOnce(const std::string& userInput)
-{
-    error_message.clear();
-    ai_output.clear();
-    if (!user_input.empty())
-        user_input += u8"\n";
-    user_input += userInput;
-    if (!callWorkspaceAI(user_input))
+    Json::Value root;
+    Json::Reader reader;
+
+    if (!reader.parse(jsonText, root))
+        return "json parse failed";
+
+    if (!root.isMember("success") || !root["success"].isBool())
+        return "missing success";
+
+    if (!root["success"].asBool())
     {
-        workspace_ready = false;
-        return false;
-    }
-    if (ai_output.find("WS:ERR") != std::string::npos)
-    {
-        workspace_ready = false;
-        error_message = ai_output;
-        return false;
-    }
-    if (ai_output.find("WS:OK") == std::string::npos)
-    {
-        workspace_ready = false;
-        error_message = u8"AI 返回格式错误：缺少 WS:OK";
-        return false;
-    }
-    if (!extractWorkspaceJson(ai_output))
-    {
-        workspace_ready = false;
-        return false;
-    }
-    workspace_ready = true;
-    return true;
-}
-
-// 状态判断
-bool WorkspaceAI::isReadyForDecision() const
-{
-    if (!hasWorkspace()) return false;
-    return workspace_json.find("\"decision_model\"") != std::string::npos;
-}
-
-bool WorkspaceAI::isReadyForPLC() const
-{
-    if (!hasWorkspace()) return false;
-    return workspace_json.find("\"plc\"") != std::string::npos;
-}
-
-// Getter
-const std::string& WorkspaceAI::getUserInput() const
-{
-    return user_input;
-}
-
-const std::string& WorkspaceAI::getAiRawOutput() const
-{
-    return ai_output;
-}
-
-const std::string& WorkspaceAI::getWorkspaceJson() const
-{
-    return workspace_json;
-}
-
-const std::string& WorkspaceAI::getErrorMessage() const
-{
-    return error_message;
-}
-
-// 文件操作
-bool WorkspaceAI::saveToFile(const std::string& path) const
-{
-    if (!hasWorkspace()) return false;
-
-    std::ofstream ofs(path, std::ios::binary);
-    if (!ofs) return false;
-
-    ofs.write(workspace_json.data(),
-        (std::streamsize)workspace_json.size());
-    return true;
-}
-//读取操作
-bool WorkspaceAI::loadFromFile(const std::string& path)
-{
-    std::ifstream ifs(path, std::ios::binary);
-    if (!ifs)
-    {
-        error_message = u8"无法打开 workspace 文件";
-        return false;
+        if (root.isMember("error") && root["error"].isString())
+            return root["error"].asString();
+        return "unknown error";
     }
 
-    std::ostringstream oss;
-    oss << ifs.rdbuf();
-    std::string content = oss.str();
+    if (!root.isMember("plc_info") || !root["plc_info"].isObject())
+        return "missing plc_info";
 
-    if (content.empty())
-    {
-        error_message = u8"workspace 文件为空";
-        return false;
-    }
+    Json::Value plc = root["plc_info"];
 
-    size_t p = content.find('{');
-    if (p == std::string::npos)
-    {
-        error_message = u8"workspace 文件不是 JSON";
-        return false;
-    }
+    plc_name = plc.isMember("plc_name") && plc["plc_name"].isString()
+        ? plc["plc_name"].asString() : "";
 
-    std::string j;
-    if (!extractFirstJsonObject(content, p, j))
-    {
-        error_message = u8"workspace JSON 解析失败";
-        return false;
-    }
+    ip_address = plc.isMember("ip_address") && plc["ip_address"].isString()
+        ? plc["ip_address"].asString() : "";
 
-    workspace_json = j;
-    workspace_ready = true;
-    user_input.clear();
-    ai_output.clear();
-    error_message.clear();
-    return true;
+    rack = plc.isMember("rack") && plc["rack"].isInt()
+        ? plc["rack"].asInt() : 0;
+
+    slot = plc.isMember("slot") && plc["slot"].isInt()
+        ? plc["slot"].asInt() : 0;
+
+    description = plc.isMember("description") && plc["description"].isString()
+        ? plc["description"].asString() : "";
+
+    return "OK";
 }
 
-// 调用 AI（唯一修改点）
-bool WorkspaceAI::callWorkspaceAI(const std::string& userInput)
+std::string WorkspaceAI::parseSignalJson(
+    const std::string& jsonText,
+    std::vector<SignalWorkspaceData>& signals
+)
 {
-   ai_output = ai.workspace(aicode, userInput);
+    signals.clear();
 
-    if (ai_output.empty())
+    Json::Value root;
+    Json::Reader reader;
+
+    if (!reader.parse(jsonText, root))
+        return "json parse failed";
+
+    if (!root.isMember("success") || !root["success"].isBool())
+        return "missing success";
+
+    if (!root["success"].asBool())
     {
-        error_message = u8"AI 返回为空";
-        return false;
+        if (root.isMember("error") && root["error"].isString())
+            return root["error"].asString();
+        return "unknown error";
     }
-    return true;
+
+    if (!root.isMember("signals") || !root["signals"].isArray())
+        return "missing signals";
+
+    const Json::Value& arr = root["signals"];
+    if (arr.empty())
+        return "signals empty";
+
+    for (Json::ArrayIndex i = 0; i < arr.size(); ++i)
+    {
+        const Json::Value& sig = arr[i];
+        if (!sig.isObject())
+            continue;
+
+        SignalWorkspaceData data;
+
+        data.name =
+            sig.isMember("name") && sig["name"].isString()
+            ? sig["name"].asString()
+            : "";
+
+        data.plc_address =
+            sig.isMember("plc_address") && sig["plc_address"].isString()
+            ? sig["plc_address"].asString()
+            : "";
+
+        data.description =
+            sig.isMember("description") && sig["description"].isString()
+            ? sig["description"].asString()
+            : "";
+
+        signals.push_back(data);
+    }
+
+    if (signals.empty())
+        return "no valid signal item";
+
+    return "OK";
 }
 
-// JSON 提取
-bool WorkspaceAI::extractWorkspaceJson(const std::string& aiText)
+
+
+// 调用 PLC Workspace AI
+std::string WorkspaceAI::callPlcAI(const std::string& user_input)
 {
-    workspace_json.clear();
-
-    size_t pos = aiText.find("WS:JSON");
-    if (pos == std::string::npos)
-    {
-        pos = aiText.find("WS:OK");
-        if (pos == std::string::npos)
-        {
-            error_message = u8"AI 返回格式错误：缺少 WS:OK / WS:JSON";
-            return false;
-        }
-    }
-
-    size_t brace = aiText.find('{', pos);
-    if (brace == std::string::npos)
-    {
-        error_message = u8"AI 返回格式错误：未找到 JSON";
-        return false;
-    }
-
-    std::string j;
-    if (!extractFirstJsonObject(aiText, brace, j))
-    {
-        error_message = u8"JSON 括号不匹配";
-        return false;
-    }
-
-    workspace_json = j;
-    return true;
+    return ai.allairun(
+        true,
+        true,
+        aicode,
+        "workspace_plc",
+        user_input,
+        ai.workspaceplcprompt_get()
+    );
 }
 
-// JSON 括号提取
-bool WorkspaceAI::extractFirstJsonObject(
-    const std::string& s,
-    size_t startPos,
-    std::string& outJson)
+// 调用 Signal Workspace AI
+std::string WorkspaceAI::callSignalAI(const std::string& user_input)
 {
-    outJson.clear();
-
-    if (startPos >= s.size() || s[startPos] != '{')
-        return false;
-
-    int depth = 0;
-    for (size_t i = startPos; i < s.size(); ++i)
-    {
-        if (s[i] == '{') depth++;
-        else if (s[i] == '}') depth--;
-
-        if (depth == 0)
-        {
-            outJson = s.substr(startPos, i - startPos + 1);
-            return true;
-        }
-    }
-    return false;
+    return ai.allairun(
+        true,
+        true,
+        aicode,
+        "workspace_signal",
+        user_input,
+        ai.workspacesigprompt_get()
+    );
 }

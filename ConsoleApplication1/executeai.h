@@ -1,54 +1,39 @@
-// executeai.h
 #pragma once
 #include <string>
 #include <vector>
 #include <json/json.h>
 
 class AIController;
-class PLCClient;
 class AITrace;
-// 执行 AI：只负责 PLC 指令生成与执行
+struct ExecuteItem
+{
+    std::string message;     // AI 给用户/上位机的中文说明
+    std::string op;          // "read" / "write"
+    std::string address;     // PLC 地址
+    std::string value;       // 写入值，read 时可为空
+};
+// ExecuteAI：只生成并解析执行 JSON，不执行 PLC
 class ExecuteAI
 {
 public:
-    ExecuteAI(int aicode, AIController& aiRef, AITrace& traceRef,PLCClient& plcRef);
-    std::string runOnce(const std::string& user_input);
-    std::string newcallExecuteAI(const std::string& user_input);
+    ExecuteAI(
+        int aicode,
+        AIController& aiRef,
+        AITrace& traceRef
+    );
 
-private:
-    struct ActionItem
-    {
-        enum class Type
-        {
-            Connect,
-            Disconnect,
-            Read,
-            Write,
-            Invalid
-        };
-        Type type = Type::Invalid;
-        std::string address;
-        double value = 0.0;
-        std::string ip;
-        int rack = 0;
-        int slot = 0;
-        std::string raw_action;
-    };
-
-    struct ExecutePlan
-    {
-        bool json_parsed = false;
-        std::string json_error;
-        std::string raw_json;
-        std::vector<ActionItem> actions;
-    };
-private:
+    // 返回解析后的动作列表
+    std::vector<ExecuteItem> runOnce(const std::string& user_input);
+    // 调用 AI，获取原始 JSON
     std::string callExecuteAI(const std::string& user_input);
-    ExecutePlan parseExecuteJson(const std::string& json_text);
-    std::string executePLC(const ExecutePlan& plan);
+
+private:
+
+    // 解析 JSON 为 ExecuteItem 列表
+    std::vector<ExecuteItem> parseExecuteJson(const std::string& jsonText);
+
 private:
     int aicode;
     AIController& ai;
     AITrace& trace;
-    PLCClient& plc;
 };

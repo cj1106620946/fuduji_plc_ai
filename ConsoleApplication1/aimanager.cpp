@@ -220,32 +220,14 @@ void AiManager::inimodwrite()
 
 void AiManager::iniread()
 {
-   /* HANDLE hEvent = CreateEventW(
-        nullptr,          // 默认安全属性
-        TRUE,             // 手动复位
-        FALSE,            // 初始未触发
-        L"Global\\AIMANAGER_UI_READY"
-    );
-
-    if (hEvent)
-    {
-        SetEvent(hEvent);
-        CloseHandle(hEvent);
-    }
-    uiThread = std::thread(::uiThread, this);
-    */
     printGBK1("\n正在初始化，请等待\n");
     //ai初始化
     chat = new ChatAI(ai_mode, aiController, aiTrace);
-    execute = new ExecuteAI(ai_mode, aiController, aiTrace, plc);
+    execute = new ExecuteAI(ai_mode, aiController, aiTrace);
     workspace = new WorkspaceAI(ai_mode, aiController, aiTrace);
     printGBK1(".........ai初始化完成\n");
     //模型动作输入初始化
     live2dWriter.init();
-    //读取当前工作区并写入
-    workspace->loadFromFile("workspace.json");
-	chat->runExecuteRead(workspace->getWorkspaceJson());
-    execute->newcallExecuteAI(workspace->getWorkspaceJson());
     printGBK1(".........ai读取工作区和记忆完成\n");
 	// 输入线程：负责读取控制台输入
     inputThread = std::thread(&AiManager::inputLoop, this);
@@ -449,9 +431,7 @@ void AiManager::processWorkLoop()
         // 任务类型：1 = Execute
         if (item.type == 1)
         {
-            // 当前阶段：仍然传完整字符串给 Execute
-            // Execute 内部如果需要，可以再次按相同分隔符解析
-            resultText = execute->runOnce(executeText);
+
         }
         else
         {

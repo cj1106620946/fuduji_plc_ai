@@ -64,7 +64,6 @@ std::string ChatAI::runExecuteOnce(const std::string& user_input)
 {
     return callChatExecuteAI(user_input);
 }
-
 std::string ChatAI::callChatExecuteAI(const std::string& user_input)
 {
     // 这里使用新的 chatExecute 接口

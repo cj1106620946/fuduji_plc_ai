@@ -207,7 +207,6 @@ if (!sql->execute(plcPointer))
         "write_flag INTEGER,"                             // 写入标记：0 无 / 1 等待写入
 
         "last_op_at INTEGER,"                             // 上一次读或写时间戳
-
         "is_available INTEGER"                            // 是否可用：1 可用 / 0 不可用
         ");";
 
@@ -1012,6 +1011,7 @@ bool SqlStore::createSignal(
 
     return true;
 }
+/*
 bool SqlStore::getAllSignalMapText(
     std::string& outText
 )
@@ -1171,6 +1171,7 @@ bool SqlStore::aiWriteSignal(
 
     return true;
 }
+*/
 // 创建变量（绑定当前 PLC）
 bool SqlStore::createSignalInfo(const signalinfo& in)
 {

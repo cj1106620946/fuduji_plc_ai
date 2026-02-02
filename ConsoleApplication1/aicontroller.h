@@ -51,7 +51,11 @@ public:
     //¶ÁÈ¡prompt 
     std::string executeprompt_get();
     std::string chatprompt_get();
-    std::string workspaceprompt_get();
+
+    std::string workspaceplcprompt_get();
+    std::string workspacesigprompt_get();
+
+
     std::string decisionprompt_get();
     std::string judgmentprompt_get();
     std::string chatexecuteprompt_get();
@@ -88,8 +92,14 @@ private:
     // Prompt Ä£°å£¨Ö»´æ×Ö·û´®£©
     std::string response_prompt;
     std::string execute_prompt;
-    std::string workspace_prompt;
+
+
+    std::string workspacesig_prompt;
+    std::string workspaceplc_prompt;
+
     std::string decision_prompt;
+
+
     std::string Judgment_prompt;
     std::string chatexecute_prompt;
     std::string memoryjudge_prompt;
