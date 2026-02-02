@@ -25,24 +25,24 @@ struct plcinfo
 };
 struct signalinfo
 {
-    int signalId;               // signal_def.signal_id£¬±äÁ¿Î¨Ò» ID
+    int signalId;               // signal_def.signal_idï¼Œå˜é‡å”¯ä¸€ ID
 
-    std::string name;           // ±äÁ¿Ãû£¨Èç Ë®±Ã1£©
-    std::string plcAddress;     // PLC µØÖ·£¨Èç M0.0£©
+    std::string name;           // å˜é‡åï¼ˆå¦‚ æ°´æ³µ1ï¼‰
+    std::string plcAddress;     // PLC åœ°å€ï¼ˆå¦‚ M0.0ï¼‰
 
-    int plcId;                  // ËùÊô PLC£¨¶ÔÓ¦ plc_info.plc_id£©
+    int plcId;                  // æ‰€å± PLCï¼ˆå¯¹åº” plc_info.plc_idï¼‰
 
-    std::string description;    // ±äÁ¿ÖĞÎÄËµÃ÷
-    int createdAt;              // ´´½¨Ê±¼ä
+    std::string description;    // å˜é‡ä¸­æ–‡è¯´æ˜
+    int createdAt;              // åˆ›å»ºæ—¶é—´
 
-    std::string currentValue;   // µ±Ç°Öµ£¨Êı¾İ¿â¼ÇÂ¼£¬ÎÄ±¾ĞÎÊ½£©
-    int readOk;                 // ×î½üÒ»´Î¶ÁÈ¡ÊÇ·ñ³É¹¦£¨1 ³É¹¦ / 0 Ê§°Ü£©
+    std::string currentValue;   // å½“å‰å€¼ï¼ˆæ•°æ®åº“è®°å½•ï¼Œæ–‡æœ¬å½¢å¼ï¼‰
+    int readOk;                 // æœ€è¿‘ä¸€æ¬¡è¯»å–æ˜¯å¦æˆåŠŸï¼ˆ1 æˆåŠŸ / 0 å¤±è´¥ï¼‰
 
-    std::string targetValue;    // Ä¿±êĞ´ÈëÖµ£¨Êı¾İ¿â¼ÇÂ¼£¬ÎÄ±¾ĞÎÊ½£©
-    int writeFlag;              // Ğ´Èë±ê¼Ç£¨0 ÎŞ / 1 µÈ´ıĞ´Èë£©
+    std::string targetValue;    // ç›®æ ‡å†™å…¥å€¼ï¼ˆæ•°æ®åº“è®°å½•ï¼Œæ–‡æœ¬å½¢å¼ï¼‰
+    int writeFlag;              // å†™å…¥æ ‡è®°ï¼ˆ0 æ—  / 1 ç­‰å¾…å†™å…¥ï¼‰
 
-    int lastOpAt;               // ×î½üÒ»´Î¶Á»òĞ´Ê±¼ä´Á
-    int isAvailable;            // ÊÇ·ñ¿ÉÓÃ£¨1 ¿ÉÓÃ / 0 ²»¿ÉÓÃ£©
+    int lastOpAt;               // æœ€è¿‘ä¸€æ¬¡è¯»æˆ–å†™æ—¶é—´æˆ³
+    int isAvailable;            // æ˜¯å¦å¯ç”¨ï¼ˆ1 å¯ç”¨ / 0 ä¸å¯ç”¨ï¼‰
 };
 
 class SqlStore
@@ -53,7 +53,7 @@ public:
 
     bool open();
     void close();
-    //Õ¼Î»
+    //å ä½
     bool isAvailable() const;
 
     const char* getLastErrorText() const;

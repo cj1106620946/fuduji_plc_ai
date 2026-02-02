@@ -1,81 +1,122 @@
 #include "chatai.h"
 #include "aicontroller.h"
 #include "aitrace.h"
-#include <string>
+
 #include <json/json.h>
 #include <sstream>
 
-// ¹¹Ôì
-ChatAI::ChatAI(int AICODE,AIController& aiRef,AITrace& traceRef)
-:ai(aiRef), trace(traceRef), aicode(AICODE)
+// æ„é€ 
+ChatAI::ChatAI(int AICODE, AIController& aiRef, AITrace& traceRef)
+    : aicode(AICODE),
+    ai(aiRef),
+    trace(traceRef)
 {
-
+    // åˆå§‹åŒ–ç»“æœç¼“å­˜
+    r.control = 0;
+    r.priority = 0;
 }
-
-//¶ÁÈ¡
 std::string ChatAI::getAiName()
 {
     return r.ainame;
 }
+
 std::string ChatAI::getText()
 {
     return r.text;
 }
+
 int ChatAI::getControl()
 {
     return r.control;
 }
+
 int ChatAI::getPriority()
 {
     return r.priority;
 }
+
 std::string ChatAI::getEmotion()
 {
     return r.emotion;
 }
-//Ö´ĞĞai¶Ô»°Èë¿Ú
-std::string ChatAI::runExecuteRead(const std::string& user_input)
+
+std::string ChatAI::runOnce(const std::string& user_input)
 {
+    // å¼€å§‹ Trace
     trace.begin(
-        "chat_execute",
+        "chat",
         aicode,
         user_input,
-     ai.chatexecuteprompt_get()
+        ai.chatprompt_get()
     );
-    trace.debug(u8"[STEP] µ÷ÓÃÖ´ĞĞÈë¿Ú£¬»ñÈ¡ AI Ô­Ê¼ JSON");
-    std::string jsonOut = runExecuteOnce(user_input);
-    if (!parseChatJson(jsonOut))
-    {
-        trace.debug(u8"[PARSE] JSON ½âÎöÊ§°Ü£¬Ö±½Ó·µ»ØÔ­Ê¼Êä³ö");
-        trace.end(false, jsonOut);
+    // è°ƒç”¨ AIControllerï¼ˆChat é€šé“ï¼‰
+    std::string jsonOut = ai.allairun(
+        true,                   // è¯»å–çŸ­æœŸè®°å¿†
+        true,                   // å†™å…¥çŸ­æœŸè®°å¿†
+        aicode,                 // ai æ¨¡å¼
+        "chat",                 // è®°å¿†æ§½
+        user_input,             // ç”¨æˆ·è¾“å…¥
+        ai.chatprompt_get()     // å›ºå®š Chat Prompt
+    );
+    // è§£æ JSON
+    bool ok = parseChatJson(jsonOut);
+    // ç»“æŸ Trace
+    trace.end(ok, jsonOut);
+    // è¿”å›ç”¨äºæ˜¾ç¤ºçš„æ–‡æœ¬
+    if (!ok)
         return jsonOut;
-    }
-    std::string displayText;
     if (!r.ainame.empty())
-        displayText = r.ainame + u8"£º" + r.text;
-    else
-        displayText = r.text;
-    trace.debug(u8"[PARSE] JSON ½âÎö³É¹¦");
-    trace.debug(u8"[DISPLAY] ");
-    trace.debug(displayText);trace.end(true, jsonOut);
-    return displayText;
+        return r.ainame + u8"ï¼š" + r.text;
+    return r.text;
 }
-std::string ChatAI::runExecuteOnce(const std::string& user_input)
+std::string ChatAI::runOnce(
+    const std::string& user_input,
+    const std::string& personaText
+)
 {
-    return callChatExecuteAI(user_input);
-}
-std::string ChatAI::callChatExecuteAI(const std::string& user_input)
-{
-    // ÕâÀïÊ¹ÓÃĞÂµÄ chatExecute ½Ó¿Ú
-    return ai.allairun( true, true, aicode,"chat_e",user_input, ai.chatexecuteprompt_get()
+    // å¼€å§‹ Trace
+    trace.begin(
+        "chat",
+        aicode,
+        user_input,
+        ai.chatprompt_get()
     );
+
+    // è°ƒç”¨ AIControllerï¼ˆChat é€šé“ + äººæ ¼æ³¨å…¥ï¼‰
+    std::string jsonOut = ai.allairun(
+        true,                   // è¯»å–çŸ­æœŸè®°å¿†
+        true,                   // å†™å…¥çŸ­æœŸè®°å¿†
+        aicode,                 // ai æ¨¡å¼
+        "chat",                 // è®°å¿†æ§½
+        user_input,             // ç”¨æˆ·è¾“å…¥
+        ai.chatprompt_get(),    // å›ºå®š Chat Prompt
+        personaText             // â˜… äººæ ¼è®¾å®šï¼ˆsystem çº§ï¼‰
+    );
+
+    // è§£æ JSON
+    bool ok = parseChatJson(jsonOut);
+
+    // ç»“æŸ Trace
+    trace.end(ok, jsonOut);
+
+    // è¿”å›ç”¨äºæ˜¾ç¤ºçš„æ–‡æœ¬
+    if (!ok)
+        return jsonOut;
+
+    if (!r.ainame.empty())
+        return r.ainame + u8"ï¼š" + r.text;
+
+    return r.text;
 }
+
 bool ChatAI::parseChatJson(const std::string& jsonText)
 {
     Json::Value root;
-    Json::Reader reader;
+    Json::CharReaderBuilder builder;
+    std::string errors;
 
-    if (!reader.parse(jsonText, root))
+    std::istringstream iss(jsonText);
+    if (!Json::parseFromStream(builder, iss, &root, &errors))
         return false;
 
     // ainame
@@ -96,38 +137,34 @@ bool ChatAI::parseChatJson(const std::string& jsonText)
     else
         r.control = 0;
 
-    // emotion
-    if (root.isMember("emotion") && root["emotion"].isString())
-        r.emotion = root["emotion"].asString();
-    else if (root.isMember("emotion") &&
-        root["emotion"].isObject() &&
-        root["emotion"].isMember("state") &&
-        root["emotion"]["state"].isString())
-        r.emotion = root["emotion"]["state"].asString();
-    else
-        r.emotion.clear();
-
-    // priority£¨ĞÂÔö£¬¶Ô»°ÓÅÏÈ¶È£©
+    // priority
     if (root.isMember("priority") && root["priority"].isInt())
         r.priority = root["priority"].asInt();
     else
         r.priority = 0;
 
+    // emotionï¼ˆæ”¯æŒå­—ç¬¦ä¸²æˆ–å¯¹è±¡ï¼‰
+    if (root.isMember("emotion"))
+    {
+        if (root["emotion"].isString())
+        {
+            r.emotion = root["emotion"].asString();
+        }
+        else if (root["emotion"].isObject() &&
+            root["emotion"].isMember("state") &&
+            root["emotion"]["state"].isString())
+        {
+            r.emotion = root["emotion"]["state"].asString();
+        }
+        else
+        {
+            r.emotion.clear();
+        }
+    }
+    else
+    {
+        r.emotion.clear();
+    }
+
     return true;
-}
-// ÆÕÍ¨ai¶Ô»°Èë¿Ú
-std::string ChatAI::runOnce(const std::string& user_input)
-{
-    // µ÷ÓÃ¿ªÊ¼¼ÇÂ¼
-    trace.begin("chat", aicode, user_input, ai.chatprompt_get());
-    std::string output;
-    // µ÷ÓÃ¶Ô»° AI
-    output = callChatAI(user_input);
-    // µ÷ÓÃ½áÊø¼ÇÂ¼
-    trace.end(1, output);
-    return output;
-}
-std::string ChatAI::callChatAI(const std::string& user_input)
-{
-    return ai.chatTalk(aicode, user_input);
 }

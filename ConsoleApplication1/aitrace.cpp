@@ -6,24 +6,24 @@
 #include <chrono>
 #include <filesystem>
 using namespace std;
-// ¹¹Ôì
+// æ„é€ 
 AITrace::AITrace()
 {
     root_dir = "ai_trace";
 }
 
-// Îö¹¹
+// ææ„
 AITrace::~AITrace()
 {
 }
 
-// ÉèÖÃ¸ùÄ¿Â¼
+// è®¾ç½®æ ¹ç›®å½•
 void AITrace::setRootDir(const std::string& dir)
 {
     root_dir = dir;
 }
 
-// ¿ªÊ¼Ò»´Î AI µ÷ÓÃ¼ÇÂ¼
+// å¼€å§‹ä¸€æ¬¡ AI è°ƒç”¨è®°å½•
 void AITrace::begin(
     const std::string& role_name,
     int ai_mode,
@@ -42,7 +42,7 @@ void AITrace::begin(
     ctx.begin_time = nowMs();
 }
 
-// ¼ÇÂ¼µ÷ÊÔĞÅÏ¢
+// è®°å½•è°ƒè¯•ä¿¡æ¯
 void AITrace::debug(const std::string& text)
 {
     if (!ctx.active)
@@ -54,7 +54,7 @@ void AITrace::debug(const std::string& text)
     ctx.debug_logs.push_back(item);
 }
 
-// ½áÊøÒ»´Î AI µ÷ÓÃ²¢Ğ´ÎÄ¼ş
+// ç»“æŸä¸€æ¬¡ AI è°ƒç”¨å¹¶å†™æ–‡ä»¶
 void AITrace::end(
     bool ok,
     const std::string& output_text
@@ -71,13 +71,13 @@ void AITrace::end(
     reset();
 }
 
-// ÖØÖÃµ±Ç° trace
+// é‡ç½®å½“å‰ trace
 void AITrace::reset()
 {
     ctx = TraceContext();
 }
 
-// µ±Ç°Ê±¼ä´Á£¨ºÁÃë£©
+// å½“å‰æ—¶é—´æˆ³ï¼ˆæ¯«ç§’ï¼‰
 uint64_t AITrace::nowMs()
 {
     using namespace std::chrono;
@@ -86,7 +86,7 @@ uint64_t AITrace::nowMs()
     ).count();
 }
 
-// ×ÓÄ¿Â¼
+// å­ç›®å½•
 std::string AITrace::modeDir(int ai_mode)
 {
     switch (ai_mode)
@@ -99,7 +99,7 @@ std::string AITrace::modeDir(int ai_mode)
     }
 }
 
-// ÎÄ¼şÃû
+// æ–‡ä»¶å
 std::string AITrace::makeFileName(uint64_t timestamp)
 {
     std::time_t t = static_cast<std::time_t>(timestamp / 1000);
@@ -118,7 +118,7 @@ std::string AITrace::makeFileName(uint64_t timestamp)
     return oss.str();
 }
 
-// Ğ´ÈëÎÄ¼ş£¨Ö»ÔÚ end µ÷ÓÃ£©
+// å†™å…¥æ–‡ä»¶ï¼ˆåªåœ¨ end è°ƒç”¨ï¼‰
 void AITrace::writeToFile()
 {
 
@@ -132,7 +132,7 @@ void AITrace::writeToFile()
     if (!ofs.is_open())
         return;
 
-    // -------- ÎÄ¼şÍ·£¨¸öÈË±êÊ¶£¬²»Ó°Ïì½á¹¹£©--------
+    // -------- æ–‡ä»¶å¤´ï¼ˆä¸ªäººæ ‡è¯†ï¼Œä¸å½±å“ç»“æ„ï¼‰--------
     ofs.write("\xEF\xBB\xBF", 3);
     ofs << "// AI TRACE LOG\n";
     ofs << "// owner: fuduji\n";

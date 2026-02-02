@@ -2,7 +2,7 @@
 #include <windows.h>
 #include <fstream>
 
-// Ğ´ÈëÎÄ±¾ÎÄ¼ş
+// å†™å…¥æ–‡æœ¬æ–‡ä»¶
 static bool writetextfile(const std::string& path, const std::string& text)
 {
     std::ofstream out(path.c_str(), std::ios::binary);
@@ -27,7 +27,7 @@ bool PiperEngine::speak(const std::string& utf8text)
     if (!writetextfile(m_inputtxt, utf8text))
         return false;
 
-    // ========== ĞÂÔö£º±£´æµ±Ç°¿ØÖÆÌ¨´úÂëÒ³ ==========
+    // ========== æ–°å¢ï¼šä¿å­˜å½“å‰æ§åˆ¶å°ä»£ç é¡µ ==========
     UINT originalOutputCP = GetConsoleOutputCP();
     UINT originalInputCP = GetConsoleCP();
     // ============================================
@@ -61,7 +61,7 @@ bool PiperEngine::speak(const std::string& utf8text)
 
     if (!ok)
     {
-        // ========== ĞÂÔö£ºÊ§°ÜÊ±Ò²»Ö¸´´úÂëÒ³ ==========
+        // ========== æ–°å¢ï¼šå¤±è´¥æ—¶ä¹Ÿæ¢å¤ä»£ç é¡µ ==========
         SetConsoleOutputCP(originalOutputCP);
         SetConsoleCP(originalInputCP);
         // ============================================
@@ -72,7 +72,7 @@ bool PiperEngine::speak(const std::string& utf8text)
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
 
-    // ========== ĞÂÔö£ºÖ´ĞĞÍê³Éºó»Ö¸´Ô­Ê¼´úÂëÒ³ ==========
+    // ========== æ–°å¢ï¼šæ‰§è¡Œå®Œæˆåæ¢å¤åŸå§‹ä»£ç é¡µ ==========
     SetConsoleOutputCP(originalOutputCP);
     SetConsoleCP(originalInputCP);
     // =================================================

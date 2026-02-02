@@ -14,19 +14,19 @@ uppermachine::~uppermachine()
         writeThread.join();
 }
 void uppermachine::logOp(
-    const std::string& fromFunc,   // º¯ÊıÃû£¨ÀıÈç init / readThreadProc£©
-    const std::string& action      // Ö´ĞĞµÄ²Ù×÷£¨ÀıÈç ³õÊ¼»¯¿ªÊ¼£©
+    const std::string& fromFunc,   // å‡½æ•°åï¼ˆä¾‹å¦‚ init / readThreadProcï¼‰
+    const std::string& action      // æ‰§è¡Œçš„æ“ä½œï¼ˆä¾‹å¦‚ åˆå§‹åŒ–å¼€å§‹ï¼‰
 )
 {
-    // ´ò¿ªÈÕÖ¾ÎÄ¼ş£¬×·¼ÓÄ£Ê½
+    // æ‰“å¼€æ—¥å¿—æ–‡ä»¶ï¼Œè¿½åŠ æ¨¡å¼
     std::ofstream logFile("uppermachine.log", std::ios::app);
 
     if (!logFile.is_open()) {
-        std::cerr << "ÎŞ·¨´ò¿ªÈÕÖ¾ÎÄ¼ş" << std::endl;
+        std::cerr << "æ— æ³•æ‰“å¼€æ—¥å¿—æ–‡ä»¶" << std::endl;
         return;
     }
 
-    // »ñÈ¡µ±Ç°Ê±¼ä
+    // è·å–å½“å‰æ—¶é—´
     auto now = std::chrono::system_clock::now();
     auto time_t_now = std::chrono::system_clock::to_time_t(now);
     std::tm local_tm;
@@ -41,26 +41,26 @@ void uppermachine::logOp(
         local_tm.tm_year + 1900, local_tm.tm_mon + 1, local_tm.tm_mday,
         local_tm.tm_hour, local_tm.tm_min, local_tm.tm_sec);
 
-    // Ğ´ÈëÈÕÖ¾ÄÚÈİ
+    // å†™å…¥æ—¥å¿—å†…å®¹
     logFile << "[" << buf << "] " << fromFunc << " | " << action << std::endl;
 
-    // ¹Ø±ÕÈÕÖ¾ÎÄ¼ş
+    // å…³é—­æ—¥å¿—æ–‡ä»¶
     logFile.close();
 }
 bool uppermachine::createPlcInfoRow(const plcinfo& info)
 {
-    logOp("createPlcInfoRow", "¿ªÊ¼´´½¨ PLC ÉÏÎ»»úĞÅÏ¢");
+    logOp("createPlcInfoRow", "å¼€å§‹åˆ›å»º PLC ä¸Šä½æœºä¿¡æ¯");
 
     if (!store.createPlcInfo(info))
     {
         lastError = store.getLastErrorText();
         logOp(
             "createPlcInfoRow",
-            std::string("´´½¨Ê§°Ü£¬Ô­Òò: ") + lastError
+            std::string("åˆ›å»ºå¤±è´¥ï¼ŒåŸå› : ") + lastError
         );
         return false;
     }
-    logOp("createPlcInfoRow", "PLC ÉÏÎ»»úĞÅÏ¢´´½¨³É¹¦");
+    logOp("createPlcInfoRow", "PLC ä¸Šä½æœºä¿¡æ¯åˆ›å»ºæˆåŠŸ");
     lastError.clear();
     return true;
 }
@@ -74,7 +74,7 @@ bool uppermachine::createSignalRow(
 {
     logOp(
         "createSignalRow",
-        std::string("¿ªÊ¼´´½¨±äÁ¿£¬µØÖ·: ") + plcAddress
+        std::string("å¼€å§‹åˆ›å»ºå˜é‡ï¼Œåœ°å€: ") + plcAddress
     );
 
     if (!store.createSignal(name, plcAddress, description))
@@ -82,12 +82,12 @@ bool uppermachine::createSignalRow(
         lastError = store.getLastErrorText();
         logOp(
             "createSignalRow",
-            std::string("´´½¨Ê§°Ü£¬Ô­Òò: ") + lastError
+            std::string("åˆ›å»ºå¤±è´¥ï¼ŒåŸå› : ") + lastError
         );
         return false;
     }
 
-    // ¹¹Ôì×îĞ¡ÄÚ´æÌ¬ signal
+    // æ„é€ æœ€å°å†…å­˜æ€ signal
     signalinfo sig;
     sig.name = name;
     sig.plcAddress = plcAddress;
@@ -98,15 +98,15 @@ bool uppermachine::createSignalRow(
     sig.writeFlag = 0;
     sig.lastOpAt = static_cast<int>(time(nullptr));
 
-    // ×·¼Óµ½ signals
+    // è¿½åŠ åˆ° signals
     signals.push_back(sig);
 
-    // ¼ÇÂ¼µØÖ·Ë÷Òı£¨µØÖ· -> signals ÏÂ±ê£©
+    // è®°å½•åœ°å€ç´¢å¼•ï¼ˆåœ°å€ -> signals ä¸‹æ ‡ï¼‰
     signalIndexByAddr[plcAddress] = signals.size() - 1;
 
     logOp(
         "createSignalRow",
-        std::string("±äÁ¿´´½¨³É¹¦£¬µØÖ·: ") + plcAddress
+        std::string("å˜é‡åˆ›å»ºæˆåŠŸï¼Œåœ°å€: ") + plcAddress
     );
 
     lastError.clear();
@@ -114,21 +114,21 @@ bool uppermachine::createSignalRow(
 }
 bool uppermachine::getCurrentPlcInfo(plcinfo& out)
 {
-    logOp("getCurrentPlcInfo", "¶ÁÈ¡µ±Ç° PLC ĞÅÏ¢");
+    logOp("getCurrentPlcInfo", "è¯»å–å½“å‰ PLC ä¿¡æ¯");
 
     if (!store.readPlcInfo(out))
     {
         lastError = store.getLastErrorText();
         logOp(
             "getCurrentPlcInfo",
-            std::string("¶ÁÈ¡Ê§°Ü£¬Ô­Òò: ") + lastError
+            std::string("è¯»å–å¤±è´¥ï¼ŒåŸå› : ") + lastError
         );
         return false;
     }
 
     logOp(
         "getCurrentPlcInfo",
-        std::string("¶ÁÈ¡³É¹¦£¬IP: ") + out.ipAddress
+        std::string("è¯»å–æˆåŠŸï¼ŒIP: ") + out.ipAddress
     );
 
     lastError.clear();
@@ -140,24 +140,24 @@ bool uppermachine::readplc(
     std::string& outResult
 )
 {
-    // ²éÕÒµØÖ·Ë÷Òı
+    // æŸ¥æ‰¾åœ°å€ç´¢å¼•
     auto it = signalIndexByAddr.find(plcAddress);
     if (it == signalIndexByAddr.end())
     {
-        lastError = "plc µØÖ·²»´æÔÚ";
+        lastError = "plc åœ°å€ä¸å­˜åœ¨";
         outResult = lastError;
         return false;
     }
 
     const signalinfo& sig = signals[it->second];
 
-    // ×éºÏÊä³ö½á¹û£º
-    // ±äÁ¿Ãû + µØÖ· + ²éÑ¯Öµ + ÖĞÎÄ½âÊÍ
+    // ç»„åˆè¾“å‡ºç»“æœï¼š
+    // å˜é‡å + åœ°å€ + æŸ¥è¯¢å€¼ + ä¸­æ–‡è§£é‡Š
     outResult =
-        "±äÁ¿Ãû: " + sig.name +
-        " µØÖ·: " + sig.plcAddress +
-        " µ±Ç°Öµ: " + sig.currentValue +
-        " ËµÃ÷: " + sig.description;
+        "å˜é‡å: " + sig.name +
+        " åœ°å€: " + sig.plcAddress +
+        " å½“å‰å€¼: " + sig.currentValue +
+        " è¯´æ˜: " + sig.description;
     return true;
 }
 bool uppermachine::writeplc(
@@ -166,33 +166,33 @@ bool uppermachine::writeplc(
     std::string& outResult
 )
 {
-    // ²éÕÒµØÖ·Ë÷Òı
+    // æŸ¥æ‰¾åœ°å€ç´¢å¼•
     auto it = signalIndexByAddr.find(plcAddress);
     if (it == signalIndexByAddr.end())
     {
-        lastError = "plc µØÖ·²»´æÔÚ";
+        lastError = "plc åœ°å€ä¸å­˜åœ¨";
         outResult = lastError;
         return false;
     }
 
     signalinfo& sig = signals[it->second];
 
-    // ÉèÖÃĞ´ÈëÒâÍ¼£¨Ö»ĞŞ¸Ä¾µÏñ£¬²»Ö±½ÓĞ´ PLC£©
+    // è®¾ç½®å†™å…¥æ„å›¾ï¼ˆåªä¿®æ”¹é•œåƒï¼Œä¸ç›´æ¥å†™ PLCï¼‰
     sig.targetValue = value;
     sig.writeFlag = 1;
 
     outResult =
-        "Ğ´ÈëÇëÇóÒÑÌá½» "
-        "±äÁ¿Ãû: " + sig.name +
-        " µØÖ·: " + sig.plcAddress +
-        " Ä¿±êÖµ: " + value +
-        " ËµÃ÷: " + sig.description;
+        "å†™å…¥è¯·æ±‚å·²æäº¤ "
+        "å˜é‡å: " + sig.name +
+        " åœ°å€: " + sig.plcAddress +
+        " ç›®æ ‡å€¼: " + value +
+        " è¯´æ˜: " + sig.description;
 
     return true;
 }
 bool uppermachine::init()
 {
-    logOp("init", "³õÊ¼»¯¿ªÊ¼");
+    logOp("init", "åˆå§‹åŒ–å¼€å§‹");
 
     runState.life = 1; // starting
 
@@ -200,7 +200,7 @@ bool uppermachine::init()
     if (!store.readPlcInfo(info))
     {
         lastError = store.getLastErrorText();
-        logOp("init", "¶ÁÈ¡ PLC ĞÅÏ¢Ê§°Ü: " + lastError);
+        logOp("init", "è¯»å– PLC ä¿¡æ¯å¤±è´¥: " + lastError);
         runState.life = 0;
         return false;
     }
@@ -209,7 +209,7 @@ bool uppermachine::init()
 
     logOp(
         "init",
-        "µ±Ç° PLC: IP=" + currentPlc.ipAddress +
+        "å½“å‰ PLC: IP=" + currentPlc.ipAddress +
         " rack=" + std::to_string(currentPlc.rack) +
         " slot=" + std::to_string(currentPlc.slot)
     );
@@ -218,29 +218,29 @@ bool uppermachine::init()
     if (!store.readAllSignalInfo(dbSignals))
     {
         lastError = store.getLastErrorText();
-        logOp("init", "¶ÁÈ¡±äÁ¿ÁĞ±íÊ§°Ü: " + lastError);
+        logOp("init", "è¯»å–å˜é‡åˆ—è¡¨å¤±è´¥: " + lastError);
         runState.life = 0;
         return false;
     }
 
     signals = dbSignals;
-    logOp("init", "¼ÓÔØ±äÁ¿ÊıÁ¿: " + std::to_string(signals.size()));
+    logOp("init", "åŠ è½½å˜é‡æ•°é‡: " + std::to_string(signals.size()));
 
-    logOp("init", "³¢ÊÔÁ¬½Ó PLC");
+    logOp("init", "å°è¯•è¿æ¥ PLC");
     if (!plc.connectPLC(
         currentPlc.ipAddress,
         currentPlc.rack,
         currentPlc.slot))
     {
         lastError = plc.getLastErrorText();
-        logOp("init", "PLC Á¬½ÓÊ§°Ü: " + lastError);
+        logOp("init", "PLC è¿æ¥å¤±è´¥: " + lastError);
         runState.life = 0;
         return false;
     }
 
-    logOp("init", "PLC Á¬½Ó³É¹¦£¬¿ªÊ¼¶ÁÈ¡ PLC Êµ¼ÊÉí·İĞÅÏ¢");
+    logOp("init", "PLC è¿æ¥æˆåŠŸï¼Œå¼€å§‹è¯»å– PLC å®é™…èº«ä»½ä¿¡æ¯");
 
-    // === Á¬½Ó³É¹¦ºó£¬¶ÁÈ¡Ò»´Î PLC Êµ¼ÊÉí·İĞÅÏ¢£¬²¹È« currentPlc ===
+    // === è¿æ¥æˆåŠŸåï¼Œè¯»å–ä¸€æ¬¡ PLC å®é™…èº«ä»½ä¿¡æ¯ï¼Œè¡¥å…¨ currentPlc ===
     PlcIdentity identity;
     if (plc.getPlcIdentity(identity))
     {
@@ -249,9 +249,9 @@ bool uppermachine::init()
 
         logOp(
             "init",
-            std::string("PLC Éí·İĞÅÏ¢¶ÁÈ¡³É¹¦£¬ĞÍºÅ: ") +
+            std::string("PLC èº«ä»½ä¿¡æ¯è¯»å–æˆåŠŸï¼Œå‹å·: ") +
             currentPlc.plcModel +
-            " ¶©»õºÅ: " +
+            " è®¢è´§å·: " +
             currentPlc.orderCode
         );
     }
@@ -259,11 +259,11 @@ bool uppermachine::init()
     {
         logOp(
             "init",
-            std::string("PLC Éí·İĞÅÏ¢¶ÁÈ¡Ê§°Ü: ") +
+            std::string("PLC èº«ä»½ä¿¡æ¯è¯»å–å¤±è´¥: ") +
             plc.getLastErrorText()
         );
-        // ×¢Òâ£ºÕâÀï²» return false
-        // Á¬½ÓÒÑ³É¹¦£¬ÔÊĞíÏµÍ³¼ÌĞøÔËĞĞ
+        // æ³¨æ„ï¼šè¿™é‡Œä¸ return false
+        // è¿æ¥å·²æˆåŠŸï¼Œå…è®¸ç³»ç»Ÿç»§ç»­è¿è¡Œ
     }
 
     runState.read = 0;
@@ -272,7 +272,7 @@ bool uppermachine::init()
     runState.life = 2;
     boolwrite = true;
     boolread = true;
-    logOp("init", "³õÊ¼»¯Íê³É£¬½øÈëÔËĞĞ×´Ì¬");
+    logOp("init", "åˆå§‹åŒ–å®Œæˆï¼Œè¿›å…¥è¿è¡ŒçŠ¶æ€");
     lastError.clear();
     return true;
 }
@@ -280,44 +280,44 @@ bool uppermachine::init()
 bool uppermachine::run()
 {
     lastError.clear();
-    logOp("run", "run Æô¶¯");
+    logOp("run", "run å¯åŠ¨");
 
-    // 1. ³õÊ¼»¯
+    // 1. åˆå§‹åŒ–
     if (!init())
     {
-        logOp("run", "init Ê§°Ü£¬run ÖĞÖ¹");
+        logOp("run", "init å¤±è´¥ï¼Œrun ä¸­æ­¢");
         return false;
     }
 
-    // 2. Æô¶¯Ïß³Ì
+    // 2. å¯åŠ¨çº¿ç¨‹
     readThread = std::thread(&uppermachine::readThreadProc, this);
     writeThread = std::thread(&uppermachine::writeThreadProc, this);
 
-    logOp("run", "¶ÁĞ´Ïß³ÌÒÑÆô¶¯");
+    logOp("run", "è¯»å†™çº¿ç¨‹å·²å¯åŠ¨");
 
-    // 3. ½øÈëÔËĞĞÑ­»·£¨Õ¼Î»ÉúÃüÖÜÆÚ£©
+    // 3. è¿›å…¥è¿è¡Œå¾ªç¯ï¼ˆå ä½ç”Ÿå‘½å‘¨æœŸï¼‰
     while (runState.life == 2) // running
     {
-        // µ±Ç°½×¶Î²»×öÈÎºÎÊÂÇé
-        // ºóĞø¿ÉÔÚ´Ë¼ÓÈë£º
-        // - ½¡¿µ¼ì²â
-        // - ĞÄÌø
-        // - ×´Ì¬Í¬²½
+        // å½“å‰é˜¶æ®µä¸åšä»»ä½•äº‹æƒ…
+        // åç»­å¯åœ¨æ­¤åŠ å…¥ï¼š
+        // - å¥åº·æ£€æµ‹
+        // - å¿ƒè·³
+        // - çŠ¶æ€åŒæ­¥
         std::this_thread::sleep_for(
             std::chrono::milliseconds(500)
         );
     }
 
-    logOp("run", "run ÍË³ö");
+    logOp("run", "run é€€å‡º");
     return true;
 }
 void uppermachine::readThreadProc()
 {
-    logOp("readThreadProc", "¶ÁÈ¡Ïß³ÌÆô¶¯");
+    logOp("readThreadProc", "è¯»å–çº¿ç¨‹å¯åŠ¨");
 
     while (1)
     {
-        // ¶ÁÈ¡Î´ÆôÓÃÊ±£¬Ïß³Ì±£³Ö´æ»îµ«²»¹¤×÷
+        // è¯»å–æœªå¯ç”¨æ—¶ï¼Œçº¿ç¨‹ä¿æŒå­˜æ´»ä½†ä¸å·¥ä½œ
         if (!boolread)
         {
             std::this_thread::sleep_for(
@@ -341,7 +341,7 @@ void uppermachine::readThreadProc()
                 sig.readOk = 0;
                 logOp(
                     "readThreadProc",
-                    "¶ÁÈ¡Ê§°Ü µØÖ·=" + sig.plcAddress
+                    "è¯»å–å¤±è´¥ åœ°å€=" + sig.plcAddress
                 );
             }
         }
@@ -353,11 +353,11 @@ void uppermachine::readThreadProc()
 }
 void uppermachine::writeThreadProc()
 {
-    logOp("writeThreadProc", "Ğ´ÈëÏß³ÌÆô¶¯");
+    logOp("writeThreadProc", "å†™å…¥çº¿ç¨‹å¯åŠ¨");
 
     while (1)
     {
-        // Ğ´ÈëÎ´ÆôÓÃÊ±£¬Ïß³Ì±£³Ö´æ»îµ«²»¹¤×÷
+        // å†™å…¥æœªå¯ç”¨æ—¶ï¼Œçº¿ç¨‹ä¿æŒå­˜æ´»ä½†ä¸å·¥ä½œ
         if (!boolwrite)
         {
             std::this_thread::sleep_for(
@@ -378,12 +378,12 @@ void uppermachine::writeThreadProc()
             }
             catch (...)
             {
-                // ·Ç·¨Ğ´ÈëÖµ£¬½áÊø±¾´ÎĞ´ÇëÇó£¬±ÜÃâËÀÑ­»·
+                // éæ³•å†™å…¥å€¼ï¼Œç»“æŸæœ¬æ¬¡å†™è¯·æ±‚ï¼Œé¿å…æ­»å¾ªç¯
                 sig.writeFlag = 0;
 
                 logOp(
                     "writeThreadProc",
-                    "·Ç·¨Ğ´ÈëÖµ µØÖ·=" + sig.plcAddress +
+                    "éæ³•å†™å…¥å€¼ åœ°å€=" + sig.plcAddress +
                     " value=" + sig.targetValue
                 );
                 continue;
@@ -393,25 +393,25 @@ void uppermachine::writeThreadProc()
 
             if (ok)
             {
-                // Ğ´Èë³É¹¦£¬Çå³ıĞ´ÇëÇó²¢Í¬²½¾µÏñÖµ
+                // å†™å…¥æˆåŠŸï¼Œæ¸…é™¤å†™è¯·æ±‚å¹¶åŒæ­¥é•œåƒå€¼
                 sig.writeFlag = 0;
                 sig.currentValue = sig.targetValue;
                 sig.readOk = 1;
 
                 logOp(
                     "writeThreadProc",
-                    "Ğ´Èë³É¹¦ µØÖ·=" + sig.plcAddress +
+                    "å†™å…¥æˆåŠŸ åœ°å€=" + sig.plcAddress +
                     " value=" + std::to_string(value)
                 );
             }
             else
             {
-                // Ğ´ÈëÊ§°Ü£¬²»Çå writeFlag£¬ÔÊĞíºóĞøÖØÊÔ
+                // å†™å…¥å¤±è´¥ï¼Œä¸æ¸… writeFlagï¼Œå…è®¸åç»­é‡è¯•
                 sig.readOk = 0;
 
                 logOp(
                     "writeThreadProc",
-                    "Ğ´ÈëÊ§°Ü µØÖ·=" + sig.plcAddress
+                    "å†™å…¥å¤±è´¥ åœ°å€=" + sig.plcAddress
                 );
             }
         }

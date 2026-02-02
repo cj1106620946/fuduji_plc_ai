@@ -87,17 +87,81 @@ void AIClient::clearHistory(const std::string& memkey)
     memories[memkey].clear();
 }
 // 聊天接口
-std::string AIClient::askChat(bool readHistory,bool pd, const std::string& memkey, const std::string& userMessage,
-    const std::string& systemPrompt)
+std::string AIClient::askChat(
+    bool readHistory,
+    bool pd,
+    const std::string& memkey,
+    const std::string& userMessage,
+    const std::string& systemPrompt,
+    const std::string& extraSystemText
+)
+
 {
-    return callChatAPI(readHistory,pd,memkey, userMessage, systemPrompt);
+    return callChatAPI(
+        readHistory,
+        pd,
+        memkey,
+        userMessage,
+        systemPrompt,
+        extraSystemText
+    );
+
 }
+
 // 本地聊天接口
-std::string AIClient::askChatLocal(bool readHistory,bool pd, const std::string& memkey, const std::string& userMessage,
-    const std::string& systemPrompt)
+std::string AIClient::askChatLocal(
+    bool readHistory,
+    bool pd,
+    const std::string& memkey,
+    const std::string& userMessage,
+    const std::string& systemPrompt,
+    const std::string& extraSystemText
+)
 {
-    return callChatLocalAPI(readHistory,pd,memkey, userMessage, systemPrompt);
+    return callChatLocalAPI(readHistory,
+        pd,memkey, 
+        userMessage, 
+        systemPrompt, 
+        extraSystemText
+    );
 }
+// 聊天接口（无人格）
+std::string AIClient::askChat(
+    bool readHistory,
+    bool pd,
+    const std::string& memkey,
+    const std::string& userMessage,
+    const std::string& systemPrompt
+)
+{
+    return callChatAPI(
+        readHistory,
+        pd,
+        memkey,
+        userMessage,
+        systemPrompt,
+        std::string()   // extraSystemText 为空
+    );
+}
+// 本地聊天接口（无人格）
+std::string AIClient::askChatLocal(
+    bool readHistory,
+    bool pd,
+    const std::string& memkey,
+    const std::string& userMessage,
+    const std::string& systemPrompt
+)
+{
+    return callChatLocalAPI(
+        readHistory,
+        pd,
+        memkey,
+        userMessage,
+        systemPrompt,
+        std::string()   // extraSystemText 为空
+    );
+}
+
 // 推理接口
 std::string AIClient::askReason(const std::string& userMessage,
     const std::string& systemPrompt)
@@ -112,13 +176,14 @@ std::string AIClient::askReasonLocal(const std::string& userMessage,
     return callReasonLocalAPI(userMessage, systemPrompt);
 }
 
-// 云端 Chat
+// 云端 Chat（人格优先）
 std::string AIClient::callChatAPI(
     bool readHistory,
     bool messagepd,
     const std::string& memkey,
     const std::string& userMessage,
-    const std::string& systemPrompt)
+    const std::string& systemPrompt,      // 规则 / JSON / control
+    const std::string& extraSystemText)   // 人格 / 记忆
 {
     if (apiKey.empty())
         return u8"api未绑定";
@@ -135,17 +200,29 @@ std::string AIClient::callChatAPI(
     Json::Value root;
     Json::Value messages(Json::arrayValue);
 
+    // [2] 行为规则 / JSON 约束 —— 第二优先级 system
+    // 只约束输出形式与 control 逻辑
+    // 不再定义“我是 AI”
     if (!systemPrompt.empty())
     {
-        Json::Value sm;
-        sm["role"] = "system";
-        sm["content"] = systemPrompt;
-        messages.append(sm);
+        Json::Value rule;
+        rule["role"] = "system";
+        rule["content"] = systemPrompt;
+        messages.append(rule);
+    }
+    // [1] 人格 / 记忆 —— 第一优先级 system
+// 定义“我是谁”，影响整体身份与语气
+    if (!extraSystemText.empty())
+    {
+        Json::Value persona;
+        persona["role"] = "system";
+        persona["content"] = extraSystemText;
+        messages.append(persona);
     }
 
+    // [3] 短期记忆（历史对话）
     if (readHistory)
     {
-        // 关键 读取指定记忆槽
         std::vector<Message>& mem = memories[memkey];
         for (auto& msg : mem)
         {
@@ -156,6 +233,7 @@ std::string AIClient::callChatAPI(
         }
     }
 
+    // [4] 当前用户输入
     {
         Json::Value um;
         um["role"] = "user";
@@ -194,22 +272,25 @@ std::string AIClient::callChatAPI(
     if (res != CURLE_OK)
         return u8"Request error: " + std::string(curl_easy_strerror(res));
 
+    // 写入短期记忆（user）
     if (messagepd)
     {
-        // 关键 写回同一个记忆槽
         memories[memkey].push_back({ "user", userMessage });
     }
 
     return parseResponse(messagepd, memkey, response);
 }
 
-// 本地 Chat（Ollama）
+
+
+// 本地 Chat（Ollama，人格优先）
 std::string AIClient::callChatLocalAPI(
     bool readHistory,
     bool messagepd,
     const std::string& memkey,
     const std::string& userMessage,
-    const std::string& systemPrompt)
+    const std::string& systemPrompt,      // 规则
+    const std::string& extraSystemText)   // 人格 / 记忆
 {
     std::string response;
     CURL* curl = curl_easy_init();
@@ -222,17 +303,24 @@ std::string AIClient::callChatLocalAPI(
 
     Json::Value root;
     Json::Value messages(Json::arrayValue);
+    // [1] 人格 / 记忆 system（优先）
+    if (!extraSystemText.empty())
+    {
+        Json::Value persona;
+        persona["role"] = "system";
+        persona["content"] = extraSystemText;
+        messages.append(persona);
+    }
+    // [2] 行为规则 system
 
-    // system prompt（工作区 / 规则）
     if (!systemPrompt.empty())
     {
-        Json::Value sm;
-        sm["role"] = "system";
-        sm["content"] = systemPrompt;
-        messages.append(sm);
+        Json::Value rule;
+        rule["role"] = "system";
+        rule["content"] = systemPrompt;
+        messages.append(rule);
     }
-
-    // 读取指定记忆槽
+    // [3] 历史记忆
     if (readHistory)
     {
         auto& mem = memories[memkey];
@@ -244,8 +332,8 @@ std::string AIClient::callChatLocalAPI(
             messages.append(m);
         }
     }
+    // [4] 当前输入
 
-    // 当前用户输入
     {
         Json::Value um;
         um["role"] = "user";
@@ -278,7 +366,7 @@ std::string AIClient::callChatLocalAPI(
     if (res != CURLE_OK)
         return u8"Local request error: " + std::string(curl_easy_strerror(res));
 
-    // 写回同一个记忆槽
+    // 写入短期记忆
     if (messagepd)
     {
         addMessage(memkey, "user", userMessage);

@@ -290,7 +290,6 @@ bool SqlStore::initSelfMemoryKeys()
         lastError = u8"数据库不可用";
         return false;
     }
-
     // 1.self.identity
     if (!sql->execute(
         "INSERT OR IGNORE INTO memory_key (key_path, description) VALUES ("
@@ -481,7 +480,6 @@ bool SqlStore::initMemorySnapshots()
             "  SELECT 1 FROM memory "
             "  WHERE memory.memory_key_id = memory_key.memory_key_id"
             ");";
-
         if (!sql->execute(sqlText.c_str()))
         {
             lastError = sql->getLastError();
@@ -624,6 +622,7 @@ bool SqlStore::initMemoryPointer()
 
     return true;
 }
+
 // 写入人格记忆并切换指针
 bool SqlStore::writeMemory(
     int memoryKeyId,                 // 只允许 user 端 4-9
@@ -674,7 +673,6 @@ bool SqlStore::writeMemory(
     }
     return true;
 }
-
 // 读取当前指针指向的记忆内容
 bool SqlStore::readMemory(
     int memoryKeyId,

@@ -7,7 +7,7 @@
 
 #include "snap7.h"
 
-// PLC Ê±¼äĞÅÏ¢½á¹¹
+// PLC æ—¶é—´ä¿¡æ¯ç»“æ„
 struct PlcTime
 {
     int year;
@@ -20,11 +20,11 @@ struct PlcTime
 
 struct PlcIdentity
 {
-    std::string moduleName;    // Ä£¿éÃû³Æ
-    std::string orderCode;     // ¶©»õºÅ
-    int versionMajor;          // Ö÷°æ±¾ºÅ
-    int versionMinor;          // ´Î°æ±¾ºÅ
-    int versionPatch;          // ²¹¶¡°æ±¾ºÅ
+    std::string moduleName;    // æ¨¡å—åç§°
+    std::string orderCode;     // è®¢è´§å·
+    int versionMajor;          // ä¸»ç‰ˆæœ¬å·
+    int versionMinor;          // æ¬¡ç‰ˆæœ¬å·
+    int versionPatch;          // è¡¥ä¸ç‰ˆæœ¬å·
 };
 
 class PLCClient
@@ -32,22 +32,22 @@ class PLCClient
 public:
     PLCClient();
     ~PLCClient();
-    // Á¬½Óµ½ PLC,1.µØÖ·2.»ú¼Ü3.²ÛºÅ
+    // è¿æ¥åˆ° PLC,1.åœ°å€2.æœºæ¶3.æ§½å·
     bool connectPLC(const std::string& plc_ip, int rack, int slot);
-    // ¶Ï¿ªÓë PLC µÄÁ¬½Ó
+    // æ–­å¼€ä¸ PLC çš„è¿æ¥
     void disconnectPLC();
-    // ×Ô¶¯¸ù¾İ×Ö·û´®µØÖ·¶ÁÈ¡Öµ
+    // è‡ªåŠ¨æ ¹æ®å­—ç¬¦ä¸²åœ°å€è¯»å–å€¼
     bool readAddress(const std::string& addr, int32_t& value);
-    // ×Ô¶¯¸ù¾İ×Ö·û´®µØÖ·Ğ´ÈëÖµ
+    // è‡ªåŠ¨æ ¹æ®å­—ç¬¦ä¸²åœ°å€å†™å…¥å€¼
     bool writeAddress(const std::string& addr, int32_t value);
-    // ¶ÁÈ¡ PLC CPU ÔËĞĞ×´Ì¬
-    // /Snap7 ¶¨ÒåµÄ×´Ì¬Öµ
+    // è¯»å– PLC CPU è¿è¡ŒçŠ¶æ€
+    // /Snap7 å®šä¹‰çš„çŠ¶æ€å€¼
     bool getCpuStatus(int& cpuStatus);
 
-    // »ñÈ¡×î½üÒ»´Î Snap7 ´íÎóÎÄ±¾
+    // è·å–æœ€è¿‘ä¸€æ¬¡ Snap7 é”™è¯¯æ–‡æœ¬
     std::string getLastErrorText() const;
 
-    // ÅúÁ¿¶ÁÈ¡ DB ÇøÓò£¬ÓÃÓÚÒ»ÖÂĞÔ×´Ì¬¿ìÕÕ
+    // æ‰¹é‡è¯»å– DB åŒºåŸŸï¼Œç”¨äºä¸€è‡´æ€§çŠ¶æ€å¿«ç…§
     bool readDbBlock(
         int dbNumber,
         int start,
@@ -60,20 +60,20 @@ public:
 
     bool getPlcIdentity(PlcIdentity& info);
 
-    // ¶ÁÈ¡ PLC µ±Ç°ÏµÍ³Ê±¼ä
+    // è¯»å– PLC å½“å‰ç³»ç»Ÿæ—¶é—´
     bool getPlcTime(PlcTime& time);
 
-    // ½« PLC ÏµÍ³Ê±¼äÉèÖÃÎªµ±Ç°±¾»úÊ±¼ä
+    // å°† PLC ç³»ç»Ÿæ—¶é—´è®¾ç½®ä¸ºå½“å‰æœ¬æœºæ—¶é—´
     bool syncPlcTimeWithLocal();
 
 private:
-    TS7Client* client;  // Snap7 ¿Í»§¶Ë¶ÔÏó
+    TS7Client* client;  // Snap7 å®¢æˆ·ç«¯å¯¹è±¡
     int lastError;
 
     bool parseAddress(const std::string& addr,
-        int& area,       // ÄÚ´æÇøÓò£ºI/Q/M/DB
-        int& dbNumber,   // DB¿éºÅ£¨·ÇDBÔòÎª0£©
-        int& start,      // ÆğÊ¼×Ö½Ú
-        int& bitIndex,   // Î»Ë÷Òı£¨Èç¹ûÊÇ×Ö½Ú/×ÖµÈÔòÎª -1£©
-        int& dataSize);  // Êı¾İ´óĞ¡£¨1×Ö½Ú / 2×Ö½Ú / 4×Ö½Ú£©
+        int& area,       // å†…å­˜åŒºåŸŸï¼šI/Q/M/DB
+        int& dbNumber,   // DBå—å·ï¼ˆéDBåˆ™ä¸º0ï¼‰
+        int& start,      // èµ·å§‹å­—èŠ‚
+        int& bitIndex,   // ä½ç´¢å¼•ï¼ˆå¦‚æœæ˜¯å­—èŠ‚/å­—ç­‰åˆ™ä¸º -1ï¼‰
+        int& dataSize);  // æ•°æ®å¤§å°ï¼ˆ1å­—èŠ‚ / 2å­—èŠ‚ / 4å­—èŠ‚ï¼‰
 };

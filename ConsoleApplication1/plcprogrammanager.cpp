@@ -2,18 +2,18 @@
 #include <fstream>
 #include <vector>
 
-// ¹¹Ôì
+// æ„é€ 
 PlcProgramManager::PlcProgramManager(TS7Client* clientRef)
     : client(clientRef), lastError(0)
 {
 }
 
-// Îö¹¹
+// ææ„
 PlcProgramManager::~PlcProgramManager()
 {
 }
 
-// ´Ó PLC µ¼³ö³ÌĞò¿éµ½ÎÄ¼ş
+// ä» PLC å¯¼å‡ºç¨‹åºå—åˆ°æ–‡ä»¶
 bool PlcProgramManager::exportBlockToFile(
     PlcBlockType blockType,
     int blockNumber,
@@ -25,7 +25,7 @@ bool PlcProgramManager::exportBlockToFile(
 
     int size = 0;
 
-    // µÚÒ»´Îµ÷ÓÃ£¬½ö»ñÈ¡³ÌĞò¿é´óĞ¡
+    // ç¬¬ä¸€æ¬¡è°ƒç”¨ï¼Œä»…è·å–ç¨‹åºå—å¤§å°
     int result = client->Upload(
         static_cast<int>(blockType),
         blockNumber,
@@ -42,7 +42,7 @@ bool PlcProgramManager::exportBlockToFile(
     std::vector<uint8_t> buffer;
     buffer.resize(size);
 
-    // µÚ¶ş´Îµ÷ÓÃ£¬¶ÁÈ¡³ÌĞò¿éÄÚÈİ
+    // ç¬¬äºŒæ¬¡è°ƒç”¨ï¼Œè¯»å–ç¨‹åºå—å†…å®¹
     result = client->Upload(
         static_cast<int>(blockType),
         blockNumber,
@@ -66,7 +66,7 @@ bool PlcProgramManager::exportBlockToFile(
     return true;
 }
 
-// ´ÓÎÄ¼şµ¼Èë³ÌĞò¿é²¢Ğ´Èë PLC
+// ä»æ–‡ä»¶å¯¼å…¥ç¨‹åºå—å¹¶å†™å…¥ PLC
 bool PlcProgramManager::importBlockFromFile(
     PlcBlockType blockType,
     int blockNumber,
@@ -94,7 +94,7 @@ bool PlcProgramManager::importBlockFromFile(
 
     in.close();
 
-    // ½«³ÌĞò¿éĞ´Èë PLC ¡ª µ÷ÓÃ TS7Client::Download(blockNum, pUsrData, Size)
+    // å°†ç¨‹åºå—å†™å…¥ PLC â€” è°ƒç”¨ TS7Client::Download(blockNum, pUsrData, Size)
     int result = client->Download(
         blockNumber,
         static_cast<void*>(buffer.data()),
@@ -110,7 +110,7 @@ bool PlcProgramManager::importBlockFromFile(
     return true;
 }
 
-// ÅĞ¶Ï PLC ÖĞÊÇ·ñ´æÔÚÖ¸¶¨³ÌĞò¿é
+// åˆ¤æ–­ PLC ä¸­æ˜¯å¦å­˜åœ¨æŒ‡å®šç¨‹åºå—
 bool PlcProgramManager::hasBlock(
     PlcBlockType blockType,
     int blockNumber
@@ -135,7 +135,7 @@ bool PlcProgramManager::hasBlock(
     return true;
 }
 
-// »ñÈ¡×î½üÒ»´Î´íÎóÂë
+// è·å–æœ€è¿‘ä¸€æ¬¡é”™è¯¯ç 
 int PlcProgramManager::getLastError() const
 {
     return lastError;

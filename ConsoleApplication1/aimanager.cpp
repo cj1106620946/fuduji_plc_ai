@@ -1,7 +1,7 @@
 #include "aimanager.h"
 #include <thread>
 #include <cstdlib>
-// GBK Ö±½ÓÊä³öµ½¿ØÖÆÌ¨
+// GBK ç›´æŽ¥è¾“å‡ºåˆ°æŽ§åˆ¶å°
 void printGBK1(const std::string& text)
 {
     DWORD w;
@@ -13,7 +13,7 @@ void printGBK1(const std::string& text)
         NULL
     );
 }
-// UTF-8 ×ª¿í×Ö·ûºóÊä³öµ½¿ØÖÆÌ¨
+// UTF-8 è½¬å®½å­—ç¬¦åŽè¾“å‡ºåˆ°æŽ§åˆ¶å°
 void printUTF81(const std::string& text)
 {
     int wlen = MultiByteToWideChar(CP_UTF8, 0, text.c_str(), -1, NULL, 0);
@@ -32,16 +32,16 @@ void printUTF81(const std::string& text)
         NULL
     );
 }
-// ½«¿ØÖÆÌ¨ÊäÈëµÄ GBK ×Ö·û´®×ª»»Îª UTF-8£¬¹© AI Ê¹ÓÃ
+// å°†æŽ§åˆ¶å°è¾“å…¥çš„ GBK å­—ç¬¦ä¸²è½¬æ¢ä¸º UTF-8ï¼Œä¾› AI ä½¿ç”¨
 std::string GBKtoUTF81(const std::string& gbk)
 {
-    // GBK ¡ú UTF-16
+    // GBK â†’ UTF-16
     int wlen = MultiByteToWideChar(936, 0, gbk.c_str(), -1, NULL, 0);
     std::wstring wbuf;
     wbuf.resize(wlen);
     MultiByteToWideChar(936, 0, gbk.c_str(), -1, &wbuf[0], wlen);
 
-    // UTF-16 ¡ú UTF-8
+    // UTF-16 â†’ UTF-8
     int u8len = WideCharToMultiByte(CP_UTF8, 0, wbuf.c_str(), -1, NULL, 0, NULL, NULL);
     std::string utf8;
     utf8.resize(u8len);
@@ -49,20 +49,20 @@ std::string GBKtoUTF81(const std::string& gbk)
 
     return utf8;
 }
-// ¹¹Ôìº¯Êý£º³õÊ¼»¯¸÷Àà AI£¬¶Ô»°Ïß³ÌÓë¹¤×÷Ïß³ÌÉÔºóÆô¶¯
+// æž„é€ å‡½æ•°ï¼šåˆå§‹åŒ–å„ç±» AIï¼Œå¯¹è¯çº¿ç¨‹ä¸Žå·¥ä½œçº¿ç¨‹ç¨åŽå¯åŠ¨
 AiManager::AiManager()
     : aiController(ai)
     ,   live2dWriter("live2dstate.json")
 {
 }
-// Îö¹¹º¯Êý£º°²È«¹Ø±ÕÏß³Ì²¢ÊÍ·Å×ÊÔ´
+// æžæž„å‡½æ•°ï¼šå®‰å…¨å…³é—­çº¿ç¨‹å¹¶é‡Šæ”¾èµ„æº
 AiManager::~AiManager()
 {
-    // Í¨ÖªËùÓÐÏß³ÌÍË³ö
+    // é€šçŸ¥æ‰€æœ‰çº¿ç¨‹é€€å‡º
     running = false;
     cv.notify_all();
     workcv.notify_all();
-    // µÈ´ýÏß³Ì½áÊø£¬±ÜÃâ·ÃÎÊÒÑÊÍ·Å¶ÔÏó
+    // ç­‰å¾…çº¿ç¨‹ç»“æŸï¼Œé¿å…è®¿é—®å·²é‡Šæ”¾å¯¹è±¡
     if (mainThread.joinable())
         mainThread.join();
     if (workThread.joinable())
@@ -86,7 +86,7 @@ void uiThread(AiManager* mgr)
     mgr->ui->show();
     mgr->ui->loop();
 }
-// ½«ÓÃ»§Ô­Ê¼ÊäÈëÍÆÈë¶ÓÁÐ£¬½ö¸ºÔðÈë¶Ó£¬²»×öÈÎºÎ AI ´¦Àí
+// å°†ç”¨æˆ·åŽŸå§‹è¾“å…¥æŽ¨å…¥é˜Ÿåˆ—ï¼Œä»…è´Ÿè´£å…¥é˜Ÿï¼Œä¸åšä»»ä½• AI å¤„ç†
 void AiManager::pushUserInput(const std::string& text)
 {
     {
@@ -99,13 +99,13 @@ void AiManager::iniaiwrite()
 {
     while (true)
     {
-        printGBK1("ÕýÔÚ³õÊ¼»¯Ð´ÈëÄ£¿é...\n");
+        printGBK1("æ­£åœ¨åˆå§‹åŒ–å†™å…¥æ¨¡å—...\n");
         printGBK1(
-            "ÇëÑ¡Ôñ AI Ä£Ê½£º\n"
-            "  1 ÔÆ¶ËÄ£Ê½£¨DeepSeek API£¬ÐèÒª API Key£©\n"
-            "    - ÎÈ¶¨¿ÉÓÃ£¬ÎÞÐè±¾µØ²¿Êð\n"
-            "  2 ±¾µØÄ£Ê½£¨Ollama + qwen2.5 Ä£ÐÍ£©\n"
-            "    - ÐèÒªÌáÇ°²¿Êð²¢Æô¶¯ Ollama\n"
+            "è¯·é€‰æ‹© AI æ¨¡å¼ï¼š\n"
+            "  1 äº‘ç«¯æ¨¡å¼ï¼ˆDeepSeek APIï¼Œéœ€è¦ API Keyï¼‰\n"
+            "    - ç¨³å®šå¯ç”¨ï¼Œæ— éœ€æœ¬åœ°éƒ¨ç½²\n"
+            "  2 æœ¬åœ°æ¨¡å¼ï¼ˆOllama + qwen2.5 æ¨¡åž‹ï¼‰\n"
+            "    - éœ€è¦æå‰éƒ¨ç½²å¹¶å¯åŠ¨ Ollama\n"
         );
 
         std::cin >> ai_mode;
@@ -113,8 +113,8 @@ void AiManager::iniaiwrite()
 
         if (ai_mode == 1)
         {
-            // ÔÆ¶ËÄ£Ê½
-            printGBK1("µ±Ç°ÎªÔÆ¶ËÄ£Ê½£¬ÇëÊäÈë AI Key£º\n");
+            // äº‘ç«¯æ¨¡å¼
+            printGBK1("å½“å‰ä¸ºäº‘ç«¯æ¨¡å¼ï¼Œè¯·è¾“å…¥ AI Keyï¼š\n");
 
             std::string key;
             std::getline(std::cin, key);
@@ -127,12 +127,12 @@ void AiManager::iniaiwrite()
             if (result == "0" || result == "1")
             {
                 printUTF81(result);
-                printGBK1("ÔÆ¶Ë AI Ð£Ñé³É¹¦¡£\n");
+                printGBK1("äº‘ç«¯ AI æ ¡éªŒæˆåŠŸã€‚\n");
                 break;
             }
             else
             {
-                printGBK1("ÔÆ¶Ë API ´íÎó£¬ÇëÖØÐÂÑ¡ÔñÄ£Ê½¡£\n");
+                printGBK1("äº‘ç«¯ API é”™è¯¯ï¼Œè¯·é‡æ–°é€‰æ‹©æ¨¡å¼ã€‚\n");
                 delete judgment;
                 judgment = nullptr;
                 continue;
@@ -140,9 +140,9 @@ void AiManager::iniaiwrite()
         }
         else
         {
-            // ±¾µØÄ£Ê½
+            // æœ¬åœ°æ¨¡å¼
             ai_mode = 2;
-            printGBK1("µ±Ç°Îª±¾µØÄ£Ê½£¬ÕýÔÚ¼ì²â±¾µØ AI...\n");
+            printGBK1("å½“å‰ä¸ºæœ¬åœ°æ¨¡å¼ï¼Œæ­£åœ¨æ£€æµ‹æœ¬åœ° AI...\n");
 
             judgment = new Judgmentai(2, aiController, aiTrace);
 
@@ -151,12 +151,12 @@ void AiManager::iniaiwrite()
             if (result == "0" || result == "1")
             {
                 printUTF81(result);
-                printGBK1("±¾µØ AI Ð£Ñé³É¹¦¡£\n");
+                printGBK1("æœ¬åœ° AI æ ¡éªŒæˆåŠŸã€‚\n");
                 break;
             }
             else
             {
-                printGBK1("±¾µØ AI Î´²¿Êð»òÄ£ÐÍ²»¿ÉÓÃ£¬ÇëÖØÐÂÑ¡ÔñÄ£Ê½¡£\n");
+                printGBK1("æœ¬åœ° AI æœªéƒ¨ç½²æˆ–æ¨¡åž‹ä¸å¯ç”¨ï¼Œè¯·é‡æ–°é€‰æ‹©æ¨¡å¼ã€‚\n");
                 delete judgment;
                 judgment = nullptr;
                 continue;
@@ -164,12 +164,12 @@ void AiManager::iniaiwrite()
         }
     }
 
-    printGBK1("aiÉèÖÃ³õÊ¼»¯Íê³É¡£\n");
+    printGBK1("aiè®¾ç½®åˆå§‹åŒ–å®Œæˆã€‚\n");
 }
 void AiManager::inimodwrite()
 {
-    printGBK1("Ä£¿é³õÊ¼»¯ÅäÖÃÖÐ...\n");
-    printGBK1("ÊÇ·ñÆôÓÃÓïÒô¹¦ÄÜ£º1 ÆôÓÃ£¬0 ²»ÆôÓÃ\n");
+    printGBK1("æ¨¡å—åˆå§‹åŒ–é…ç½®ä¸­...\n");
+    printGBK1("æ˜¯å¦å¯ç”¨è¯­éŸ³åŠŸèƒ½ï¼š1 å¯ç”¨ï¼Œ0 ä¸å¯ç”¨\n");
 
     int value = 0;
     std::cin >> value;
@@ -178,12 +178,12 @@ void AiManager::inimodwrite()
     if (value == 1)
     {
         envoice = true;
-        printGBK1("ÓïÒô¹¦ÄÜÒÑÆôÓÃ¡£\n");
+        printGBK1("è¯­éŸ³åŠŸèƒ½å·²å¯ç”¨ã€‚\n");
 
-        // ½öÔÚÆôÓÃÓïÒôºó£¬Ñ¯ÎÊÓïÒô¹¤×÷Ä£Ê½
-        printGBK1("ÇëÑ¡ÔñÓïÒô¹¤×÷Ä£Ê½£º\n");
-        printGBK1("  1 ¶ÓÁÐÄ£Ê½£¨ÍÆËÍ / Ïû·Ñ ·ÖÀë£©\n");
-        printGBK1("  2 ×èÈûÄ£Ê½£¨µ¥Ïß³ÌÓïÒô£©\n");
+        // ä»…åœ¨å¯ç”¨è¯­éŸ³åŽï¼Œè¯¢é—®è¯­éŸ³å·¥ä½œæ¨¡å¼
+        printGBK1("è¯·é€‰æ‹©è¯­éŸ³å·¥ä½œæ¨¡å¼ï¼š\n");
+        printGBK1("  1 é˜Ÿåˆ—æ¨¡å¼ï¼ˆæŽ¨é€ / æ¶ˆè´¹ åˆ†ç¦»ï¼‰\n");
+        printGBK1("  2 é˜»å¡žæ¨¡å¼ï¼ˆå•çº¿ç¨‹è¯­éŸ³ï¼‰\n");
 
         int mode = 0;
         std::cin >> mode;
@@ -192,17 +192,17 @@ void AiManager::inimodwrite()
         if (mode == 1)
         {
             uvq = true;
-            printGBK1("ÒÑÑ¡ÔñÓïÒô¶ÓÁÐÄ£Ê½¡£\n");
+            printGBK1("å·²é€‰æ‹©è¯­éŸ³é˜Ÿåˆ—æ¨¡å¼ã€‚\n");
         }
         else
         {
             uvq = false;
-            printGBK1("ÒÑÑ¡ÔñÓïÒô×èÈûÄ£Ê½¡£\n");
+            printGBK1("å·²é€‰æ‹©è¯­éŸ³é˜»å¡žæ¨¡å¼ã€‚\n");
         }
-        //Æô¶¯ÓïÑÔ
+        //å¯åŠ¨è¯­è¨€
         if (!speech.start())
         {
-            printUTF81(u8"[Speech] ÓïÒôÏµÍ³Æô¶¯Ê§°Ü\n");
+            printUTF81(u8"[Speech] è¯­éŸ³ç³»ç»Ÿå¯åŠ¨å¤±è´¥\n");
             running = false;
             return;
         }
@@ -213,34 +213,34 @@ void AiManager::inimodwrite()
     {
         envoice = false;
         uvq = false;
-        printGBK1("ÓïÒô¹¦ÄÜÎ´ÆôÓÃ£¬½öÊ¹ÓÃÎÄ±¾Ä£Ê½¡£\n");
+        printGBK1("è¯­éŸ³åŠŸèƒ½æœªå¯ç”¨ï¼Œä»…ä½¿ç”¨æ–‡æœ¬æ¨¡å¼ã€‚\n");
     }
 }
 
 
 void AiManager::iniread()
 {
-    printGBK1("\nÕýÔÚ³õÊ¼»¯£¬ÇëµÈ´ý\n");
-    //ai³õÊ¼»¯
+    printGBK1("\næ­£åœ¨åˆå§‹åŒ–ï¼Œè¯·ç­‰å¾…\n");
+    //aiåˆå§‹åŒ–
     chat = new ChatAI(ai_mode, aiController, aiTrace);
     execute = new ExecuteAI(ai_mode, aiController, aiTrace);
     workspace = new WorkspaceAI(ai_mode, aiController, aiTrace);
-    printGBK1(".........ai³õÊ¼»¯Íê³É\n");
-    //Ä£ÐÍ¶¯×÷ÊäÈë³õÊ¼»¯
+    printGBK1(".........aiåˆå§‹åŒ–å®Œæˆ\n");
+    //æ¨¡åž‹åŠ¨ä½œè¾“å…¥åˆå§‹åŒ–
     live2dWriter.init();
-    printGBK1(".........ai¶ÁÈ¡¹¤×÷ÇøºÍ¼ÇÒäÍê³É\n");
-	// ÊäÈëÏß³Ì£º¸ºÔð¶ÁÈ¡¿ØÖÆÌ¨ÊäÈë
+    printGBK1(".........aiè¯»å–å·¥ä½œåŒºå’Œè®°å¿†å®Œæˆ\n");
+	// è¾“å…¥çº¿ç¨‹ï¼šè´Ÿè´£è¯»å–æŽ§åˆ¶å°è¾“å…¥
     inputThread = std::thread(&AiManager::inputLoop, this);
-    // ¶Ô»°Ïß³Ì£º´¦ÀíÓÃ»§ÊäÈë¡¢Chat¡¢Judgment
+    // å¯¹è¯çº¿ç¨‹ï¼šå¤„ç†ç”¨æˆ·è¾“å…¥ã€Chatã€Judgment
     mainThread = std::thread(&AiManager::processLoop, this);
-    // ¹¤×÷Ïß³Ì£º×¨ÃÅÖ´ÐÐ Workspace / Execute µÈºÄÊ±ÈÎÎñ
+    // å·¥ä½œçº¿ç¨‹ï¼šä¸“é—¨æ‰§è¡Œ Workspace / Execute ç­‰è€—æ—¶ä»»åŠ¡
     workThread = std::thread(&AiManager::processWorkLoop, this);
-    printGBK1(".........Ïß³Ì³õÊ¼»¯Íê³É\n");
+    printGBK1(".........çº¿ç¨‹åˆå§‹åŒ–å®Œæˆ\n");
 
-    printGBK1("\n³õÊ¼»¯Íê³É\n");
-    printGBK1("ÊäÈë£º");
+    printGBK1("\nåˆå§‹åŒ–å®Œæˆ\n");
+    printGBK1("è¾“å…¥ï¼š");
 }
-// Ö÷ÔËÐÐÈë¿Ú£¬Æô¶¯¶Ô»°Ïß³ÌÓëºóÌ¨¹¤×÷Ïß³Ì
+// ä¸»è¿è¡Œå…¥å£ï¼Œå¯åŠ¨å¯¹è¯çº¿ç¨‹ä¸ŽåŽå°å·¥ä½œçº¿ç¨‹
 void AiManager::run()
 {  
     iniaiwrite();
@@ -251,23 +251,23 @@ void AiManager::run()
         ;
     }
 }
-//Ïß³Ì´ó¾ü
-// ÊäÈëÏß³ÌÈë¿Ú£¬Æô¶¯ÎÄ±¾ÓëÓïÒôÊäÈë×ÓÏß³Ì
+//çº¿ç¨‹å¤§å†›
+// è¾“å…¥çº¿ç¨‹å…¥å£ï¼Œå¯åŠ¨æ–‡æœ¬ä¸Žè¯­éŸ³è¾“å…¥å­çº¿ç¨‹
 void AiManager::inputLoop()
 {
-    // ÎÄ±¾Ïß³ÌÊ¼ÖÕ´æÔÚ
+    // æ–‡æœ¬çº¿ç¨‹å§‹ç»ˆå­˜åœ¨
     textThread = std::thread(&AiManager::textInputLoop, this);
     if(envoice)
     { 
         if (uvq)
         {
-            // ¶ÓÁÐÄ£Ê½£ºÁ½¸öÓïÒôÏß³Ì
+            // é˜Ÿåˆ—æ¨¡å¼ï¼šä¸¤ä¸ªè¯­éŸ³çº¿ç¨‹
             voicepush = std::thread(&AiManager::voicepushloop, this);
             voicepop = std::thread(&AiManager::voicepoploop, this);
         }
         else
         {
-            // ×èÈûÄ£Ê½£ºÒ»¸öÓïÒôÏß³Ì
+            // é˜»å¡žæ¨¡å¼ï¼šä¸€ä¸ªè¯­éŸ³çº¿ç¨‹
             voiceThread = std::thread(&AiManager::voiceInputLoop, this);
         }
     }
@@ -289,7 +289,7 @@ void AiManager::inputLoop()
         }
     }
 }
-// ÎÄ±¾ÊäÈëÏß³ÌÑ­»·
+// æ–‡æœ¬è¾“å…¥çº¿ç¨‹å¾ªçŽ¯
 void AiManager::textInputLoop()
 {
     while (running)
@@ -314,43 +314,43 @@ void AiManager::textInputLoop()
         pushUserInput(GBKtoUTF81(input));
     }
 }
-// ÓïÒôÊäÈëÏß³ÌÑ­»·
+// è¯­éŸ³è¾“å…¥çº¿ç¨‹å¾ªçŽ¯
 void AiManager::voiceInputLoop()
 {
     while (running)
     {
-        // »ñÈ¡ÓïÒôÊ¶±ðÎÄ±¾
+        // èŽ·å–è¯­éŸ³è¯†åˆ«æ–‡æœ¬
         std::string text = speech.getText();
-        // nosl£ºµ±Ç°Ã»ÓÐÐÎ³ÉÍêÕûÓï¾ä
+        // noslï¼šå½“å‰æ²¡æœ‰å½¢æˆå®Œæ•´è¯­å¥
         if (text == "nosl")
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
             continue;
         }
-        // Ö»ÒªÓÐÒ»¾äÍêÕûÎÄ±¾£¬¾Í½»¸ø AI ÏµÍ³
-        printUTF81(u8"\n[Speech] Ê¶±ð½á¹û£º");
+        // åªè¦æœ‰ä¸€å¥å®Œæ•´æ–‡æœ¬ï¼Œå°±äº¤ç»™ AI ç³»ç»Ÿ
+        printUTF81(u8"\n[Speech] è¯†åˆ«ç»“æžœï¼š");
         printUTF81(text);
         printUTF81("\n");
         pushUserInput(text);
     }
 }
-//Èë¶Ó
+//å…¥é˜Ÿ
 void AiManager::voicepushloop()
 {
     while (running)
     {
-        // ×èÈûµÈ´ýÒ»¾äÍêÕûÓïÒô
+        // é˜»å¡žç­‰å¾…ä¸€å¥å®Œæ•´è¯­éŸ³
         bool ok = speech.pushtext();
         if (!ok)
         {
-            // Ã»ÓÐÐÎ³ÉÍêÕûÓïÒô£¬ÉÔÎ¢ÈÃ³ö CPU
+            // æ²¡æœ‰å½¢æˆå®Œæ•´è¯­éŸ³ï¼Œç¨å¾®è®©å‡º CPU
             std::this_thread::sleep_for(std::chrono::milliseconds(5));
             continue;
         }
-        // ³É¹¦Èë¶ÓºóÁ¢¿Ì¼ÌÐøÏÂÒ»´ÎÂ¼ÖÆ
+        // æˆåŠŸå…¥é˜ŸåŽç«‹åˆ»ç»§ç»­ä¸‹ä¸€æ¬¡å½•åˆ¶
     }
 }
-//³ö¶Ó
+//å‡ºé˜Ÿ
 void AiManager::voicepoploop()
 {
     while (running)
@@ -358,18 +358,18 @@ void AiManager::voicepoploop()
         std::string text = speech.poptext();
         if (text.empty())
         {
-            // ¶ÓÁÐÔÝÊ±Ã»ÄÚÈÝ£¬±ÜÃâ¿Õ×ª
+            // é˜Ÿåˆ—æš‚æ—¶æ²¡å†…å®¹ï¼Œé¿å…ç©ºè½¬
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
             continue;
         }
 
-        printUTF81(u8"\n[Speech] Ê¶±ð½á¹û£º");
+        printUTF81(u8"\n[Speech] è¯†åˆ«ç»“æžœï¼š");
         printUTF81(text);
         printUTF81("\n");
         pushUserInput(text);
     }
 }
-// ¶Ô»°Ïß³ÌÑ­»·£º´®ÐÐ´¦ÀíÓÃ»§ÊäÈë£¬±£Ö¤ Chat Á¬ÐøÐÔ
+// å¯¹è¯çº¿ç¨‹å¾ªçŽ¯ï¼šä¸²è¡Œå¤„ç†ç”¨æˆ·è¾“å…¥ï¼Œä¿è¯ Chat è¿žç»­æ€§
 void AiManager::processLoop()
 {
     while (running)
@@ -387,8 +387,7 @@ void AiManager::processLoop()
         handleUserInput(rawText);
     }
 }
-// ºóÌ¨¹¤×÷Ïß³Ì£º×¨ÃÅ´¦ÀíºÄÊ±µÄ Workspace / Execute
-// ºóÌ¨¹¤×÷Ïß³Ì£º×¨ÃÅ´¦ÀíºÄÊ±µÄ Workspace / Execute
+// åŽå°å·¥ä½œçº¿ç¨‹ï¼šä¸“é—¨å¤„ç†è€—æ—¶çš„ Workspace / Execute
 void AiManager::processWorkLoop()
 {
     while (running)
@@ -407,28 +406,28 @@ void AiManager::processWorkLoop()
 
         std::string executeText = item.text;
 
-        // ===== ²ð·ÖÓÃ»§ÊäÈë + Chat Ö´ÐÐÉÏÏÂÎÄ =====
+        // ===== æ‹†åˆ†ç”¨æˆ·è¾“å…¥ + Chat æ‰§è¡Œä¸Šä¸‹æ–‡ =====
         std::string userText;
         std::string chatContext;
 
-        size_t pos = executeText.find("chatai£º");
+        size_t pos = executeText.find("chataiï¼š");
         if (pos != std::string::npos)
         {
             userText = executeText.substr(0, pos);
             chatContext = executeText.substr(
-                pos + std::strlen("chatai£º")
+                pos + std::strlen("chataiï¼š")
             );
         }
         else
         {
-            // ¼æÈÝ¾ÉÂß¼­£ºÖ»ÓÐÓÃ»§ÊäÈë
+            // å…¼å®¹æ—§é€»è¾‘ï¼šåªæœ‰ç”¨æˆ·è¾“å…¥
             userText = executeText;
             chatContext.clear();
         }
 
         std::string resultText;
 
-        // ÈÎÎñÀàÐÍ£º1 = Execute
+        // ä»»åŠ¡ç±»åž‹ï¼š1 = Execute
         if (item.type == 1)
         {
 
@@ -447,12 +446,12 @@ void AiManager::processWorkLoop()
     }
 }
 
-// ´¦ÀíÒ»ÌõÓÃ»§ÊäÈë£ºµ¥Ò» Chat ¾ö²ß£¨control£©£¬¾ö¶¨ÊÇ·ñÍ¶µÝºóÌ¨ÈÎÎñ
+// å¤„ç†ä¸€æ¡ç”¨æˆ·è¾“å…¥ï¼šå•ä¸€ Chat å†³ç­–ï¼ˆcontrolï¼‰ï¼Œå†³å®šæ˜¯å¦æŠ•é€’åŽå°ä»»åŠ¡
 void AiManager::handleUserInput(const std::string& text)
 {
     if (text.empty())
         return;
-    std::string chatReply = chat->runExecuteRead(text);
+    std::string chatReply = chat->runOnce(text);
     std::string writetext = chat->getText();
     std::string emotion = chat->getEmotion();
     int priority = chat->getPriority();
@@ -469,18 +468,18 @@ void AiManager::handleUserInput(const std::string& text)
         std::lock_guard<std::mutex> lock(workMutex);
         WorkItem item;
         item.type = 1;     // Execute
-        item.text = text;  // Ô­Ê¼ÓÃ»§ÊäÈë½»¸ø Execute
+        item.text = text;  // åŽŸå§‹ç”¨æˆ·è¾“å…¥äº¤ç»™ Execute
         workQueue.push(item);
         workcv.notify_one();
         return;
     }
-    // control == 2£ºµ±Ç°²»Í¶µÝÈÎÎñ£¬±£³Ö¶Ô»°¼´¿É
+    // control == 2ï¼šå½“å‰ä¸æŠ•é€’ä»»åŠ¡ï¼Œä¿æŒå¯¹è¯å³å¯
     return;
 }
-// ¹¤×÷Íê³Éºó£ºÓÉ Chat Í³Ò»¶ÔÓÃ»§×ÔÈ»»Ø¸´
+// å·¥ä½œå®ŒæˆåŽï¼šç”± Chat ç»Ÿä¸€å¯¹ç”¨æˆ·è‡ªç„¶å›žå¤
 void AiManager::handleResultInput(const std::string& text)
 {
-    std::string reply = chat->runExecuteRead(text);
+    std::string reply = chat->runOnce(text);
     std::string writetext = chat->getText();
     std::string emotion = chat->getEmotion();
     int priority = chat->getPriority();

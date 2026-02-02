@@ -4,30 +4,30 @@
 class AIController;
 class AITrace;
 
-// ¾ö²ß AI£º·ÖÎöµ±Ç°×´Ì¬²¢¸ø³ö½¨Òé
+// å†³ç­– AIï¼šåˆ†æå½“å‰çŠ¶æ€å¹¶ç»™å‡ºå»ºè®®
 class DecisionAI
 {
 public:
-    // ¹¹Ôì
+    // æ„é€ 
     DecisionAI(int AICODE, AIController& aiRef, AITrace& traceRef);
 
-    // Î¨Ò»Èë¿Ú£º
-    // snapshot£ºµ±Ç°ÏµÍ³×´Ì¬¿ìÕÕ£¨JSON / ÎÄ±¾£©
-    // user_input£ºÀ´×Ô chat / ÉÏÓÎµÄÉÏÏÂÎÄÊäÈë
-    // ·µ»Ø£º½âÎöºóµÄ content ÎÄ±¾£¬Ê§°ÜÊ±·µ»Ø´íÎóËµÃ÷
+    // å”¯ä¸€å…¥å£ï¼š
+    // snapshotï¼šå½“å‰ç³»ç»ŸçŠ¶æ€å¿«ç…§ï¼ˆJSON / æ–‡æœ¬ï¼‰
+    // user_inputï¼šæ¥è‡ª chat / ä¸Šæ¸¸çš„ä¸Šä¸‹æ–‡è¾“å…¥
+    // è¿”å›ï¼šè§£æåçš„ content æ–‡æœ¬ï¼Œå¤±è´¥æ—¶è¿”å›é”™è¯¯è¯´æ˜
     std::string runOnce(
         const std::string& snapshot,
         const std::string& user_input
     );
 
 private:
-    // µ÷ÓÃ AI
+    // è°ƒç”¨ AI
     std::string callDecisionAI(
         const std::string& snapshot,
         const std::string& user_input
     );
 
-    // ½âÎö decision JSON£¬Ö»ÌáÈ¡ content
+    // è§£æ decision JSONï¼Œåªæå– content
     bool parseDecisionJson(
         const std::string& jsonText,
         std::string& outContent

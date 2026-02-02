@@ -39,6 +39,7 @@ std::string WorkspaceAI::runPlcOnce(
     trace.end(err == "OK", output);
     return err;
 }
+
 std::string WorkspaceAI::runSignalOnce(
     const std::string& user_input,
     std::vector<SignalWorkspaceData>& signals
@@ -165,8 +166,6 @@ std::string WorkspaceAI::parseSignalJson(
 
     return "OK";
 }
-
-
 
 // 调用 PLC Workspace AI
 std::string WorkspaceAI::callPlcAI(const std::string& user_input)

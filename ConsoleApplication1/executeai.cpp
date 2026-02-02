@@ -19,12 +19,13 @@ ExecuteAI::ExecuteAI(
 // 调用执行 AI，获取原始 JSON
 std::string ExecuteAI::callExecuteAI(const std::string& user_input)
 {
-    return ai.execute(
+    return ai.allairun(
         true,
         true,
         aicode,
         "execute",
-        user_input
+        user_input,
+        ai.executeprompt_get()
     );
 }
 

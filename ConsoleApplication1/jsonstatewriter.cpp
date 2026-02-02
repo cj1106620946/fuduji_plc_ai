@@ -1,13 +1,13 @@
 #include "jsonstatewriter.h"
 #include <fstream>
 
-// ¹¹Ôìº¯Êı
+// æ„é€ å‡½æ•°
 JsonStateWriter::JsonStateWriter(const std::string& path)
     : filepath(path)
 {
 }
 
-// ³õÊ¼»¯£ºÈ·±£ json ÎÄ¼ş´æÔÚ
+// åˆå§‹åŒ–ï¼šç¡®ä¿ json æ–‡ä»¶å­˜åœ¨
 void JsonStateWriter::init()
 {
     std::ifstream in(filepath.c_str(), std::ios::binary);

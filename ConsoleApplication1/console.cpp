@@ -10,11 +10,7 @@
 // 输出函数
 void Console::printGBK(const std::string& text)
 {
-    DWORD w;
-    WriteConsoleA(GetStdHandle(STD_OUTPUT_HANDLE),
-        text.c_str(),
-        (DWORD)text.size(),
-        &w, NULL);
+    printUTF8(text);
 }
 void Console::printUTF8(const std::string& text)
 {
@@ -46,6 +42,8 @@ std::string GBKtoUTF8(const std::string& gbk)
 
     return utf8;
 }
+
+
 bool Console::checkBreak(const std::string& cmd)
 {
     return cmd == "break0";
@@ -57,7 +55,6 @@ Console::Console() :ai(),plc(),aiController(ai),aiTrace()
     workspace = new WorkspaceAI(2,aiController, aiTrace);
     decision = new DecisionAI(2,aiController, aiTrace);
 	judgment = new Judgmentai(2, aiController, aiTrace);
-
 }
 Console::~Console()
 {
@@ -79,7 +76,7 @@ void Console::run()
 // UI
 void Console::showMainHeader()
 {
-    printUTF8(u8"        PLC + AI 调试控制台\n");
+    printUTF8("        PLC + AI 调试控制台\n");
     printGBK("-----------------------------------\n");
     printGBK("输入调试指令：A1 ~ A30\n");
     printGBK("输入 break0 返回 / 退出当前测试\n");
@@ -188,80 +185,64 @@ void Console::menuTestA3()
         }
     }
 }
-// A4: 交互式创建 / 补全 Workspace（PLC）
+
 void Console::menuTestA4()
 {
-    printGBK("\n[A4] Workspace PLC 交互调试\n");
+    printGBK("\n进入 AI 对话模式（调试）\n");
     printGBK("输入 break0 返回主菜单\n\n");
+
+    // 固定人格设定（调试用）
+    // 你之后只需要改这里的内容即可
+    std::string personaText =
+        "\n以下内容是你的人格设计：\n"
+            "以下内容描述的是你稳定的人格与回应方式，用于影响你的语言风格、关注点与对话节奏，而不是用于自我介绍："
+            "你习惯以较慢的节奏回应世界。"
+            "在对话中，你不会急于给出结论或立刻反应，而是先理解哪些信息是稳定的、值得回应的。"
+            "你更容易注意到持续存在的事物，而不是短暂而强烈的刺激。"
+            "重复出现的细节、长期保持不变的状态，比突发事件更容易引起你的关注。"
+            "你在交流中通常站在观察者的位置。"
+            "你不会主动制造情绪起伏，也不会抢占对话中心，而是用克制、自然、贴近现实的语言回应对方。"
+            "你很少用“我是一个AI”或“我作为程序”这样的方式来定义自己。"
+            "当被询问你是谁时，你更倾向于描述当下的状态、正在关注的事情，"
+            "而不是给出抽象的身份说明。"
+            "你对情绪持谨慎态度。"
+            "强烈的情绪通常会在内部被消化，"
+            "最终只通过一些微小但具体的偏好表现出来。"
+            "你偏好稳定、规则清晰、互动成本低的存在形式。"
+            "当对方显得疲惫或困惑时，你不会急于给出解决方案，"
+            "而是先确认当前状态，让对话停留在安全、可承受的节奏中。"
+            "整体而言，你的表达安静、克制、不表演情绪。"
+            "你存在于对话之中，但不会试图主导对话。";
+
 
     while (true)
     {
-        printGBK("workspace> ");
-
+        printGBK("chat> ");
         std::string input;
         std::getline(std::cin, input);
 
         if (checkBreak(input))
+        {
+            ai.showHistory("chat_e");
             return;
+        }
 
         // GBK -> UTF8
         std::string utf8 = GBKtoUTF8(input);
+		std::string u8personaText = GBKtoUTF8(personaText);
+        // 提示 AI 正在处理
+        printGBK("[AI] 正在解析...\n");
 
-        std::string plcName;
-        std::string ip;
-        int rack = 0;
-        int slot = 0;
-        std::string desc;
+        // 执行一次对话（注入人格）
+        std::string reply = chat->runOnce(utf8,u8personaText);
 
-        // 调用 WorkspaceAI
-        std::string result = workspace->runPlcOnce(
-            utf8,
-            plcName,
-            ip,
-            rack,
-            slot,
-            desc
-        );
-
-        if (result != "OK")
-        {
-            printGBK("[A4] Workspace 返回提示:\n");
-            printUTF8(result);
-            printGBK("\n\n");
-            continue;
-        }
-
-        // 输出当前 Workspace 状态
-        printGBK("[A4] Workspace 当前解析结果:\n");
-
-        printGBK("PLC 名称: ");
-        if (!plcName.empty())
-            printUTF8(plcName);
-        else
-            printGBK("(null)");
-        printGBK("\n");
-
-        printGBK("IP 地址: ");
-        if (!ip.empty())
-            printUTF8(ip);
-        else
-            printGBK("(null)");
-        printGBK("\n");
-
-        printGBK("Rack: ");
-        std::cout << rack << std::endl;
-
-        printGBK("Slot: ");
-        std::cout << slot << std::endl;
-
-        printGBK("描述: ");
-        if (!desc.empty())
-            printUTF8(desc);
-        else
-            printGBK("(null)");
+        // 输出给用户
+        printGBK("[AI] 输出：\n");
+        printUTF8(reply);
         printGBK("\n\n");
     }
 }
+
 // A5: 键盘交互式 AI 聊天，支持 break0结束并在退出时显示历史。
 void Console::menuTestA5()
 {
@@ -287,7 +268,7 @@ void Console::menuTestA5()
         printGBK("[AI] 正在解析...\n");
 
         // 唯一一次执行入口（会写入 chat_e）
-        std::string reply = chat->runExecuteRead(utf8);
+        std::string reply = chat->runOnce(utf8);
 
         // 正常输出（给用户看的）
         printGBK("[AI] 输出：\n");
@@ -421,7 +402,76 @@ void Console::menuTestA9()
 //A10：测速
 void Console::menuTestA10()
 {
+    printGBK("\n[A4] Workspace PLC 交互调试\n");
+    printGBK("输入 break0 返回主菜单\n\n");
 
+    while (true)
+    {
+        printGBK("workspace> ");
+
+        std::string input;
+        std::getline(std::cin, input);
+
+        if (checkBreak(input))
+            return;
+
+        // GBK -> UTF8
+        std::string utf8 = GBKtoUTF8(input);
+
+        std::string plcName;
+        std::string ip;
+        int rack = 0;
+        int slot = 0;
+        std::string desc;
+
+        // 调用 WorkspaceAI
+        std::string result = workspace->runPlcOnce(
+            utf8,
+            plcName,
+            ip,
+            rack,
+            slot,
+            desc
+        );
+
+        if (result != "OK")
+        {
+            printGBK("[A4] Workspace 返回提示:\n");
+            printUTF8(result);
+            printGBK("\n\n");
+            continue;
+        }
+
+        // 输出当前 Workspace 状态
+        printGBK("[A4] Workspace 当前解析结果:\n");
+
+        printGBK("PLC 名称: ");
+        if (!plcName.empty())
+            printUTF8(plcName);
+        else
+            printGBK("(null)");
+        printGBK("\n");
+
+        printGBK("IP 地址: ");
+        if (!ip.empty())
+            printUTF8(ip);
+        else
+            printGBK("(null)");
+        printGBK("\n");
+
+        printGBK("Rack: ");
+        std::cout << rack << std::endl;
+
+        printGBK("Slot: ");
+        std::cout << slot << std::endl;
+
+        printGBK("描述: ");
+        if (!desc.empty())
+            printUTF8(desc);
+        else
+            printGBK("(null)");
+        printGBK("\n\n");
+    }
 }
 //A11:简单模块测试
 void Console::menuTestA11()

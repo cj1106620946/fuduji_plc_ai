@@ -10,65 +10,65 @@
 #include <chrono>
 #include "sqlstore.h"
 #include "PLCClient.h"
-// Ç°ÏòÉùÃ÷
+// å‰å‘å£°æ˜
 class PLCClient;
 class SqlStore;
 struct RunState
 {
-    int life;        // ÉÏÎ»»úÔËĞĞÉúÃüÖÜÆÚ×´Ì¬
-    // 0£º¿ÕÏĞ£¨idle£¬ÔÊĞí´´½¨ / ÇĞ»» PLC£©
-    // 1£ºÆô¶¯ÖĞ£¨starting£¬ÕıÔÚ init£©
-    // 2£ºÔËĞĞÖĞ£¨running£¬¶ÁĞ´Ïß³Ì¹¤×÷ÖĞ£©
-    // 3£ºÍ£Ö¹ÖĞ£¨stopping£¬µÈ´ıÏß³ÌÍË³ö£©
-    // 4£ºÖÂÃü´íÎó£¨fatal£¬²»¿É»Ö¸´£©
+    int life;        // ä¸Šä½æœºè¿è¡Œç”Ÿå‘½å‘¨æœŸçŠ¶æ€
+    // 0ï¼šç©ºé—²ï¼ˆidleï¼Œå…è®¸åˆ›å»º / åˆ‡æ¢ PLCï¼‰
+    // 1ï¼šå¯åŠ¨ä¸­ï¼ˆstartingï¼Œæ­£åœ¨ initï¼‰
+    // 2ï¼šè¿è¡Œä¸­ï¼ˆrunningï¼Œè¯»å†™çº¿ç¨‹å·¥ä½œä¸­ï¼‰
+    // 3ï¼šåœæ­¢ä¸­ï¼ˆstoppingï¼Œç­‰å¾…çº¿ç¨‹é€€å‡ºï¼‰
+    // 4ï¼šè‡´å‘½é”™è¯¯ï¼ˆfatalï¼Œä¸å¯æ¢å¤ï¼‰
 
-    int read;        // ¶ÁÈ¡Í¨µÀ×´Ì¬
-    // 0£ºÕı³£
-    // 1£º¿ÉÓÃµ«Òì³££¨½µ¼¶£©
-    // 2£ºÊ§°Ü£¨¶ÁÈ¡²»¿ÉÓÃ£©
+    int read;        // è¯»å–é€šé“çŠ¶æ€
+    // 0ï¼šæ­£å¸¸
+    // 1ï¼šå¯ç”¨ä½†å¼‚å¸¸ï¼ˆé™çº§ï¼‰
+    // 2ï¼šå¤±è´¥ï¼ˆè¯»å–ä¸å¯ç”¨ï¼‰
 
-    int write;       // Ğ´ÈëÍ¨µÀ×´Ì¬
-    // 0£ºÕı³£
-    // 1£º¿ÉÓÃµ«Òì³££¨½µ¼¶£©
-    // 2£ºÊ§°Ü£¨Ğ´Èë²»¿ÉÓÃ£©
+    int write;       // å†™å…¥é€šé“çŠ¶æ€
+    // 0ï¼šæ­£å¸¸
+    // 1ï¼šå¯ç”¨ä½†å¼‚å¸¸ï¼ˆé™çº§ï¼‰
+    // 2ï¼šå¤±è´¥ï¼ˆå†™å…¥ä¸å¯ç”¨ï¼‰
 
-    int fatalReason; // ÖÂÃü´íÎóÔ­Òò£¨½ö life == 4 Ê±ÓĞĞ§£©
-    // 0£ºÎŞ
-    // 1£ºÊı¾İ¿â´íÎó£¨½á¹¹²»Ò»ÖÂ¡¢²»¿ÉÓÃ£©
-    // 2£ºPLC ´íÎó£¨³¤ÆÚ²»¿ÉÁ¬½ÓµÈ£©
-    // 3£ºÄÚ²¿Âß¼­´íÎó
+    int fatalReason; // è‡´å‘½é”™è¯¯åŸå› ï¼ˆä»… life == 4 æ—¶æœ‰æ•ˆï¼‰
+    // 0ï¼šæ— 
+    // 1ï¼šæ•°æ®åº“é”™è¯¯ï¼ˆç»“æ„ä¸ä¸€è‡´ã€ä¸å¯ç”¨ï¼‰
+    // 2ï¼šPLC é”™è¯¯ï¼ˆé•¿æœŸä¸å¯è¿æ¥ç­‰ï¼‰
+    // 3ï¼šå†…éƒ¨é€»è¾‘é”™è¯¯
 };
 
 /*
 struct CurrentPlcContext
 {
-    int plcId;                // µ±Ç° PLC µÄÎ¨Ò»±êÊ¶£¨À´×ÔÊı¾İ¿â£©
+    int plcId;                // å½“å‰ PLC çš„å”¯ä¸€æ ‡è¯†ï¼ˆæ¥è‡ªæ•°æ®åº“ï¼‰
 
-    std::string ipAddress;    // PLC IP µØÖ·
-    int rack;                 // »ú¼ÜºÅ
-    int slot;                 // ²ÛºÅ
+    std::string ipAddress;    // PLC IP åœ°å€
+    int rack;                 // æœºæ¶å·
+    int slot;                 // æ§½å·
 
-    std::string plcModel;     // PLC ĞÍºÅ
-    std::string orderCode;    // PLC ¶©»õºÅ
+    std::string plcModel;     // PLC å‹å·
+    std::string orderCode;    // PLC è®¢è´§å·
 
-    std::string taskDesc;     // µ±Ç°¿ØÖÆÈÎÎñÃèÊö
-    std::string taskDomain;   // ÈÎÎñËùÊôÁìÓò
-    std::string sourceText;   // ÓÃ»§Ô­Ê¼ÊäÈëÎÄ±¾
+    std::string taskDesc;     // å½“å‰æ§åˆ¶ä»»åŠ¡æè¿°
+    std::string taskDomain;   // ä»»åŠ¡æ‰€å±é¢†åŸŸ
+    std::string sourceText;   // ç”¨æˆ·åŸå§‹è¾“å…¥æ–‡æœ¬
 };
 
 
 struct SignalSnapshot
 {
-    std::string plcAddress;    // PLC ±äÁ¿µØÖ·£¨Èç M0.0 / DB1.DBW2£©
-    std::string description;   // ±äÁ¿ÖĞÎÄËµÃ÷£¨À´×ÔÊı¾İ¿â£¬ÓÃÓÚ AI Àí½â£©
+    std::string plcAddress;    // PLC å˜é‡åœ°å€ï¼ˆå¦‚ M0.0 / DB1.DBW2ï¼‰
+    std::string description;   // å˜é‡ä¸­æ–‡è¯´æ˜ï¼ˆæ¥è‡ªæ•°æ®åº“ï¼Œç”¨äº AI ç†è§£ï¼‰
 
-    int32_t currentValue;      // µ±Ç°ÄÚ´æÖĞµÄ±äÁ¿Öµ
-    bool readOk;               // ×î½üÒ»´Î¶ÁÈ¡ÊÇ·ñ³É¹¦
+    int32_t currentValue;      // å½“å‰å†…å­˜ä¸­çš„å˜é‡å€¼
+    bool readOk;               // æœ€è¿‘ä¸€æ¬¡è¯»å–æ˜¯å¦æˆåŠŸ
 
-    bool hasWriteRequest;      // ÊÇ·ñ´æÔÚ´ı´¦ÀíµÄĞ´ÈëÇëÇó
-    int32_t targetValue;       // Ä¿±êĞ´ÈëÖµ£¨½öÔÚÓĞĞ´ÇëÇóÊ±ÓĞĞ§£©
+    bool hasWriteRequest;      // æ˜¯å¦å­˜åœ¨å¾…å¤„ç†çš„å†™å…¥è¯·æ±‚
+    int32_t targetValue;       // ç›®æ ‡å†™å…¥å€¼ï¼ˆä»…åœ¨æœ‰å†™è¯·æ±‚æ—¶æœ‰æ•ˆï¼‰
 
-    int lastOpTime;            // ×î½üÒ»´Î¶Á»òĞ´²Ù×÷µÄÊ±¼ä´Á
+    int lastOpTime;            // æœ€è¿‘ä¸€æ¬¡è¯»æˆ–å†™æ“ä½œçš„æ—¶é—´æˆ³
 };
 
 */
@@ -77,16 +77,16 @@ class uppermachine
 public:
     uppermachine(PLCClient& plcRef, SqlStore& storeRef);
     ~uppermachine();
-    // ÔÚÊı¾İ¿âÖĞ´´½¨Ò»Ìõ plc_info ¼ÇÂ¼£¨ÉÏÎ»»ú£©
+    // åœ¨æ•°æ®åº“ä¸­åˆ›å»ºä¸€æ¡ plc_info è®°å½•ï¼ˆä¸Šä½æœºï¼‰
     bool createPlcInfoRow(const plcinfo& info);
-    // ÔÚÊı¾İ¿âÖĞ´´½¨Ò»Ìõ signal_def ¼ÇÂ¼£¨±äÁ¿£©
+    // åœ¨æ•°æ®åº“ä¸­åˆ›å»ºä¸€æ¡ signal_def è®°å½•ï¼ˆå˜é‡ï¼‰
     bool createSignalRow(
         const std::string& name,
         const std::string& plcAddress,
         int plcId,
         const std::string& description
     );
-    // ¶ÁÈ¡µ±Ç° PLC ÉÏÎ»»úÉÏÏÂÎÄ
+    // è¯»å–å½“å‰ PLC ä¸Šä½æœºä¸Šä¸‹æ–‡
     bool getCurrentPlcInfo(plcinfo& out);
     bool readplc(
         const std::string& plcAddress,
@@ -97,22 +97,22 @@ public:
         const std::string& value,
         std::string& outResult
     );
-    // Ö´ĞĞÒ»ÂÖÉÏÎ»»úÂß¼­£¨Æô¶¯Ïß³Ì£©
+    // æ‰§è¡Œä¸€è½®ä¸Šä½æœºé€»è¾‘ï¼ˆå¯åŠ¨çº¿ç¨‹ï¼‰
     bool run();
-    // ×î½üÒ»´Î´íÎó
+    // æœ€è¿‘ä¸€æ¬¡é”™è¯¯
     const std::string& getLastError() const;
 private:
-    // ³õÊ¼»¯ÉÏÎ»»ú
+    // åˆå§‹åŒ–ä¸Šä½æœº
     bool init();
 
-    // ¶ÁÈ¡Ïß³Ìº¯Êı
+    // è¯»å–çº¿ç¨‹å‡½æ•°
     void readThreadProc();
 
-    // Ğ´ÈëÏß³Ìº¯Êı
+    // å†™å…¥çº¿ç¨‹å‡½æ•°
     void writeThreadProc();
     void logOp(
-        const std::string& fromFunc,   // º¯ÊıÃû£¨ÀıÈç init / readThreadProc£©
-        const std::string& action      // Ö´ĞĞµÄ²Ù×÷£¨ÀıÈç ³õÊ¼»¯¿ªÊ¼£©
+        const std::string& fromFunc,   // å‡½æ•°åï¼ˆä¾‹å¦‚ init / readThreadProcï¼‰
+        const std::string& action      // æ‰§è¡Œçš„æ“ä½œï¼ˆä¾‹å¦‚ åˆå§‹åŒ–å¼€å§‹ï¼‰
     );
 private:
     PLCClient& plc;
@@ -122,7 +122,7 @@ private:
     std::string lastError;
     bool boolread;
     bool boolwrite;
-    // PLC µØÖ· -> signals ÖĞµÄË÷ÒıÎ»ÖÃ
+    // PLC åœ°å€ -> signals ä¸­çš„ç´¢å¼•ä½ç½®
     std::unordered_map<std::string, size_t> signalIndexByAddr;
 
     RunState runState;

@@ -4,65 +4,65 @@
 #include <vector>
 #include <cstdint>
 
-// AI µ÷ÓÃ×·×ÙÓë¼ÇÂ¼¹¤¾ßÀà
-// Ö°Ôğ£º
-// 1 ¼ÇÂ¼Ò»´Î AI µ÷ÓÃµÄÍêÕûÉúÃüÖÜÆÚ
-// 2 ¼ÇÂ¼ debug / error ÎÄ±¾
-// 3 ÔÚµ÷ÓÃ½áÊøÊ±£¬½«ÍêÕû¹ı³Ì±£´æÎª¿É¶ÁÎÄ±¾ÎÄ¼ş
-// ²»²ÎÓëÈÎºÎ AI Âß¼­¡¢²»×ö½âÎö¡¢²»×öÅĞ¶Ï
+// AI è°ƒç”¨è¿½è¸ªä¸è®°å½•å·¥å…·ç±»
+// èŒè´£ï¼š
+// 1 è®°å½•ä¸€æ¬¡ AI è°ƒç”¨çš„å®Œæ•´ç”Ÿå‘½å‘¨æœŸ
+// 2 è®°å½• debug / error æ–‡æœ¬
+// 3 åœ¨è°ƒç”¨ç»“æŸæ—¶ï¼Œå°†å®Œæ•´è¿‡ç¨‹ä¿å­˜ä¸ºå¯è¯»æ–‡æœ¬æ–‡ä»¶
+// ä¸å‚ä¸ä»»ä½• AI é€»è¾‘ã€ä¸åšè§£æã€ä¸åšåˆ¤æ–­
 class AITrace
 {
 public:
     AITrace();
     ~AITrace();
-    // ÉèÖÃ¸ùÄ¿Â¼£¬ÀıÈç£ºai_trace
-    // Êµ¼ÊÎÄ¼ş½«¸ù¾İ ai_mode Ğ´Èë×ÓÄ¿Â¼
+    // è®¾ç½®æ ¹ç›®å½•ï¼Œä¾‹å¦‚ï¼šai_trace
+    // å®é™…æ–‡ä»¶å°†æ ¹æ® ai_mode å†™å…¥å­ç›®å½•
     void setRootDir(const std::string& dir);
-    // AI µ÷ÓÃ¿ªÊ¼
+    // AI è°ƒç”¨å¼€å§‹
     // role_name   : chat / execute / workspace / decision
-    // ai_mode     : 1 ÔÆ¶ËChat / 2 ±¾µØChat / 3 ÔÆ¶ËReason / 4 ±¾µØReason
-    // user_text   : ÓÃ»§Ô­Ê¼ÊäÈë
-    // prompt_text : ±¾´Îµ÷ÓÃÊ¹ÓÃµÄ prompt
+    // ai_mode     : 1 äº‘ç«¯Chat / 2 æœ¬åœ°Chat / 3 äº‘ç«¯Reason / 4 æœ¬åœ°Reason
+    // user_text   : ç”¨æˆ·åŸå§‹è¾“å…¥
+    // prompt_text : æœ¬æ¬¡è°ƒç”¨ä½¿ç”¨çš„ prompt
     void begin(
         const std::string& role_name,
         int ai_mode,
         const std::string& user_text,
         const std::string& prompt_text
     );
-    // ¼ÇÂ¼µ÷ÊÔ / ´íÎóĞÅÏ¢
-    // ÈÎÒâ¿É¶Á×Ö·û´®£¬°´Ë³Ğò±£´æ
+    // è®°å½•è°ƒè¯• / é”™è¯¯ä¿¡æ¯
+    // ä»»æ„å¯è¯»å­—ç¬¦ä¸²ï¼ŒæŒ‰é¡ºåºä¿å­˜
     void debug(const std::string& text);
 
-    // AI µ÷ÓÃ½áÊø
-    // ok          : ±¾´Îµ÷ÓÃÊÇ·ñ³É¹¦
-    // output_text : AI ·µ»ØµÄÔ­Ê¼ÎÄ±¾
-    // µ÷ÓÃ¸Ã½Ó¿ÚÊ±»áÁ¢¼´Ğ´ÎÄ¼ş
+    // AI è°ƒç”¨ç»“æŸ
+    // ok          : æœ¬æ¬¡è°ƒç”¨æ˜¯å¦æˆåŠŸ
+    // output_text : AI è¿”å›çš„åŸå§‹æ–‡æœ¬
+    // è°ƒç”¨è¯¥æ¥å£æ—¶ä¼šç«‹å³å†™æ–‡ä»¶
     void end(
         bool ok,
         const std::string& output_text
     );
 
-    // Çå¿Õµ±Ç° trace ×´Ì¬£¨²»Ğ´ÎÄ¼ş£©
+    // æ¸…ç©ºå½“å‰ trace çŠ¶æ€ï¼ˆä¸å†™æ–‡ä»¶ï¼‰
     void reset();
 
 private:
-    // µ¥Ìõ debug ¼ÇÂ¼
+    // å•æ¡ debug è®°å½•
     struct DebugItem
     {
         uint64_t timestamp = 0;
         std::string text;
     };
 
-    // µ±Ç° trace ×´Ì¬
+    // å½“å‰ trace çŠ¶æ€
     struct TraceContext
     {
         bool active = false;
-        std::string role_name;//µ÷ÓÃaiÃû³Æ
-        int ai_mode = 0;//Ñ¡ÓÃÄ£ĞÍ
-        std::string user_text;//Ô­Ê¼ÊäÈëÄÚÈİ
-        std::string prompt_text;//promptÄÚÈİ
-        std::string output_text;//aiÊä³öÀàÈİ
-        bool ok = false;//Ö´ĞĞ³É¹¦ÅĞ¶ÏÎ»
+        std::string role_name;//è°ƒç”¨aiåç§°
+        int ai_mode = 0;//é€‰ç”¨æ¨¡å‹
+        std::string user_text;//åŸå§‹è¾“å…¥å†…å®¹
+        std::string prompt_text;//promptå†…å®¹
+        std::string output_text;//aiè¾“å‡ºç±»å®¹
+        bool ok = false;//æ‰§è¡ŒæˆåŠŸåˆ¤æ–­ä½
 
         uint64_t begin_time = 0;
         uint64_t end_time = 0;
@@ -71,20 +71,20 @@ private:
     };
 
 private:
-    // µ±Ç°ÕıÔÚ¼ÇÂ¼µÄ trace
+    // å½“å‰æ­£åœ¨è®°å½•çš„ trace
     TraceContext ctx;
-    // trace ¸ùÄ¿Â¼
+    // trace æ ¹ç›®å½•
     std::string root_dir;
 private:
-    // »ñÈ¡µ±Ç°Ê±¼ä´Á£¨ºÁÃë£©
+    // è·å–å½“å‰æ—¶é—´æˆ³ï¼ˆæ¯«ç§’ï¼‰
     static uint64_t nowMs();
 
-    // ¸ù¾İ ai_mode »ñÈ¡×ÓÄ¿Â¼Ãû
+    // æ ¹æ® ai_mode è·å–å­ç›®å½•å
     static std::string modeDir(int ai_mode);
 
-    // ¸ù¾İÊ±¼äÉú³ÉÎÄ¼şÃû
+    // æ ¹æ®æ—¶é—´ç”Ÿæˆæ–‡ä»¶å
     static std::string makeFileName(uint64_t timestamp);
 
-    // ½«µ±Ç° trace Ğ´ÈëÎÄ¼ş
+    // å°†å½“å‰ trace å†™å…¥æ–‡ä»¶
     void writeToFile();
 };

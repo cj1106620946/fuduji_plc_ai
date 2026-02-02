@@ -4,7 +4,7 @@
 #include <vector>
 #include "snap7.h"
 
-// PLC ³ÌĞò¿éÀàĞÍ
+// PLC ç¨‹åºå—ç±»å‹
 enum PlcBlockType
 {
     PlcBlockOB = 0x38,
@@ -14,37 +14,37 @@ enum PlcBlockType
 };
 
 // PlcProgramManager
-// Ö»¸ºÔğ PLC ³ÌĞò¿éÓë±¾µØÎÄ¼şÖ®¼äµÄµ¼ÈëÓëµ¼³ö
-// ²»½âÎö³ÌĞòÄÚÈİ£¬²»Àí½âÓïÒå£¬²»²ÎÓë¿ØÖÆÂß¼­
+// åªè´Ÿè´£ PLC ç¨‹åºå—ä¸æœ¬åœ°æ–‡ä»¶ä¹‹é—´çš„å¯¼å…¥ä¸å¯¼å‡º
+// ä¸è§£æç¨‹åºå†…å®¹ï¼Œä¸ç†è§£è¯­ä¹‰ï¼Œä¸å‚ä¸æ§åˆ¶é€»è¾‘
 class PlcProgramManager
 {
 public:
     PlcProgramManager(TS7Client* clientRef);
     ~PlcProgramManager();
 
-    // ´Ó PLC ÖĞµ¼³öÖ¸¶¨³ÌĞò¿éµ½ÎÄ¼ş
-    // filePath: ±¾µØÎÄ¼şÂ·¾¶£¬ÀıÈç "templates/fb10.bin"
+    // ä» PLC ä¸­å¯¼å‡ºæŒ‡å®šç¨‹åºå—åˆ°æ–‡ä»¶
+    // filePath: æœ¬åœ°æ–‡ä»¶è·¯å¾„ï¼Œä¾‹å¦‚ "templates/fb10.bin"
     bool exportBlockToFile(
         PlcBlockType blockType,
         int blockNumber,
         const std::string& filePath
     );
 
-    // ´ÓÎÄ¼şµ¼Èë³ÌĞò¿é²¢Ğ´Èë PLC
-    // filePath: ±¾µØ³ÌĞò¿éÎÄ¼şÂ·¾¶
+    // ä»æ–‡ä»¶å¯¼å…¥ç¨‹åºå—å¹¶å†™å…¥ PLC
+    // filePath: æœ¬åœ°ç¨‹åºå—æ–‡ä»¶è·¯å¾„
     bool importBlockFromFile(
         PlcBlockType blockType,
         int blockNumber,
         const std::string& filePath
     );
 
-    // ÅĞ¶Ï PLC ÖĞÊÇ·ñ´æÔÚÖ¸¶¨³ÌĞò¿é
+    // åˆ¤æ–­ PLC ä¸­æ˜¯å¦å­˜åœ¨æŒ‡å®šç¨‹åºå—
     bool hasBlock(
         PlcBlockType blockType,
         int blockNumber
     );
 
-    // »ñÈ¡×î½üÒ»´Î´íÎóÂë
+    // è·å–æœ€è¿‘ä¸€æ¬¡é”™è¯¯ç 
     int getLastError() const;
 
 private:

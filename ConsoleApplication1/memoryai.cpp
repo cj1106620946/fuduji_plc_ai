@@ -2,7 +2,7 @@
 #include "aicontroller.h"
 #include "aitrace.h"
 
-// ¹¹Ôì
+// æ„é€ 
 MemoryAI::MemoryAI(int aicode, AIController& aiRef, AITrace& traceRef)
     : aicode(aicode),
     ai(aiRef),
@@ -10,19 +10,19 @@ MemoryAI::MemoryAI(int aicode, AIController& aiRef, AITrace& traceRef)
 {
 }
 
-// ¼ÇÒä¶ÁÈ¡ÅĞ¶Ï
+// è®°å¿†è¯»å–åˆ¤æ–­
 std::string MemoryAI::runJudge(const std::string& user_input)
 {
     return std::string();
 }
 
-// ¼ÇÒäĞ´Èë
+// è®°å¿†å†™å…¥
 std::string MemoryAI::runWrite(const std::string& user_input)
 {
     return std::string();
 }
 
-// ³¤ÆÚ¼ÇÒäÕûÀí
+// é•¿æœŸè®°å¿†æ•´ç†
 std::string MemoryAI::runManage(const std::string& user_input)
 {
     return std::string();

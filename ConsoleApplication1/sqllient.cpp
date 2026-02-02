@@ -2,7 +2,7 @@
 #include "sqlite3.h"
 #include <windows.h>
 
-// ¹¹Ôìº¯Êı
+// æ„é€ å‡½æ•°
 Sqllient::Sqllient(const char* databaseName)
     : dbName(databaseName),
     dbHandle(nullptr),
@@ -11,19 +11,19 @@ Sqllient::Sqllient(const char* databaseName)
 {
 }
 
-// Îö¹¹º¯Êı
+// ææ„å‡½æ•°
 Sqllient::~Sqllient()
 {
     close();
 }
 
-// ´ò¿ª»ò´´½¨Êı¾İ¿â
+// æ‰“å¼€æˆ–åˆ›å»ºæ•°æ®åº“
 bool Sqllient::open()
 {
     if (available)
         return true;
 
-    // ´´½¨Êı¾İ¿âÄ¿Â¼
+    // åˆ›å»ºæ•°æ®åº“ç›®å½•
     CreateDirectoryA("sqlite", NULL);
 
     char fullPath[MAX_PATH] = { 0 };
@@ -41,7 +41,7 @@ bool Sqllient::open()
         }
         else
         {
-            lastError = "sqlite3_open Ê§°Ü";
+            lastError = "sqlite3_open å¤±è´¥";
         }
 
         available = false;
@@ -53,7 +53,7 @@ bool Sqllient::open()
     return true;
 }
 
-// ¹Ø±ÕÊı¾İ¿â
+// å…³é—­æ•°æ®åº“
 void Sqllient::close()
 {
     if (dbHandle)
@@ -65,24 +65,24 @@ void Sqllient::close()
     available = false;
 }
 
-// ÊÇ·ñ¿ÉÓÃ
+// æ˜¯å¦å¯ç”¨
 bool Sqllient::isAvailable() const
 {
     return available;
 }
 
-// »ñÈ¡×î½üÒ»´Î´íÎó
+// è·å–æœ€è¿‘ä¸€æ¬¡é”™è¯¯
 const char* Sqllient::getLastError() const
 {
     return lastError.c_str();
 }
 
-// Ö´ĞĞ²»·µ»Ø½á¹ûµÄ SQL
+// æ‰§è¡Œä¸è¿”å›ç»“æœçš„ SQL
 bool Sqllient::execute(const char* sql)
 {
     if (!available || !dbHandle)
     {
-        lastError = "Êı¾İ¿âÎ´´ò¿ª";
+        lastError = "æ•°æ®åº“æœªæ‰“å¼€";
         return false;
     }
 
@@ -97,7 +97,7 @@ bool Sqllient::execute(const char* sql)
         }
         else
         {
-            lastError = "sqlite3_exec Ö´ĞĞÊ§°Ü";
+            lastError = "sqlite3_exec æ‰§è¡Œå¤±è´¥";
         }
         return false;
     }
@@ -106,12 +106,12 @@ bool Sqllient::execute(const char* sql)
     return true;
 }
 
-// ×¼±¸²éÑ¯Óï¾ä
+// å‡†å¤‡æŸ¥è¯¢è¯­å¥
 bool Sqllient::prepare(const char* sql, sqlite3_stmt** stmt)
 {
     if (!available || !dbHandle)
     {
-        lastError = "Êı¾İ¿âÎ´´ò¿ª";
+        lastError = "æ•°æ®åº“æœªæ‰“å¼€";
         return false;
     }
 
@@ -126,14 +126,14 @@ bool Sqllient::prepare(const char* sql, sqlite3_stmt** stmt)
     return true;
 }
 
-// ÍÆ½øµ½ÏÂÒ»ĞĞ
+// æ¨è¿›åˆ°ä¸‹ä¸€è¡Œ
 bool Sqllient::step(sqlite3_stmt* stmt)
 {
     int result = sqlite3_step(stmt);
     return result == SQLITE_ROW;
 }
 
-// ÊÍ·Å²éÑ¯Óï¾ä
+// é‡Šæ”¾æŸ¥è¯¢è¯­å¥
 void Sqllient::finalize(sqlite3_stmt* stmt)
 {
     if (stmt)
@@ -142,31 +142,31 @@ void Sqllient::finalize(sqlite3_stmt* stmt)
     }
 }
 
-// ¶ÁÈ¡ÎÄ±¾ÁĞ
+// è¯»å–æ–‡æœ¬åˆ—
 const char* Sqllient::columnText(sqlite3_stmt* stmt, int index)
 {
     return reinterpret_cast<const char*>(sqlite3_column_text(stmt, index));
 }
 
-// ¶ÁÈ¡ÕûĞÍÁĞ
+// è¯»å–æ•´å‹åˆ—
 int Sqllient::columnInt(sqlite3_stmt* stmt, int index)
 {
     return sqlite3_column_int(stmt, index);
 }
 
-// ¿ªÊ¼ÊÂÎñ
+// å¼€å§‹äº‹åŠ¡
 bool Sqllient::beginTransaction()
 {
     return execute("BEGIN TRANSACTION;");
 }
 
-// Ìá½»ÊÂÎñ
+// æäº¤äº‹åŠ¡
 bool Sqllient::commitTransaction()
 {
     return execute("COMMIT;");
 }
 
-// »Ø¹öÊÂÎñ
+// å›æ»šäº‹åŠ¡
 bool Sqllient::rollbackTransaction()
 {
     return execute("ROLLBACK;");

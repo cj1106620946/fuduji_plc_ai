@@ -7,12 +7,12 @@ class AIController;
 class AITrace;
 struct ExecuteItem
 {
-    std::string message;     // AI ¸øÓÃ»§/ÉÏÎ»»úµÄÖĞÎÄËµÃ÷
+    std::string message;     // AI ç»™ç”¨æˆ·/ä¸Šä½æœºçš„ä¸­æ–‡è¯´æ˜
     std::string op;          // "read" / "write"
-    std::string address;     // PLC µØÖ·
-    std::string value;       // Ğ´ÈëÖµ£¬read Ê±¿ÉÎª¿Õ
+    std::string address;     // PLC åœ°å€
+    std::string value;       // å†™å…¥å€¼ï¼Œread æ—¶å¯ä¸ºç©º
 };
-// ExecuteAI£ºÖ»Éú³É²¢½âÎöÖ´ĞĞ JSON£¬²»Ö´ĞĞ PLC
+// ExecuteAIï¼šåªç”Ÿæˆå¹¶è§£ææ‰§è¡Œ JSONï¼Œä¸æ‰§è¡Œ PLC
 class ExecuteAI
 {
 public:
@@ -22,14 +22,14 @@ public:
         AITrace& traceRef
     );
 
-    // ·µ»Ø½âÎöºóµÄ¶¯×÷ÁĞ±í
+    // è¿”å›è§£æåçš„åŠ¨ä½œåˆ—è¡¨
     std::vector<ExecuteItem> runOnce(const std::string& user_input);
-    // µ÷ÓÃ AI£¬»ñÈ¡Ô­Ê¼ JSON
+    // è°ƒç”¨ AIï¼Œè·å–åŸå§‹ JSON
     std::string callExecuteAI(const std::string& user_input);
 
 private:
 
-    // ½âÎö JSON Îª ExecuteItem ÁĞ±í
+    // è§£æ JSON ä¸º ExecuteItem åˆ—è¡¨
     std::vector<ExecuteItem> parseExecuteJson(const std::string& jsonText);
 
 private:

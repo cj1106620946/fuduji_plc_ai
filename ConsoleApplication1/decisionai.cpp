@@ -5,7 +5,7 @@
 #include <json/json.h>
 #include <string>
 
-// ¹¹Ôì
+// æ„é€ 
 DecisionAI::DecisionAI(
     int AICODE,
     AIController& aiRef,
@@ -17,46 +17,41 @@ DecisionAI::DecisionAI(
 {
 }
 
-// Î¨Ò»Ö´ĞĞÈë¿Ú
+// å”¯ä¸€æ‰§è¡Œå…¥å£
 std::string DecisionAI::runOnce(
     const std::string& snapshot,
     const std::string& user_input
 )
 {
 	std::string trace_in = snapshot+"|" + user_input;
-    // ¿ªÊ¼ trace ¼ÇÂ¼
+    // å¼€å§‹ trace è®°å½•
     trace.begin(
         "decision",
         aicode,
         trace_in,
         ai.decisionprompt_get()
     );
-    trace.debug(u8"[STEP] µ÷ÓÃ¾ö²ß AI£¬»ñÈ¡Ô­Ê¼ JSON");
-    // µ÷ÓÃ AI
+    // è°ƒç”¨ AI
     std::string jsonOut = callDecisionAI(snapshot, user_input);
 
-    // ½âÎö JSON
+    // è§£æ JSON
     std::string content;
     if (!parseDecisionJson(jsonOut, content))
     {
-        trace.debug(u8"[PARSE] decision JSON ½âÎöÊ§°Ü£¬Ö±½Ó·µ»ØÔ­Ê¼Êä³ö");
         trace.end(false, jsonOut);
         return jsonOut;
     }
-    trace.debug(u8"[PARSE] decision JSON ½âÎö³É¹¦");
-    trace.debug(u8"[CONTENT]");
-    trace.debug(content);
     trace.end(true, jsonOut);
     return content;
 }
 
-// µ÷ÓÃ AIController
+// è°ƒç”¨ AIController
 std::string DecisionAI::callDecisionAI(
     const std::string& snapshot,
     const std::string& user_input
 )
 {
-    // snapshot + user_input ×÷ÎªÊäÈëÉÏÏÂÎÄ
+    // snapshot + user_input ä½œä¸ºè¾“å…¥ä¸Šä¸‹æ–‡
     std::string input;
     input.reserve(snapshot.size() + user_input.size() + 16);
     input.append(snapshot);
@@ -73,7 +68,7 @@ std::string DecisionAI::callDecisionAI(
     );
 }
 
-// ½âÎö decision JSON£¬Ö»ÌáÈ¡ content
+// è§£æ decision JSONï¼Œåªæå– content
 bool DecisionAI::parseDecisionJson(
     const std::string& jsonText,
     std::string& outContent
