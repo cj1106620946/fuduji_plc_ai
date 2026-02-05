@@ -64,9 +64,9 @@ public:
     std::string decisionprompt_get();
     std::string judgmentprompt_get();
     std::string chatexecuteprompt_get();
-    std::string memoryprompt_get();
-
-    // Chatexcute AI（执行）
+    std::string memory13prompt_get();
+    std::string memory49prompt_get();
+   // Chatexcute AI（执行）
     std::string execute(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
     // ChatTalk AI（对话）
     std::string chat(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
@@ -117,6 +117,7 @@ private:
     std::string Judgment_prompt;
     std::string chatexecute_prompt;
     std::string memoryjudge_prompt;
-    std::string memorywrite_prompt;
-    std::string memorymanage_prompt;
+    std::string memorywrite13_prompt;
+    std::string memorywrite49_prompt;
+
 };

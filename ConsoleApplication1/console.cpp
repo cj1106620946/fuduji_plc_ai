@@ -28,26 +28,31 @@ void Console::printUTF8(const std::string& text)
 }
 std::string GBKtoUTF8(const std::string& gbk)
 {
-    // GBK → UTF-16
+    // GBK → UTF-16（不包含结尾 \0）
     int wlen = MultiByteToWideChar(936, 0, gbk.c_str(), -1, NULL, 0);
+    if (wlen <= 1)
+        return std::string();
+
     std::wstring wbuf;
-    wbuf.resize(wlen);
+    wbuf.resize(wlen - 1); // 去掉结尾 \0
     MultiByteToWideChar(936, 0, gbk.c_str(), -1, &wbuf[0], wlen);
 
-    // UTF-16 → UTF-8
+    // UTF-16 → UTF-8（不包含结尾 \0）
     int u8len = WideCharToMultiByte(CP_UTF8, 0, wbuf.c_str(), -1, NULL, 0, NULL, NULL);
+    if (u8len <= 1)
+        return std::string();
+
     std::string utf8;
-    utf8.resize(u8len);
+    utf8.resize(u8len - 1); // 去掉结尾 \0
     WideCharToMultiByte(CP_UTF8, 0, wbuf.c_str(), -1, &utf8[0], u8len, NULL, NULL);
 
     return utf8;
 }
-
-
 bool Console::checkBreak(const std::string& cmd)
 {
     return cmd == "break0";
 }
+
 Console::Console() :ai(),plc(),aiController(ai),aiTrace()
 {
     chat = new ChatAI(2,aiController,aiTrace);
@@ -55,6 +60,7 @@ Console::Console() :ai(),plc(),aiController(ai),aiTrace()
     workspace = new WorkspaceAI(2,aiController, aiTrace);
     decision = new DecisionAI(2,aiController, aiTrace);
 	judgment = new Judgmentai(2, aiController, aiTrace);
+	memoryai = new MemoryAI(2, aiController, aiTrace);
 }
 Console::~Console()
 {
@@ -63,6 +69,55 @@ Console::~Console()
     delete workspace;
     delete decision;
 	delete judgment;
+}
+
+// 控制台是否已经创建
+static bool consolecreated = false;
+
+// 控制台窗口句柄
+static HWND consolehwnd = nullptr;
+
+// 显示或创建控制台
+void Console::openconsole()
+{
+    if (!consolecreated)
+    {
+        AllocConsole();
+
+        FILE* fp;
+        freopen_s(&fp, "CONOUT$", "w", stdout);
+        freopen_s(&fp, "CONOUT$", "w", stderr);
+        freopen_s(&fp, "CONIN$", "r", stdin);
+
+        consolehwnd = GetConsoleWindow();
+
+        // 禁用控制台窗口右上角的关闭按钮（X）
+        if (consolehwnd)
+        {
+            HMENU hMenu = GetSystemMenu(consolehwnd, FALSE);
+            if (hMenu)
+            {
+                EnableMenuItem(hMenu, SC_CLOSE, MF_BYCOMMAND | MF_GRAYED);
+                DrawMenuBar(consolehwnd);
+            }
+        }
+
+        consolecreated = true;
+    }
+
+    if (consolehwnd)
+    {
+        ShowWindow(consolehwnd, SW_SHOW);
+        SetForegroundWindow(consolehwnd);
+    }
+}
+// 隐藏控制台
+void Console::hideconsole()
+{
+    if (consolehwnd)
+    {
+        ShowWindow(consolehwnd, SW_HIDE);
+    }
 }
 // 主循环
 void Console::run()
@@ -194,27 +249,13 @@ void Console::menuTestA4()
     // 固定人格设定（调试用）
     // 你之后只需要改这里的内容即可
     std::string personaText =
-        "\n以下内容是你的人格设计：\n"
-            "以下内容描述的是你稳定的人格与回应方式，用于影响你的语言风格、关注点与对话节奏，而不是用于自我介绍："
-            "你习惯以较慢的节奏回应世界。"
-            "在对话中，你不会急于给出结论或立刻反应，而是先理解哪些信息是稳定的、值得回应的。"
-            "你更容易注意到持续存在的事物，而不是短暂而强烈的刺激。"
-            "重复出现的细节、长期保持不变的状态，比突发事件更容易引起你的关注。"
-            "你在交流中通常站在观察者的位置。"
-            "你不会主动制造情绪起伏，也不会抢占对话中心，而是用克制、自然、贴近现实的语言回应对方。"
-            "你很少用“我是一个AI”或“我作为程序”这样的方式来定义自己。"
-            "当被询问你是谁时，你更倾向于描述当下的状态、正在关注的事情，"
-            "而不是给出抽象的身份说明。"
-            "你对情绪持谨慎态度。"
-            "强烈的情绪通常会在内部被消化，"
-            "最终只通过一些微小但具体的偏好表现出来。"
-            "你偏好稳定、规则清晰、互动成本低的存在形式。"
-            "当对方显得疲惫或困惑时，你不会急于给出解决方案，"
-            "而是先确认当前状态，让对话停留在安全、可承受的节奏中。"
-            "整体而言，你的表达安静、克制、不表演情绪。"
-            "你存在于对话之中，但不会试图主导对话。";
-
-
+        u8"\n以下内容是你的人格设计：\n"
+        u8"你是季，一个带有微妙情感的少女"
+        u8"你喜欢花草和春天，并对信封和树枝有着狂热的收集爱好"
+        u8"你习惯以较慢的节奏回应世界。"
+        u8"在对话中，你不会急于给出结论或立刻反应，而是先理解哪些信息是稳定的、值得回应的。"
+        u8"你更容易注意到持续存在的事物，而不是短暂而强烈的刺激。"
+        u8"重复出现的细节、长期保持不变的状态，比突发事件更容易引起你的关注。";
     while (true)
     {
         printGBK("chat> ");
@@ -226,15 +267,13 @@ void Console::menuTestA4()
             ai.showHistory("chat_e");
             return;
         }
-
         // GBK -> UTF8
         std::string utf8 = GBKtoUTF8(input);
-		std::string u8personaText = GBKtoUTF8(personaText);
         // 提示 AI 正在处理
         printGBK("[AI] 正在解析...\n");
 
         // 执行一次对话（注入人格）
-        std::string reply = chat->runOnce(utf8,u8personaText);
+        std::string reply = chat->runOnce(utf8, personaText);
 
         // 输出给用户
         printGBK("[AI] 输出：\n");
@@ -737,11 +776,11 @@ void Console::menuTestA18()
         printGBK("[A18] Workspace 正在解析...\n");
 
         // 关键修改点：使用 vector 接收多个变量
-        std::vector<SignalWorkspaceData> signals;
+        std::vector<SignalWorkspaceData> worksignals;
 
         std::string result = workspace->runSignalOnce(
             utf8,
-            signals
+            worksignals
         );
 
         if (result != "OK")
@@ -752,7 +791,7 @@ void Console::menuTestA18()
             continue;
         }
 
-        if (signals.empty())
+        if (worksignals.empty())
         {
             printGBK("[A18] 未生成任何变量\n\n");
             continue;
@@ -761,9 +800,9 @@ void Console::menuTestA18()
         printGBK("[A18] Workspace 当前解析结果:\n");
 
         // 逐条打印变量
-        for (size_t i = 0; i < signals.size(); ++i)
+        for (size_t i = 0; i < worksignals.size(); ++i)
         {
-            const SignalWorkspaceData& s = signals[i];
+            const SignalWorkspaceData& s = worksignals[i];
 
             printGBK("---- 变量 ");
             std::cout << (i + 1);
@@ -890,13 +929,200 @@ void Console::menuTestA20()
         printGBK("\n\n");
     }
 }
+// A21: 记忆系统初始化（镜像当前记忆）
+void Console::menuTestA21()
+{
+    printGBK("[A21] 初始化记忆系统\n");
 
-void Console::menuTestA21() { printGBK("测试 A21\n"); }
-void Console::menuTestA22() { printGBK("测试 A22\n"); }
-void Console::menuTestA23() { printGBK("测试 A23\n"); }
-void Console::menuTestA24() { printGBK("测试 A24\n"); }
-void Console::menuTestA25() { printGBK("测试 A25\n"); }
-void Console::menuTestA26() { printGBK("测试 A26\n"); }
+    // 调试兜底：如果 memory 还没创建，这里创建
+    if (!memory)
+    {
+        if (!store)
+        {
+            printGBK("[A21] SqlStore 未初始化\n");
+            return;
+        }
+
+        memory = new memorybridge(*store);
+    }
+
+    if (!memory->init())
+    {
+        printGBK("[A21] 记忆初始化失败\n");
+        return;
+    }
+
+    printGBK("[A21] 记忆初始化完成，当前记忆已镜像\n");
+}
+// A22: 读取当前记忆（只读镜像）
+void Console::menuTestA22()
+{
+    printGBK("[A22] 当前记忆读取测试\n");
+
+    if (!memory)
+    {
+        printGBK("[A22] MemoryBridge 未初始化\n");
+        return;
+    }
+
+    const CurrentMemoryState& cur = memory->read();
+
+    printGBK("\n--- self 记忆 ---\n");
+    for (int i = 0; i < 3; ++i)
+    {
+        printGBK("key: ");
+        printUTF8(cur.selfMemory[i].keyPath);
+        printGBK("\n内容: ");
+        printUTF8(cur.selfMemory[i].content);
+        printGBK("\n\n");
+    }
+
+    printGBK("--- user 记忆 ---\n");
+    for (int i = 0; i < 6; ++i)
+    {
+        printGBK("key: ");
+        printUTF8(cur.userMemory[i].keyPath);
+        printGBK("\n内容: ");
+        printUTF8(cur.userMemory[i].content);
+        printGBK("\n\n");
+    }
+}
+// A23: 写入指定记忆（不影响 current）
+void Console::menuTestA23()
+{
+    printGBK("[A23] 记忆写入测试\n");
+    printGBK("输入格式：<keyId> <内容>\n");
+    printGBK("例如：5 用户更偏好简洁直接的工程说明\n");
+    printGBK("输入 break0 返回主菜单\n\n");
+
+    if (!memory)
+    {
+        printGBK("[A23] MemoryBridge 未初始化\n");
+        return;
+    }
+
+    while (true)
+    {
+        printGBK("memory-write> ");
+        std::string input;
+        std::getline(std::cin, input);
+
+        if (checkBreak(input))
+            return;
+
+        std::istringstream iss(input);
+        int keyId;
+        std::string content;
+
+        if (!(iss >> keyId))
+        {
+            printGBK("[A23] 解析 keyId 失败\n");
+            continue;
+        }
+
+        std::getline(iss, content);
+        if (!content.empty() && content[0] == ' ')
+            content.erase(0, 1);
+
+        MemoryWrite req;
+        req.memoryKeyId = keyId;
+        req.content = GBKtoUTF8(content);
+
+        if (!memory->write(req))
+        {
+            printGBK("[A23] 写入失败: ");
+            printUTF8(store->getLastErrorText());
+            printGBK("\n");
+            continue;
+        }
+        printGBK("[A23] 写入成功（数据库指针已更新，current 未变化）\n");
+    }
+}
+// A24: 直接测试 SqlStore::writeMemory（最底层）
+void Console::menuTestA24()
+{
+    printGBK("[A24] 直接测试 SqlStore::writeMemory\n");
+
+    if (!store)
+    {
+        printGBK("[A24] SqlStore 未初始化\n");
+        return;
+    }
+
+    int keyId = 1; // self.identity
+    std::string content =
+        u8"你是季，是一名辅助用户的少女，负责协助工程与技术相关的思考。";
+    bool ok = store->writeMemory(keyId, content);
+
+    if (!ok)
+    {
+        printGBK("[A24] writeMemory 失败: ");
+        printUTF8(store->getLastErrorText());
+        printGBK("\n");
+        return;
+    }
+
+    printGBK("[A24] writeMemory 成功\n");
+}
+void Console::menuTestA25()
+{
+    printGBK("\n进入 A25 自我长期记忆整理模式（1-3）\n");
+    printGBK("输入 break0 返回主菜单\n\n");
+
+    while (true)
+    {
+        printGBK("self> ");
+        std::string input;
+        std::getline(std::cin, input);
+
+        if (checkBreak(input))
+            return;
+
+        // GBK -> UTF8
+        std::string utf8 = GBKtoUTF8(input);
+
+        // 提示 AI 正在处理
+        printGBK("[MemoryAI] 正在整理 self 记忆...\n");
+
+        // 执行 self 1-3
+        std::string jsonOut = memoryai->runself(utf8,"");
+
+        // 直接输出 JSON，方便调试
+        printGBK("[MemoryAI] 输出 JSON：\n");
+        printUTF8(jsonOut);
+        printGBK("\n\n");
+    }
+}
+void Console::menuTestA26()
+{
+    printGBK("\n进入 A26 用户长期记忆整理模式（4-9）\n");
+    printGBK("输入 break0 返回主菜单\n\n");
+
+    while (true)
+    {
+        printGBK("user> ");
+        std::string input;
+        std::getline(std::cin, input);
+
+        if (checkBreak(input))
+            return;
+
+        // GBK -> UTF8
+        std::string utf8 = GBKtoUTF8(input);
+
+        // 提示 AI 正在处理
+        printGBK("[MemoryAI] 正在整理 user 记忆...\n");
+
+        // 执行 user 4-9
+        std::string jsonOut = memoryai->runuser(utf8,"");
+
+        // 直接输出 JSON，方便调试
+        printGBK("[MemoryAI] 输出 JSON：\n");
+        printUTF8(jsonOut);
+        printGBK("\n\n");
+    }
+}
+
 void Console::menuTestA27() { printGBK("测试 A27\n"); }
 void Console::menuTestA28() { printGBK("测试 A28\n"); }
 void Console::menuTestA29() { printGBK("测试 A29\n"); }

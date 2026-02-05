@@ -199,7 +199,15 @@ std::string AIClient::callChatAPI(
 
     Json::Value root;
     Json::Value messages(Json::arrayValue);
-
+    // [1] 人格 / 记忆 —— 第一优先级 system
+// 定义“我是谁”，影响整体身份与语气
+    if (!extraSystemText.empty())
+    {
+        Json::Value persona;
+        persona["role"] = "system";
+        persona["content"] = extraSystemText;
+        messages.append(persona);
+    }
     // [2] 行为规则 / JSON 约束 —— 第二优先级 system
     // 只约束输出形式与 control 逻辑
     // 不再定义“我是 AI”
@@ -209,15 +217,6 @@ std::string AIClient::callChatAPI(
         rule["role"] = "system";
         rule["content"] = systemPrompt;
         messages.append(rule);
-    }
-    // [1] 人格 / 记忆 —— 第一优先级 system
-// 定义“我是谁”，影响整体身份与语气
-    if (!extraSystemText.empty())
-    {
-        Json::Value persona;
-        persona["role"] = "system";
-        persona["content"] = extraSystemText;
-        messages.append(persona);
     }
 
     // [3] 短期记忆（历史对话）
@@ -303,7 +302,7 @@ std::string AIClient::callChatLocalAPI(
 
     Json::Value root;
     Json::Value messages(Json::arrayValue);
-    // [1] 人格 / 记忆 system（优先）
+
     if (!extraSystemText.empty())
     {
         Json::Value persona;
@@ -311,7 +310,6 @@ std::string AIClient::callChatLocalAPI(
         persona["content"] = extraSystemText;
         messages.append(persona);
     }
-    // [2] 行为规则 system
 
     if (!systemPrompt.empty())
     {
@@ -320,7 +318,7 @@ std::string AIClient::callChatLocalAPI(
         rule["content"] = systemPrompt;
         messages.append(rule);
     }
-    // [3] 历史记忆
+
     if (readHistory)
     {
         auto& mem = memories[memkey];
@@ -332,8 +330,6 @@ std::string AIClient::callChatLocalAPI(
             messages.append(m);
         }
     }
-    // [4] 当前输入
-
     {
         Json::Value um;
         um["role"] = "user";

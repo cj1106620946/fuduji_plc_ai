@@ -49,6 +49,21 @@ bool SqlStore::open()
         available = false;
         return false;
     }
+
+    // 初始化人格记忆快照（每个 key 至少一条 memory）
+    if (!initMemorySnapshots())
+    {
+        available = false;
+        return false;
+    }
+
+    // 初始化人格记忆指针（每个 key 一个 pointer）
+    if (!initMemoryPointer())
+    {
+        available = false;
+        return false;
+    }
+
     //  数据库正式可用
     available = true;
     lastError.clear();
@@ -218,7 +233,7 @@ if (!sql->execute(plcPointer))
     }
 
 
-    // 长期记忆表（人格 / 状态 快照存储）
+
     const char* memory =
         "CREATE TABLE IF NOT EXISTS memory ("
         "memory_id INTEGER PRIMARY KEY AUTOINCREMENT," // 记忆快照唯一 ID（不断增长）
@@ -625,7 +640,7 @@ bool SqlStore::initMemoryPointer()
 
 // 写入人格记忆并切换指针
 bool SqlStore::writeMemory(
-    int memoryKeyId,                 // 只允许 user 端 4-9
+    int memoryKeyId,                 
     const std::string& content       // 长期成立的记忆内容
 )
 {
@@ -634,17 +649,13 @@ bool SqlStore::writeMemory(
         lastError = u8"数据库不可用";
         return false;
     }
-
     if (content.empty())
     {
         lastError = u8"memory 内容为空";
         return false;
     }
-
     int now = static_cast<int>(time(nullptr));
-
     // 1. 插入新的 memory 记录
-    // 这里应当生成一条新的 memory_id
     std::string insertMemorySql =
         "INSERT INTO memory (memory_key_id, content, created_at) VALUES ("
         + std::to_string(memoryKeyId) + ", '"
@@ -656,16 +667,13 @@ bool SqlStore::writeMemory(
         lastError = sql->getLastError();
         return false;
     }
-
     // 2. 更新 memory_pointer 指向最新的 memory
-    // 此处逻辑是：明确切换当前生效的记忆
     std::string updatePointerSql =
         "UPDATE memory_pointer SET "
         "memory_id = (SELECT MAX(memory_id) FROM memory WHERE memory_key_id = "
         + std::to_string(memoryKeyId) + "), "
         "updated_at = " + std::to_string(now) +
         " WHERE memory_key_id = " + std::to_string(memoryKeyId) + ";";
-
     if (!sql->execute(updatePointerSql.c_str()))
     {
         lastError = sql->getLastError();

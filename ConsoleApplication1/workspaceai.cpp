@@ -42,7 +42,7 @@ std::string WorkspaceAI::runPlcOnce(
 
 std::string WorkspaceAI::runSignalOnce(
     const std::string& user_input,
-    std::vector<SignalWorkspaceData>& signals
+    std::vector<SignalWorkspaceData>& worksignals
 )
 {
     trace.begin(
@@ -52,7 +52,7 @@ std::string WorkspaceAI::runSignalOnce(
         ai.workspacesigprompt_get()
     );
     std::string output = callSignalAI(user_input);
-    std::string err = parseSignalJson(output, signals);
+    std::string err = parseSignalJson(output, worksignals);
     trace.end(err == "OK", output);
     return err;
 }
@@ -107,10 +107,10 @@ std::string WorkspaceAI::parsePlcJson(
 
 std::string WorkspaceAI::parseSignalJson(
     const std::string& jsonText,
-    std::vector<SignalWorkspaceData>& signals
+    std::vector<SignalWorkspaceData>& worksignals
 )
 {
-    signals.clear();
+    worksignals.clear();
 
     Json::Value root;
     Json::Reader reader;
@@ -128,12 +128,12 @@ std::string WorkspaceAI::parseSignalJson(
         return "unknown error";
     }
 
-    if (!root.isMember("signals") || !root["signals"].isArray())
-        return "missing signals";
+    if (!root.isMember("worksignals") || !root["worksignals"].isArray())
+        return "missing worksignals";
 
-    const Json::Value& arr = root["signals"];
+    const Json::Value& arr = root["worksignals"];
     if (arr.empty())
-        return "signals empty";
+        return "worksignals empty";
 
     for (Json::ArrayIndex i = 0; i < arr.size(); ++i)
     {
@@ -158,10 +158,10 @@ std::string WorkspaceAI::parseSignalJson(
             ? sig["description"].asString()
             : "";
 
-        signals.push_back(data);
+        worksignals.push_back(data);
     }
 
-    if (signals.empty())
+    if (worksignals.empty())
         return "no valid signal item";
 
     return "OK";

@@ -98,11 +98,11 @@ bool uppermachine::createSignalRow(
     sig.writeFlag = 0;
     sig.lastOpAt = static_cast<int>(time(nullptr));
 
-    // 追加到 signals
-    signals.push_back(sig);
+    // 追加到 worksignals
+    worksignals.push_back(sig);
 
-    // 记录地址索引（地址 -> signals 下标）
-    signalIndexByAddr[plcAddress] = signals.size() - 1;
+    // 记录地址索引（地址 -> worksignals 下标）
+    signalIndexByAddr[plcAddress] = worksignals.size() - 1;
 
     logOp(
         "createSignalRow",
@@ -149,7 +149,7 @@ bool uppermachine::readplc(
         return false;
     }
 
-    const signalinfo& sig = signals[it->second];
+    const signalinfo& sig = worksignals[it->second];
 
     // 组合输出结果：
     // 变量名 + 地址 + 查询值 + 中文解释
@@ -175,7 +175,7 @@ bool uppermachine::writeplc(
         return false;
     }
 
-    signalinfo& sig = signals[it->second];
+    signalinfo& sig = worksignals[it->second];
 
     // 设置写入意图（只修改镜像，不直接写 PLC）
     sig.targetValue = value;
@@ -223,8 +223,8 @@ bool uppermachine::init()
         return false;
     }
 
-    signals = dbSignals;
-    logOp("init", "加载变量数量: " + std::to_string(signals.size()));
+    worksignals = dbSignals;
+    logOp("init", "加载变量数量: " + std::to_string(worksignals.size()));
 
     logOp("init", "尝试连接 PLC");
     if (!plc.connectPLC(
@@ -326,7 +326,7 @@ void uppermachine::readThreadProc()
             continue;
         }
 
-        for (signalinfo& sig : signals)
+        for (signalinfo& sig : worksignals)
         {
             int32_t value = 0;
             bool ok = plc.readAddress(sig.plcAddress, value);
@@ -366,7 +366,7 @@ void uppermachine::writeThreadProc()
             continue;
         }
 
-        for (signalinfo& sig : signals)
+        for (signalinfo& sig : worksignals)
         {
             if (sig.writeFlag != 1)
                 continue;

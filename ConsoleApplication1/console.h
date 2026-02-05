@@ -17,7 +17,8 @@
 #include "workspaceai.h"
 #include "decisionai.h"
 #include "judgmentai.h"
-
+#include"memorybridge.h"
+#include"memoryai.h"
 // ===== 前向声明（指针 / 引用使用，避免重编译） =====
 
 // PLC / 数据库
@@ -47,13 +48,16 @@ public:
     Console();
     ~Console();
     void run();
+    // 显示或创建控制台
+    void openconsole();
+    // 隐藏控制台
+    void hideconsole();
 
 private:
     // 基础工具
     void printGBK(const std::string& text);
     void printUTF8(const std::string& text);
     bool checkBreak(const std::string& cmd);
-
     void showMainHeader();
     void mainMenu();
     void menuTestA1();
@@ -98,10 +102,13 @@ private:
     AIClient ai;
     AIController aiController;
     AITrace aiTrace;
-
+   //记忆管理
+    memorybridge* memory = nullptr;    
     // AI 模块
     WorkspaceAI* workspace = nullptr;
     ChatAI* chat = nullptr;
+
+    MemoryAI* memoryai = nullptr;
     DecisionAI* decision = nullptr;
     ExecuteAI* execute = nullptr;
     Judgmentai* judgment = nullptr;

@@ -19,24 +19,18 @@
     <Filter Include="源文件\ai类">
       <UniqueIdentifier>{0016aa05-800b-4ecb-8b31-14d7775adb1d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="QTUI">
+      <UniqueIdentifier>{0a1904fa-dd74-47ae-929f-6f5a8d7ea695}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="外部文件">
+      <UniqueIdentifier>{a1d0f0f8-b8e3-4c53-8942-e11ff3c551cd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="console.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="aicontroller.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="aitrace.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="aimanager.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="jsonstatewriter.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="aimanagerui.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="workspaceai.cpp">
@@ -72,39 +66,51 @@
     <ClCompile Include="sqllient.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\c-cpp\src\snap7.cpp">
-      <Filter>资源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\c-cpp\src\sqlite3.c">
-      <Filter>资源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>资源文件</Filter>
-    </ClCompile>
     <ClCompile Include="memoryai.cpp">
       <Filter>源文件\ai类</Filter>
     </ClCompile>
     <ClCompile Include="uppermachine.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="aiclient.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="personabuilder.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="qtmain.cpp">
-      <Filter>资源文件</Filter>
+    <ClCompile Include="aitrace.cpp">
+      <Filter>源文件\ai类</Filter>
+    </ClCompile>
+    <ClCompile Include="aiclient.cpp">
+      <Filter>源文件\ai类</Filter>
+    </ClCompile>
+    <ClCompile Include="aicontroller.cpp">
+      <Filter>源文件\ai类</Filter>
+    </ClCompile>
+    <ClCompile Include="aimanager.cpp">
+      <Filter>源文件\ai类</Filter>
+    </ClCompile>
+    <ClCompile Include="aimanagerui.cpp">
+      <Filter>源文件\ai类</Filter>
     </ClCompile>
     <ClCompile Include="jsoncpp.cpp">
-      <Filter>资源文件</Filter>
+      <Filter>外部文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\c-cpp\src\snap7.cpp">
+      <Filter>外部文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\c-cpp\src\sqlite3.c">
+      <Filter>外部文件</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="qtmain.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="memorybridge.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="console.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="aicontroller.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="speechagent.h">
@@ -113,16 +119,7 @@
     <ClInclude Include="piperengine.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="aitrace.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="aimanager.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="jsonstatewriter.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="aimanagerui.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="chatai.h">
@@ -146,26 +143,59 @@
     <ClInclude Include="sqllient.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="aiclient.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="plcclient.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="plcprogrammanager.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\c-cpp\include\snap7.h">
-      <Filter>资源文件</Filter>
-    </ClInclude>
     <ClInclude Include="memoryai.h">
+      <Filter>头文件\ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="personabuilder.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="aiclient.h">
+      <Filter>头文件\ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="aicontroller.h">
+      <Filter>头文件\ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="aimanager.h">
+      <Filter>头文件\ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="aimanagerui.h">
+      <Filter>头文件\ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="aitrace.h">
       <Filter>头文件\ai类</Filter>
     </ClInclude>
     <ClInclude Include="uppermachine.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="personabuilder.h">
+    <ClInclude Include="resource.h">
+      <Filter>资源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\c-cpp\include\snap7.h">
+      <Filter>外部文件</Filter>
+    </ClInclude>
+    <ClInclude Include="memorybridge.h">
       <Filter>头文件</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="fuduij_ai_plc.rc">
+      <Filter>资源文件</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="qtmain.h">
+      <Filter>头文件</Filter>
+    </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <QtUic Include="qtmain.ui">
+      <Filter>QTUI</Filter>
+    </QtUic>
   </ItemGroup>
 </Project>

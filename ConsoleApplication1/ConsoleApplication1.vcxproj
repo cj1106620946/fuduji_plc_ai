@@ -57,9 +57,15 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <Import Project="$(QtMsBuild)\qt_defaults.props" Condition="Exists('$(QtMsBuild)\qt_defaults.props')" />
-  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
-  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
-  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <QtModules>core;gui;widgets</QtModules>
+  </PropertyGroup>
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <QtModules>core;gui;widgets</QtModules>
+  </PropertyGroup>
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <QtModules>core;gui;widgets</QtModules>
+  </PropertyGroup>
   <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <QtModules>core;gui;widgets</QtModules>
     <QtInstall>6.10.2</QtInstall>
@@ -149,7 +155,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\project\c-cpp\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\Qt\6.10.2\msvc2022_64\lib;D:\project\c-cpp\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>snap7.lib;libcurl_a_debug.lib;libcurl_a.lib;ws2_32.lib;winmm.lib;wldap32.lib;Crypt32.lib;Normaliz.lib;whisper.lib;portaudio.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
@@ -173,6 +179,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="jsoncpp.cpp" />
     <ClCompile Include="memoryai.cpp" />
+    <ClCompile Include="memorybridge.cpp" />
     <ClCompile Include="personabuilder.cpp" />
     <ClCompile Include="piperengine.cpp" />
     <ClCompile Include="plcclient.cpp" />
@@ -198,15 +205,24 @@
     <ClInclude Include="jsonstatewriter.h" />
     <ClInclude Include="judgmentai.h" />
     <ClInclude Include="memoryai.h" />
+    <ClInclude Include="memorybridge.h" />
     <ClInclude Include="personabuilder.h" />
     <ClInclude Include="piperengine.h" />
     <ClInclude Include="plcclient.h" />
     <ClInclude Include="plcprogrammanager.h" />
+    <QtMoc Include="qtmain.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="speechagent.h" />
     <ClInclude Include="sqlstore.h" />
     <ClInclude Include="sqllient.h" />
     <ClInclude Include="uppermachine.h" />
     <ClInclude Include="workspaceai.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="fuduij_ai_plc.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtUic Include="qtmain.ui" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(QtMsBuild)\qt.targets" Condition="Exists('$(QtMsBuild)\qt.targets')" />

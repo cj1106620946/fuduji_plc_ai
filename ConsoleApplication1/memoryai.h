@@ -5,29 +5,50 @@
 class AIController;
 class AITrace;
 
-// MemoryAI
-// 仅作为“记忆 AI 调度入口”的占位骨架
-// 不包含任何实现逻辑
+// MemoryAI 专用单条记忆
+struct MemoryAIItem
+{
+    int memoryKeyId;
+    std::string keyPath;
+    std::string content;
+};
+
+// MemoryAI 专用记忆状态
+struct MemoryAIState
+{
+    MemoryAIItem selfMemory[3];
+    MemoryAIItem userMemory[6];
+};
+
 class MemoryAI
 {
 public:
-    // aicode：AI 编号或模式
+    // 构造
     MemoryAI(int aicode, AIController& aiRef, AITrace& traceRef);
 
-    // ===== 记忆读取判断 =====
-    // 判断用户输入是否与已有记忆相关
-    std::string runJudge(const std::string& user_input);
+    // 生成 self 1-3 的长期记忆
+    std::string runself(const std::string& user_input,
+        const std::string& personaText
+    );
 
-    // ===== 记忆写入 =====
-    // 将一次对话或事件整理为记忆
-    std::string runWrite(const std::string& user_input);
+    // 生成 user 4-9 的长期记忆
+    std::string runuser(const std::string& user_input,
+        const std::string& personaText
+    );
 
-    // ===== 长期记忆整理 =====
-    // 后台调用，用于整理长期记忆
-    std::string runManage(const std::string& user_input);
+private:
+    // 统一 JSON 解析（[{name,text}, ...]）
+    // 解析结果直接写入 state
+    bool parseMemoryJson(
+        const std::string& jsonText,
+        bool isSelf   // true = selfMemory，false = userMemory
+    );
 
 private:
     int aicode;
     AIController& ai;
     AITrace& trace;
+
+    // 内部状态，仅供 MemoryAI 自己使用
+    MemoryAIState state;
 };

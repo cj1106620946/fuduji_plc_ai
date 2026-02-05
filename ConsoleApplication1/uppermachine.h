@@ -122,10 +122,10 @@ private:
     std::string lastError;
     bool boolread;
     bool boolwrite;
-    // PLC 地址 -> signals 中的索引位置
+    // PLC 地址 -> worksignals 中的索引位置
     std::unordered_map<std::string, size_t> signalIndexByAddr;
 
     RunState runState;
     plcinfo currentPlc;
-    std::vector<signalinfo> signals;
+    std::vector<signalinfo> worksignals;
 };

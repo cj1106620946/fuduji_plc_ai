@@ -2,28 +2,187 @@
 #include "aicontroller.h"
 #include "aitrace.h"
 
+#include <json/json.h>
+#include <sstream>
+
 // 构造
 MemoryAI::MemoryAI(int aicode, AIController& aiRef, AITrace& traceRef)
     : aicode(aicode),
     ai(aiRef),
     trace(traceRef)
 {
+    // 初始化 selfMemory
+    for (int i = 0; i < 3; ++i)
+    {
+        state.selfMemory[i].memoryKeyId = 0;
+        state.selfMemory[i].keyPath.clear();
+        state.selfMemory[i].content.clear();
+    }
+
+    // 初始化 userMemory
+    for (int i = 0; i < 6; ++i)
+    {
+        state.userMemory[i].memoryKeyId = 0;
+        state.userMemory[i].keyPath.clear();
+        state.userMemory[i].content.clear();
+    }
 }
 
-// 记忆读取判断
-std::string MemoryAI::runJudge(const std::string& user_input)
+// 生成 self 1-3 的长期记忆（带人格通道）
+std::string MemoryAI::runself(
+    const std::string& currentText,
+    const std::string& personaText
+)
 {
-    return std::string();
+    // 开始 Trace
+    trace.begin(
+        u8"memory_self",
+        aicode,
+        currentText,
+        ai.memory13prompt_get()
+    );
+
+    // 调用 AIController（self 1-3 + 人格通道）
+    std::string jsonOut = ai.allairun(
+        true,                       // 读取短期记忆
+        false,                      // 不写入短期记忆
+        aicode,                     // ai 模式
+        u8"memory_self",            // 记忆槽
+        currentText,                // 当前需要整理的文本
+        ai.memory13prompt_get(),    // self 1-3 prompt
+        personaText                 // ★ 上一次已确认的人格记忆
+    );
+
+    // 解析 JSON
+    bool ok = parseMemoryJson(jsonOut, true);
+
+    // 结束 Trace
+    trace.end(ok, jsonOut);
+
+    return jsonOut;
 }
 
-// 记忆写入
-std::string MemoryAI::runWrite(const std::string& user_input)
+// 生成 user 4-9 的长期记忆（带人格通道）
+std::string MemoryAI::runuser(
+    const std::string& currentText,
+    const std::string& personaText
+)
 {
-    return std::string();
+    // 开始 Trace
+    trace.begin(
+        u8"memory_user",
+        aicode,
+        currentText,
+        ai.memory49prompt_get()
+    );
+
+    // 调用 AIController（user 4-9 + 人格通道）
+    std::string jsonOut = ai.allairun(
+        true,                       // 读取短期记忆
+        false,                      // 不写入短期记忆
+        aicode,                     // ai 模式
+        u8"memory_user",            // 记忆槽
+        currentText,                // 当前需要整理的文本
+        ai.memory49prompt_get(),    // user 4-9 prompt
+        personaText                 // ★ 上一次已确认的用户长期记忆
+    );
+
+    // 解析 JSON
+    bool ok = parseMemoryJson(jsonOut, false);
+
+    // 结束 Trace
+    trace.end(ok, jsonOut);
+
+    return jsonOut;
 }
 
-// 长期记忆整理
-std::string MemoryAI::runManage(const std::string& user_input)
+// 统一 JSON 解析
+bool MemoryAI::parseMemoryJson(
+    const std::string& jsonText,
+    bool isSelf
+)
 {
-    return std::string();
+    Json::Value root;
+    Json::CharReaderBuilder builder;
+    std::string errors;
+
+    std::istringstream iss(jsonText);
+    if (!Json::parseFromStream(builder, iss, &root, &errors))
+        return false;
+
+    // 必须是数组
+    if (!root.isArray())
+        return false;
+
+    for (Json::ArrayIndex i = 0; i < root.size(); ++i)
+    {
+        const Json::Value& item = root[i];
+        if (!item.isObject())
+            continue;
+
+        if (!item.isMember("name") || !item.isMember("text"))
+            continue;
+
+        if (!item["name"].isString() || !item["text"].isString())
+            continue;
+
+        std::string name = item["name"].asString();
+        std::string text = item["text"].asString();
+
+        if (isSelf)
+        {
+            // self 1-3
+            if (name == "self.identity")
+            {
+                state.selfMemory[0].keyPath = name;
+                state.selfMemory[0].content = text;
+            }
+            else if (name == "self.emotion")
+            {
+                state.selfMemory[1].keyPath = name;
+                state.selfMemory[1].content = text;
+            }
+            else if (name == "self.attitude")
+            {
+                state.selfMemory[2].keyPath = name;
+                state.selfMemory[2].content = text;
+            }
+        }
+        else
+        {
+            // user 4-9
+            if (name == "user.summary")
+            {
+                state.userMemory[0].keyPath = name;
+                state.userMemory[0].content = text;
+            }
+            else if (name == "user.preference")
+            {
+                state.userMemory[1].keyPath = name;
+                state.userMemory[1].content = text;
+            }
+            else if (name == "user.addressing")
+            {
+                state.userMemory[2].keyPath = name;
+                state.userMemory[2].content = text;
+            }
+            else if (name == "user.interaction")
+            {
+                state.userMemory[3].keyPath = name;
+                state.userMemory[3].content = text;
+            }
+            else if (name == "user.context")
+            {
+                state.userMemory[4].keyPath = name;
+                state.userMemory[4].content = text;
+            }
+            else if (name == "user.constraints")
+            {
+                state.userMemory[5].keyPath = name;
+                state.userMemory[5].content = text;
+            }
+        }
+    }
+
+    return true;
 }

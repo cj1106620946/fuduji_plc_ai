@@ -37,7 +37,7 @@ public:
 
     std::string runSignalOnce(
         const std::string& user_input,
-        std::vector<SignalWorkspaceData>& signals
+        std::vector<SignalWorkspaceData>& worksignals
     );
     std::string callPlcAI(const std::string& user_input);
     std::string callSignalAI(const std::string& user_input);
@@ -54,7 +54,7 @@ private:
 
     std::string parseSignalJson(
         const std::string& jsonText,
-        std::vector<SignalWorkspaceData>& signals
+        std::vector<SignalWorkspaceData>& worksignals
     );
 
 

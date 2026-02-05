@@ -121,26 +121,6 @@ public:
     );
 
 
-
-    /*
-    bool getAllSignalAddresses(std::vector<std::string>& addrs);
-
-    bool updateSignalReadResult(
-        const std::string& addr,
-        int32_t value,
-        bool readOk
-    );
-
-    bool getAllWriteSignals(
-        std::vector<std::string>& addrs,
-        std::vector<int32_t>& values
-    );
-
-    bool updateSignalWriteResult(
-        const std::string& addr,
-        bool writeOk
-    );
-    */
     bool initSelfMemoryKeys();
     bool initMemoryPointer();
 
