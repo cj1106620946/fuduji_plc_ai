@@ -17,12 +17,15 @@ class ProjectManager
 {
 public:
     ProjectManager(
-        PLCClient& plc,
-        uppermachine& upper,
+        SqlStore& store,
+        RunState runState,
+        plcinfo currentPlc,
+        std::vector<signalinfo> worksignals,
         WorkspaceAI& workspaceAI,
         ExecuteAI& executeAI,
         DecisionAI& decisionAI
     );
+	~ProjectManager();
     // 生命周期接口
     bool init();
     bool start();
@@ -61,18 +64,18 @@ public:
     const std::string& getLastError() const;
 private:
     // 外部注入对象
-    uppermachine& upperRef;
+    uppermachine* upperRef;
+
     WorkspaceAI& workspaceAIRef;
     ExecuteAI& executeAIRef;
     DecisionAI& decisionAIRef;
-    PLCClient& plcRef;
-    // 管理层错误
-    std::string lastError;
     // 系统状态镜像
     RunState runState;
     plcinfo currentPlc;
-
     std::vector<signalinfo> worksignals;
+
+    // 管理层错误
+    std::string lastError;
     std::atomic<bool> running;
     // 管理线程
     std::thread runThread;      // manager 主运行线程
@@ -87,6 +90,4 @@ private:
     void runThreadProc();       // manager 主循环
     void upperThreadProc();     // 上位机 run 封装
     void aiThreadProc();        // AI 输入输出循环
-
-
 };

@@ -1,20 +1,34 @@
 
 #include "projectmanager.h"
+
 ProjectManager::ProjectManager(
-    PLCClient& plc,
-    uppermachine& upper,
+    SqlStore& store,
+    RunState runState,
+    plcinfo currentPlc,
+    std::vector<signalinfo> worksignals,
     WorkspaceAI& workspaceAI,
     ExecuteAI& executeAI,
     DecisionAI& decisionAI
 )
-    : plcRef(plc),
-    upperRef(upper),
+    : upperRef(new uppermachine(store, runState, currentPlc, worksignals)),
     workspaceAIRef(workspaceAI),
     executeAIRef(executeAI),
     decisionAIRef(decisionAI),
     running(false)
 {
 }
+
+ProjectManager::~ProjectManager()
+{
+    running = false;
+
+    if (upperRef)
+    {
+        delete upperRef;
+        upperRef = nullptr;
+    }
+}
+
 void ProjectManager::logError(
     const std::string& fromFunc,
     const std::string& reason
@@ -120,9 +134,9 @@ bool ProjectManager::createPlcByAI(const std::string& userInput)
     // 其余字段由数据库或后续流程补全
 
     // 3. 交给 uppermachine 创建
-    if (!upperRef.createPlcInfoRow(info))
+    if (!upperRef->createPlcInfoRow(info))
     {
-        lastError = upperRef.getLastError();
+        lastError = upperRef->getLastError();
         logError("createPlcByAI", lastError);
         return false;
     }
@@ -146,13 +160,13 @@ bool ProjectManager::createSignalsByAI(const std::string& userInput)
     // 2. 逐个交给 uppermachine 创建
     for (const auto& sig : aiSignals)
     {
-        if (!upperRef.createSignalRow(
+        if (!upperRef->createSignalRow(
             sig.name,
             sig.plc_address,
             currentPlc.signalRootId,   // 当前 PLC id
             sig.description))
         {
-            lastError = upperRef.getLastError();
+            lastError = upperRef->getLastError();
             logError("createSignalsByAI", lastError);
             return false;
         }
@@ -309,9 +323,9 @@ bool ProjectManager::createPlcWorkspaceByAI(
     info.isActive = 0;
 
     // 3. 写入数据库（通过 uppermachine）
-    if (!upperRef.createPlcInfoRow(info))
+    if (!upperRef->createPlcInfoRow(info))
     {
-        lastError = upperRef.getLastError();
+        lastError = upperRef->getLastError();
         logError("createPlcWorkspaceByAI", lastError);
         return false;
     }
@@ -337,14 +351,14 @@ bool ProjectManager::createSignalWorkspaceByAI(
     }
     for (const auto& sig : aiSignals)
     {
-        if (!upperRef.createSignalRow(
+        if (!upperRef->createSignalRow(
             sig.name,
             sig.plc_address,
             currentPlc.signalRootId,
             sig.description
         ))
         {
-            lastError = upperRef.getLastError();
+            lastError = upperRef->getLastError();
             logError("createSignalWorkspaceByAI", lastError);
             return false;
         }
