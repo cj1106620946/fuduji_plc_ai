@@ -60,9 +60,6 @@
     <ClCompile Include="plcclient.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="plcprogrammanager.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="sqllient.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -108,6 +105,12 @@
     <ClCompile Include="memorybridge.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="projectmanager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ai_plc_delegate.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="console.h">
@@ -146,9 +149,6 @@
     <ClInclude Include="plcclient.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="plcprogrammanager.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="memoryai.h">
       <Filter>头文件\ai类</Filter>
     </ClInclude>
@@ -180,6 +180,12 @@
       <Filter>外部文件</Filter>
     </ClInclude>
     <ClInclude Include="memorybridge.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="projectmanager.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ai_plc_delegate.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,10 +1,24 @@
 #include "uppermachine.h"
-uppermachine::uppermachine(PLCClient& plcRef, SqlStore& storeRef)
-    : plc(plcRef),
-    store(storeRef),
-    lastError()
+
+
+uppermachine::uppermachine(
+    SqlStore& storeRef,
+    RunState& runStateRef,
+    plcinfo& plcRefInfo,
+    std::vector<signalinfo>& signalRefList
+)
+    : plc(),
+      store(storeRef),
+      runState(runStateRef),
+      currentPlc(plcRefInfo),
+      worksignals(signalRefList),
+      boolread(false),
+      boolwrite(false)
 {
 }
+
+
+
 uppermachine::~uppermachine()
 {
     if (readThread.joinable())
@@ -13,13 +27,17 @@ uppermachine::~uppermachine()
     if (writeThread.joinable())
         writeThread.join();
 }
+
+
+
+
 void uppermachine::logOp(
     const std::string& fromFunc,   // 函数名（例如 init / readThreadProc）
     const std::string& action      // 执行的操作（例如 初始化开始）
 )
 {
     // 打开日志文件，追加模式
-    std::ofstream logFile("uppermachine.log", std::ios::app);
+    std::ofstream logFile("error//uppermachine.log", std::ios::app);
 
     if (!logFile.is_open()) {
         std::cerr << "无法打开日志文件" << std::endl;
@@ -112,28 +130,7 @@ bool uppermachine::createSignalRow(
     lastError.clear();
     return true;
 }
-bool uppermachine::getCurrentPlcInfo(plcinfo& out)
-{
-    logOp("getCurrentPlcInfo", "读取当前 PLC 信息");
 
-    if (!store.readPlcInfo(out))
-    {
-        lastError = store.getLastErrorText();
-        logOp(
-            "getCurrentPlcInfo",
-            std::string("读取失败，原因: ") + lastError
-        );
-        return false;
-    }
-
-    logOp(
-        "getCurrentPlcInfo",
-        std::string("读取成功，IP: ") + out.ipAddress
-    );
-
-    lastError.clear();
-    return true;
-}
 
 bool uppermachine::readplc(
     const std::string& plcAddress,
@@ -144,11 +141,10 @@ bool uppermachine::readplc(
     auto it = signalIndexByAddr.find(plcAddress);
     if (it == signalIndexByAddr.end())
     {
-        lastError = "plc 地址不存在";
+        lastError = u8"plc 地址不存在";
         outResult = lastError;
         return false;
     }
-
     const signalinfo& sig = worksignals[it->second];
 
     // 组合输出结果：
@@ -170,7 +166,7 @@ bool uppermachine::writeplc(
     auto it = signalIndexByAddr.find(plcAddress);
     if (it == signalIndexByAddr.end())
     {
-        lastError = "plc 地址不存在";
+        lastError = u8"plc 地址不存在";
         outResult = lastError;
         return false;
     }
@@ -180,7 +176,6 @@ bool uppermachine::writeplc(
     // 设置写入意图（只修改镜像，不直接写 PLC）
     sig.targetValue = value;
     sig.writeFlag = 1;
-
     outResult =
         "写入请求已提交 "
         "变量名: " + sig.name +
@@ -190,6 +185,8 @@ bool uppermachine::writeplc(
 
     return true;
 }
+
+
 bool uppermachine::init()
 {
     logOp("init", "初始化开始");
@@ -204,9 +201,7 @@ bool uppermachine::init()
         runState.life = 0;
         return false;
     }
-
     currentPlc = info;
-
     logOp(
         "init",
         "当前 PLC: IP=" + currentPlc.ipAddress +
@@ -222,10 +217,8 @@ bool uppermachine::init()
         runState.life = 0;
         return false;
     }
-
     worksignals = dbSignals;
     logOp("init", "加载变量数量: " + std::to_string(worksignals.size()));
-
     logOp("init", "尝试连接 PLC");
     if (!plc.connectPLC(
         currentPlc.ipAddress,
@@ -239,8 +232,6 @@ bool uppermachine::init()
     }
 
     logOp("init", "PLC 连接成功，开始读取 PLC 实际身份信息");
-
-    // === 连接成功后，读取一次 PLC 实际身份信息，补全 currentPlc ===
     PlcIdentity identity;
     if (plc.getPlcIdentity(identity))
     {
@@ -265,7 +256,6 @@ bool uppermachine::init()
         // 注意：这里不 return false
         // 连接已成功，允许系统继续运行
     }
-
     runState.read = 0;
     runState.write = 0;
     runState.fatalReason = 0;

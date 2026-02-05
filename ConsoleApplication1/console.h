@@ -53,9 +53,36 @@ public:
     // 隐藏控制台
     void hideconsole();
 
+
+private:
+    // 数据库与上位机
+    Sqllient* sqlClient = nullptr;
+    SqlStore* store = nullptr;
+    uppermachine* upper = nullptr;
+
+    // PLC 与 AI
+    PLCClient plc;
+    AIClient ai;
+    AIController aiController;
+    AITrace aiTrace;
+   //记忆管理
+    memorybridge* memory = nullptr;    
+    // AI 模块
+    WorkspaceAI* workspace = nullptr;
+    ChatAI* chat = nullptr;
+
+    MemoryAI* memoryai = nullptr;
+    DecisionAI* decision = nullptr;
+    ExecuteAI* execute = nullptr;
+    Judgmentai* judgment = nullptr;
+
+    // 状态
+    bool hasAIKey = false;
+
+
+std::string GBKtoUTF8(const std::string& gbk);
 private:
     // 基础工具
-    void printGBK(const std::string& text);
     void printUTF8(const std::string& text);
     bool checkBreak(const std::string& cmd);
     void showMainHeader();
@@ -90,31 +117,4 @@ private:
     void menuTestA28();
     void menuTestA29();
     void menuTestA30();
-
-private:
-    // 数据库与上位机
-    Sqllient* sqlClient = nullptr;
-    SqlStore* store = nullptr;
-    uppermachine* upper = nullptr;
-
-    // PLC 与 AI
-    PLCClient plc;
-    AIClient ai;
-    AIController aiController;
-    AITrace aiTrace;
-   //记忆管理
-    memorybridge* memory = nullptr;    
-    // AI 模块
-    WorkspaceAI* workspace = nullptr;
-    ChatAI* chat = nullptr;
-
-    MemoryAI* memoryai = nullptr;
-    DecisionAI* decision = nullptr;
-    ExecuteAI* execute = nullptr;
-    Judgmentai* judgment = nullptr;
-
-    // 状态
-    bool hasAIKey = false;
-
 };
-std::string GBKtoUTF8(const std::string& gbk);

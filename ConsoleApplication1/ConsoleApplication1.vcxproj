@@ -169,6 +169,7 @@
     <ClCompile Include="aimanager.cpp" />
     <ClCompile Include="aimanagerui.cpp" />
     <ClCompile Include="aitrace.cpp" />
+    <ClCompile Include="ai_plc_delegate.cpp" />
     <ClCompile Include="chatai.cpp" />
     <ClCompile Include="executeai.cpp" />
     <ClCompile Include="console.cpp" />
@@ -183,7 +184,7 @@
     <ClCompile Include="personabuilder.cpp" />
     <ClCompile Include="piperengine.cpp" />
     <ClCompile Include="plcclient.cpp" />
-    <ClCompile Include="plcprogrammanager.cpp" />
+    <ClCompile Include="projectmanager.cpp" />
     <ClCompile Include="qtmain.cpp" />
     <ClCompile Include="speechagent.cpp" />
     <ClCompile Include="sqlstore.cpp" />
@@ -197,6 +198,7 @@
     <ClInclude Include="aimanager.h" />
     <ClInclude Include="aimanagerui.h" />
     <ClInclude Include="aitrace.h" />
+    <ClInclude Include="ai_plc_delegate.h" />
     <ClInclude Include="chatai.h" />
     <ClInclude Include="executeai.h" />
     <ClInclude Include="console.h" />
@@ -209,8 +211,8 @@
     <ClInclude Include="personabuilder.h" />
     <ClInclude Include="piperengine.h" />
     <ClInclude Include="plcclient.h" />
-    <ClInclude Include="plcprogrammanager.h" />
     <QtMoc Include="qtmain.h" />
+    <ClInclude Include="projectmanager.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="speechagent.h" />
     <ClInclude Include="sqlstore.h" />

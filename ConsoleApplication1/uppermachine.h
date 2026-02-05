@@ -8,8 +8,10 @@
 #include <ctime>
 #include <fstream>
 #include <chrono>
+
 #include "sqlstore.h"
 #include "PLCClient.h"
+
 // 前向声明
 class PLCClient;
 class SqlStore;
@@ -39,93 +41,75 @@ struct RunState
     // 3：内部逻辑错误
 };
 
-/*
-struct CurrentPlcContext
-{
-    int plcId;                // 当前 PLC 的唯一标识（来自数据库）
-
-    std::string ipAddress;    // PLC IP 地址
-    int rack;                 // 机架号
-    int slot;                 // 槽号
-
-    std::string plcModel;     // PLC 型号
-    std::string orderCode;    // PLC 订货号
-
-    std::string taskDesc;     // 当前控制任务描述
-    std::string taskDomain;   // 任务所属领域
-    std::string sourceText;   // 用户原始输入文本
-};
-
-
-struct SignalSnapshot
-{
-    std::string plcAddress;    // PLC 变量地址（如 M0.0 / DB1.DBW2）
-    std::string description;   // 变量中文说明（来自数据库，用于 AI 理解）
-
-    int32_t currentValue;      // 当前内存中的变量值
-    bool readOk;               // 最近一次读取是否成功
-
-    bool hasWriteRequest;      // 是否存在待处理的写入请求
-    int32_t targetValue;       // 目标写入值（仅在有写请求时有效）
-
-    int lastOpTime;            // 最近一次读或写操作的时间戳
-};
-
-*/
 class uppermachine
 {
 public:
-    uppermachine(PLCClient& plcRef, SqlStore& storeRef);
+    uppermachine(
+        SqlStore& storeRef,
+        RunState& runStateRef,
+        plcinfo& plcRefInfo,
+        std::vector<signalinfo>& signalRefList
+    );
+
     ~uppermachine();
-    // 在数据库中创建一条 plc_info 记录（上位机）
+
+    // === 数据库操作（仍然允许） ===
     bool createPlcInfoRow(const plcinfo& info);
-    // 在数据库中创建一条 signal_def 记录（变量）
+
     bool createSignalRow(
         const std::string& name,
         const std::string& plcAddress,
         int plcId,
         const std::string& description
     );
-    // 读取当前 PLC 上位机上下文
-    bool getCurrentPlcInfo(plcinfo& out);
+
+    // === 执行接口（只操作镜像引用） ===
     bool readplc(
         const std::string& plcAddress,
         std::string& outResult
     );
+
     bool writeplc(
         const std::string& plcAddress,
         const std::string& value,
         std::string& outResult
     );
-    // 执行一轮上位机逻辑（启动线程）
+
+    // 执行主循环（由 ProjectManager 调度）
     bool run();
-    // 最近一次错误
+
     const std::string& getLastError() const;
+
 private:
-    // 初始化上位机
     bool init();
 
-    // 读取线程函数
     void readThreadProc();
-
-    // 写入线程函数
     void writeThreadProc();
+
     void logOp(
-        const std::string& fromFunc,   // 函数名（例如 init / readThreadProc）
-        const std::string& action      // 执行的操作（例如 初始化开始）
+        const std::string& fromFunc,
+        const std::string& action
     );
+
 private:
-    PLCClient& plc;
+    // === 外部资源 ===
+    PLCClient plc;
     SqlStore& store;
+
+    // === 系统镜像（引用，不拥有） ===
+    RunState& runState;
+    plcinfo& currentPlc;
+    std::vector<signalinfo>& worksignals;
+
+    // === 执行器内部状态 ===
     std::thread readThread;
     std::thread writeThread;
-    std::string lastError;
+
     bool boolread;
     bool boolwrite;
-    // PLC 地址 -> worksignals 中的索引位置
-    std::unordered_map<std::string, size_t> signalIndexByAddr;
 
-    RunState runState;
-    plcinfo currentPlc;
-    std::vector<signalinfo> worksignals;
+    std::string lastError;
+
+    // 地址索引缓存（执行层私有）
+    std::unordered_map<std::string, size_t> signalIndexByAddr;
 };

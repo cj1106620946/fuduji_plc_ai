@@ -11,9 +11,6 @@ public:
     // 构造
     DecisionAI(int AICODE, AIController& aiRef, AITrace& traceRef);
 
-    // 唯一入口：
-    // snapshot：当前系统状态快照（JSON / 文本）
-    // user_input：来自 chat / 上游的上下文输入
     // 返回：解析后的 content 文本，失败时返回错误说明
     std::string runOnce(
         const std::string& snapshot,
