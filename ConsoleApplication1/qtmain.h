@@ -1,15 +1,15 @@
 #pragma once
 
-#include <windows.h>
 #include <QWidget>
-#include <QShowEvent>
 #include <QResizeEvent>
+
+#include <windows.h>
 #include <thread>
 #include <memory>
 
 #include "ui_qtmain.h"
-
-class Console;
+#include "chatpanel.h"
+#include "console.h"
 
 class qtmain : public QWidget
 {
@@ -20,20 +20,26 @@ public:
     ~qtmain();
 
 protected:
+    // Live2D 嵌入相关
     void showEvent(QShowEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
 
-private:
-    Ui::qtmainClass ui;
+private slots:
+    void startConsole();
 
-    bool consoleStarted;
+private:
+    Ui::qtmain ui;
+
+    // ================= 中间聊天面板 =================
+    chatpanel* chat = nullptr;
+
+    // ================= Console =================
+    bool consoleStarted = false;
     std::unique_ptr<Console> consoleApp;
     std::thread consoleThread;
 
-    HWND hostHwnd;
-    HWND liveHwnd;
-    PROCESS_INFORMATION livePi;
-
-private:
-    void startConsole();
+    // ================= Live2D 相关 =================
+    HWND hostHwnd = nullptr;
+    HWND liveHwnd = nullptr;
+    PROCESS_INFORMATION livePi{};
 };

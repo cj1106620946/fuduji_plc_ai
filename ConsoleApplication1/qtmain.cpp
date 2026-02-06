@@ -2,8 +2,11 @@
 
 #include <QPushButton>
 #include <QShowEvent>
+#include <QVBoxLayout>
+
 #include <windows.h>
 
+#include "chatpanel.h"
 #include "console.h"
 
 // 构造函数
@@ -16,7 +19,34 @@ qtmain::qtmain(QWidget* parent)
     // 初始化 UI
     ui.setupUi(this);
 
-    // 右侧 Live2D 承载区域必须是原生窗口
+    // ================= 中间区域：chatpanel =================
+    chat = new chatpanel(ui.mainpanel);
+
+    // 确保中间区域有布局
+    if (!ui.mainpanel->layout())
+    {
+        QVBoxLayout* layout = new QVBoxLayout(ui.mainpanel);
+        layout->setContentsMargins(0, 0, 0, 0);
+        layout->setSpacing(0);
+        layout->addWidget(chat);
+    }
+    else
+    {
+        ui.mainpanel->layout()->addWidget(chat);
+    }
+
+    // chatpanel 输入 → 直接回显（最小可用）
+    connect(
+        chat,
+        &chatpanel::inputSubmitted,
+        this,
+        [this](const QString& text)
+    {
+        chat->appendOutput(text);
+    }
+    );
+
+    // ================= 右侧 Live2D 承载 =================
     ui.rightpanel->setAttribute(Qt::WA_NativeWindow);
     ui.rightpanel->setAttribute(Qt::WA_DontCreateNativeAncestors);
 
@@ -79,11 +109,9 @@ void qtmain::showEvent(QShowEvent* event)
     // 2 启动 Live2D 独立 exe
     STARTUPINFOW si{};
     si.cb = sizeof(si);
-
     ZeroMemory(&livePi, sizeof(livePi));
 
     wchar_t cmd[] = L"Demo.exe --from-launcher";
-
     if (!CreateProcessW(
         nullptr,
         cmd,
@@ -138,7 +166,7 @@ void qtmain::showEvent(QShowEvent* event)
     if (!liveHwnd)
         return;
 
-    // 关键：先隐藏 Live2D 窗口
+    // 先隐藏 Live2D 窗口
     ShowWindow(liveHwnd, SW_HIDE);
 
     // 4 修改样式并嵌入 Qt
@@ -162,6 +190,8 @@ void qtmain::showEvent(QShowEvent* event)
 
     ShowWindow(liveHwnd, SW_SHOW);
 }
+
+// 窗口尺寸变化时同步 Live2D
 void qtmain::resizeEvent(QResizeEvent* event)
 {
     QWidget::resizeEvent(event);

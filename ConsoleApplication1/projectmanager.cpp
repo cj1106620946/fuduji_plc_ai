@@ -3,9 +3,10 @@
 
 ProjectManager::ProjectManager(
     SqlStore& store,
-    RunState runState,
-    plcinfo currentPlc,
-    std::vector<signalinfo> worksignals,
+    RunState& runState,
+    plcinfo& currentPlc,
+    std::vector<signalinfo>& worksignals,
+    ProjectState& projectstate,
     WorkspaceAI& workspaceAI,
     ExecuteAI& executeAI,
     DecisionAI& decisionAI
@@ -17,7 +18,6 @@ ProjectManager::ProjectManager(
     running(false)
 {
 }
-
 ProjectManager::~ProjectManager()
 {
     running = false;

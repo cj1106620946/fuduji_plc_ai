@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>qtmainClass</class>
- <widget class="QWidget" name="qtmainClass">
+ <class>qtmain</class>
+ <widget class="QWidget" name="qtmain">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -482,19 +482,16 @@
   <property name="windowTitle">
    <string>qtmain</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_3" stretch="10,85,5">
+  <layout class="QVBoxLayout" name="verticalLayout" stretch="10,85,5">
    <item>
-    <widget class="QFrame" name="topbar">
+    <widget class="QFrame" name="frame_3">
      <property name="frameShape">
       <enum>QFrame::Shape::Box</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Shadow::Raised</enum>
      </property>
      <widget class="QPushButton" name="btnStartConsole">
       <property name="geometry">
        <rect>
-        <x>670</x>
+        <x>660</x>
         <y>20</y>
         <width>81</width>
         <height>24</height>
@@ -507,36 +504,15 @@
     </widget>
    </item>
    <item>
-    <widget class="QFrame" name="centerarea">
+    <widget class="QFrame" name="frame_2">
      <property name="frameShape">
       <enum>QFrame::Shape::Box</enum>
      </property>
-     <property name="frameShadow">
-      <enum>QFrame::Shadow::Raised</enum>
-     </property>
-     <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,4,2">
-      <property name="spacing">
-       <number>0</number>
-      </property>
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
+     <layout class="QHBoxLayout" name="horizontalLayout" stretch="2,7,3">
       <item>
-       <widget class="QFrame" name="leftpanel">
+       <widget class="QFrame" name="frame">
         <property name="frameShape">
          <enum>QFrame::Shape::Box</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Shadow::Raised</enum>
         </property>
        </widget>
       </item>
@@ -545,9 +521,6 @@
         <property name="frameShape">
          <enum>QFrame::Shape::Box</enum>
         </property>
-        <property name="frameShadow">
-         <enum>QFrame::Shadow::Raised</enum>
-        </property>
        </widget>
       </item>
       <item>
@@ -555,36 +528,24 @@
         <property name="frameShape">
          <enum>QFrame::Shape::Box</enum>
         </property>
-        <property name="frameShadow">
-         <enum>QFrame::Shadow::Raised</enum>
-        </property>
-        <property name="lineWidth">
-         <number>1</number>
-        </property>
-        <property name="midLineWidth">
-         <number>0</number>
-        </property>
        </widget>
       </item>
      </layout>
     </widget>
    </item>
    <item>
-    <widget class="QFrame" name="statusbar">
+    <widget class="QFrame" name="frame">
+     <property name="acceptDrops">
+      <bool>false</bool>
+     </property>
      <property name="frameShape">
       <enum>QFrame::Shape::Box</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Shadow::Raised</enum>
      </property>
     </widget>
    </item>
   </layout>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
- <tabstops>
-  <tabstop>btnStartConsole</tabstop>
- </tabstops>
  <resources/>
  <connections/>
 </ui>
