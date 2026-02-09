@@ -5,7 +5,6 @@
 class AIController;
 class AITrace;
 
-// MemoryAI 专用单条记忆
 struct MemoryAIItem
 {
     int memoryKeyId;
@@ -35,6 +34,7 @@ public:
     std::string runuser(const std::string& user_input,
         const std::string& personaText
     );
+    std::string getMemoryContent(int memoryKeyId);
 
 private:
     // 统一 JSON 解析（[{name,text}, ...]）

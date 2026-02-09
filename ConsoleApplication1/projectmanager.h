@@ -14,51 +14,76 @@
 #include"plcclient.h"
 struct ProjectState
 {
-    // ===== 项目自身 =====
-    bool projectInited;         // 项目是否完成基础初始化
-    bool projectRunning;        // 项目是否整体处于运行态
-    bool stopping;              // 项目是否进入停止流程
-    bool destroyed;             // Project 是否已进入销毁阶段
+    bool projectInited;         // 初始化完成标志位
+    bool projectRunning;        // 运行标志位
+    bool stopping;              // 停止完成标志位
 
-    // ===== 上位机生命周期（调度级）=====
-    bool upperStartRequested;   // 是否已请求启动上位机
-    bool upperInited;           // 上位机是否完成 init
-    bool upperRunning;          // 上位机是否正在运行（run 中）
-    bool upperStopping;         // 是否正在请求上位机停止
-    bool upperDestroyed;        // 上位机资源是否已销毁
+    bool upperInited;           // 上位机初始化完成标志位
+    bool upperRunning;          // 上位机运行标志位
+    bool upperStopping;         // 停止完成标志位
 
-    // ===== AI 与字符串输入通道 =====
-    bool stringThreadInited;    // 字符串读取线程是否已初始化
-    bool stringThreadRunning;   // 字符串读取线程是否正在运行
-    bool stringThreadStopping;  // 字符串读取线程是否进入停止流程
+    bool stringThreadInited;    // 初始化完成标志位
+    bool stringThreadRunning;   // 启动标志位
+    bool stringThreadStopping;  // 停止完成标志位
 
-    bool aiInputEnabled;        // 是否允许字符串触发 AI
-    bool aiBusy;                // AI 是否正在消耗（防重入）
-
-    // ===== 错误与安全 =====
-    bool fatalError;            // 是否发生不可恢复错误
+    bool aiInputEnabled;        // 激活AI
+    bool aiBusy;                // 当前是否使用AI
 };
+struct AIMessage
+{
+    std::string text;      // 原始输入文本（用户 / 系统 / AI / 其它）
+    int source;            // 消息意图 / 通道类型
+    int type;              // 具体子类型
+    int createdAt;         // 时间戳
+};
+
+struct ProjectMessage
+{
+    std::string text;    // 实际输出内容
+    int source;          // 输出来源（AI / system / plc / project）
+    int createdAt;       // 时间戳
+};
+
 
 class ProjectManager
 {
 public:
     ProjectManager(
         SqlStore& store,
-        RunState& runState,
-        plcinfo& currentPlc,
-        std::vector<signalinfo>& worksignals,
-        ProjectState& projectstate,
         WorkspaceAI& workspaceAI,
         ExecuteAI& executeAI,
-        DecisionAI& decisionAI
+        DecisionAI& decisionAI,
+        RunState& runStateRef,
+        plcinfo& currentPlcRef,
+        std::vector<signalinfo>& worksignalsRef,
+        ProjectState& projectstateRef
     );
+
+
 	~ProjectManager();
 
     // 生命周期接口
     bool init();
-    bool start();
+    bool upperinit();
+    bool connectplcinit();
+    bool aiinit();
     void stop();
     bool isReady() const;
+
+    void createRunThread();
+    void destroyRunThread();
+    void createUpperThread();
+    void destroyUpperThread();
+    void createAIThread();
+    void destroyAIThread();
+
+    bool pushAIMessage(const std::string& text, int source, int type);
+
+    void pushProjectMessage(
+        const std::string& text,
+        int source
+    );
+    bool popProjectMessage(ProjectMessage& outMsg);
 
     // 由 AI 生成并创建 PLC 工程
     bool createPlcByAI(const std::string& userInput);
@@ -66,11 +91,13 @@ public:
     bool createSignalsByAI(const std::string& userInput);
 
     bool createPlcWorkspaceByAI(
-        const std::string& userInput
+        const std::string& userInput,
+        std::vector<std::string>& outMessages
     );
 
     bool createSignalWorkspaceByAI(
-        const std::string& userInput
+        const std::string& userInput,
+        std::vector<std::string>& outMessages
     );
     // 从系统镜像读取变量
     bool readSignal(
@@ -94,20 +121,31 @@ private:
 
     // 外部注入对象
     uppermachine* upperRef;
-
     WorkspaceAI& workspaceAIRef;
     ExecuteAI& executeAIRef;
     DecisionAI& decisionAIRef;
 
-    // 系统状态镜像
-    RunState runState;
-    plcinfo currentPlc;
-    std::vector<signalinfo> worksignals;
-    ProjectState projectstate;
+
+    // ===== 上位机运行状态镜像 =====
+    RunState& runState;
+
+    // ===== 当前 PLC 工程镜像 =====
+    plcinfo& currentPlc;
+
+    // ===== 信号变量镜像 =====
+    std::vector<signalinfo>& worksignals;
+
+    // ===== 项目状态结构 =====
+    ProjectState& projectstate;
+
+    // ===== AI 消息队列（由 ProjectManager 自身管理）=====
+    std::vector<AIMessage> aiQueue;
+
+    // ===== 项目消息队列（由 ProjectManager 自身管理）=====
+    std::vector<ProjectMessage> projectMessageQueue;
+
     // 管理层错误
     std::string lastError;
-    std::atomic<bool> running;
-    // 管理线程
     std::thread runThread;      // manager 主运行线程
     std::thread upperThread;    // 上位机线程
     std::thread aiThread;       // AI 输入输出线程

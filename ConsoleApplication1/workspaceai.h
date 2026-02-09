@@ -32,13 +32,16 @@ public:
         std::string& ip_address,
         int& rack,
         int& slot,
-        std::string& description
+        std::string& description,
+        int& canProceed
     );
 
     std::string runSignalOnce(
         const std::string& user_input,
-        std::vector<SignalWorkspaceData>& worksignals
+        std::vector<SignalWorkspaceData>& worksignals,
+        int& canProceed
     );
+
     std::string callPlcAI(const std::string& user_input);
     std::string callSignalAI(const std::string& user_input);
 

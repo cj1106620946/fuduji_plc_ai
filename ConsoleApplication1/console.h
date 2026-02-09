@@ -19,8 +19,6 @@
 #include "judgmentai.h"
 #include"memorybridge.h"
 #include"memoryai.h"
-// ===== 前向声明（指针 / 引用使用，避免重编译） =====
-
 // PLC / 数据库
 class Sqllient;
 class SqlStore;
@@ -36,7 +34,7 @@ class WorkspaceAI;
 class ChatAI;
 class DecisionAI;
 class ExecuteAI;
-class Judgmentai;   // 注意大小写，与你实际类名保持一致
+class Judgmentai;  
 
 // 语音相关
 class speechagent;

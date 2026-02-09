@@ -21,14 +21,11 @@ public:
         AIController& aiRef,
         AITrace& traceRef
     );
-
     // 返回解析后的动作列表
     std::vector<ExecuteItem> runOnce(const std::string& user_input);
     // 调用 AI，获取原始 JSON
     std::string callExecuteAI(const std::string& user_input);
-
 private:
-
     // 解析 JSON 为 ExecuteItem 列表
     std::vector<ExecuteItem> parseExecuteJson(const std::string& jsonText);
 

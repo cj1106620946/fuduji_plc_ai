@@ -8,20 +8,20 @@ class Sqllient;
 
 struct plcinfo
 {
-    std::string taskDesc;
-    std::string taskDomain;
-    std::string sourceText;
+    std::string taskDesc;       // 当前plc干的事情
+    std::string taskDomain;     // 给决策或者其他乱起八糟的用
+    std::string sourceText;     // 原始输入文本或来源描述
 
-    std::string plcModel;
-    std::string orderCode;
-    std::string ipAddress;
-    int rack;
-    int slot;
-    int signalRootId;
+    std::string plcModel;       // PLC 型号
+    std::string orderCode;      // PLC 订货号
+    std::string ipAddress;      // PLC IP 地址
+    int rack;                   // PLC rack 号
+    int slot;                   // PLC slot 号
+    int signalRootId;           // 信号根节点 ID
 
-    int isActive;
-    int createdAt;
-    int updatedAt;
+    int isActive;               // PLC 当前是否处于可用状态（1 已连接 / 0 未连接）
+    int createdAt;              // 记录创建时间戳
+    int updatedAt;              // 最近一次状态或配置更新时间戳
 };
 struct signalinfo
 {
@@ -44,6 +44,25 @@ struct signalinfo
     int lastOpAt;               // 最近一次读或写时间戳
     int isAvailable;            // 是否可用（1 可用 / 0 不可用）
 };
+// “数据库中当前被 memory_pointer 指向的那一条内容”
+struct CurrentMemory
+{
+    int memoryKeyId;        // 记忆结构位 ID（对应 memory_key.memory_key_id）
+    std::string keyPath;    // 记忆路径（如 self.identity / user.summary）
+    std::string content;    // 当前生效的记忆文本内容
+};
+
+// 不允许在 manager 中随意修改，修改必须回写数据库
+struct CurrentMemoryState
+{
+    CurrentMemory selfMemory[3];   // 人格自身记忆（固定 1–3：identity / emotion / attitude）
+    CurrentMemory userMemory[6];   // 用户相关长期记忆（固定 4–9）
+};
+
+
+
+
+
 
 class SqlStore
 {

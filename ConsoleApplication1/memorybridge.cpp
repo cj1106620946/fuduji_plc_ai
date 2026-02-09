@@ -1,7 +1,11 @@
 #include "memorybridge.h"
 
-memorybridge::memorybridge(SqlStore& storeRef)
-    : store(storeRef)
+memorybridge::memorybridge(
+    SqlStore& storeRef,
+    CurrentMemoryState& memoryRef
+)
+    : store(storeRef),
+    current(memoryRef)
 {
 }
 
@@ -54,6 +58,16 @@ const CurrentMemoryState& memorybridge::read() const
 bool memorybridge::write(const MemoryWrite& req)
 {
     if (req.content.empty())
+    {
+        lastError = u8"写入的记忆内容为空";
         return false;
-    return store.writeMemory(req.memoryKeyId, req.content);
+    }
+
+    if (!store.writeMemory(req.memoryKeyId, req.content))
+    {
+        lastError = u8"数据库写入记忆失败";
+        return false;
+    }
+
+    return true;
 }

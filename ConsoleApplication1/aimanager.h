@@ -11,9 +11,6 @@
 class AiManager;
 class AiManagerUI;
 
-// UI 线程入口（类外）
-void aiuiThreadEntry(AiManager* mgr);
-
 #include "plcclient.h"
 #include "aiclient.h"
 #include "aicontroller.h"
@@ -30,7 +27,6 @@ void aiuiThreadEntry(AiManager* mgr);
 class AiManager
 {
 public:
-    AiManager();
     ~AiManager();
 
     // 启动管理器

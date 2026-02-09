@@ -90,7 +90,6 @@ void qtmain::startConsole()
 
     consoleThread.detach();
 }
-
 // 窗口显示后嵌入 Live2D
 void qtmain::showEvent(QShowEvent* event)
 {
@@ -190,7 +189,6 @@ void qtmain::showEvent(QShowEvent* event)
 
     ShowWindow(liveHwnd, SW_SHOW);
 }
-
 // 窗口尺寸变化时同步 Live2D
 void qtmain::resizeEvent(QResizeEvent* event)
 {

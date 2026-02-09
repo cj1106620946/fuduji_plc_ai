@@ -1,24 +1,10 @@
 #pragma once
 
 #include <string>
-
 #include "sqlstore.h"
-
 // 前向声明
 class SqlStore;
 
-struct CurrentMemory
-{
-    int memoryKeyId;
-    std::string keyPath;
-    std::string content;
-};
-
-struct CurrentMemoryState
-{
-    CurrentMemory selfMemory[3];
-    CurrentMemory userMemory[6];
-};
 
 struct MemoryWrite
 {
@@ -28,9 +14,11 @@ struct MemoryWrite
 class memorybridge
 {
 public:
-    memorybridge(SqlStore& storeRef);
+    memorybridge(
+        SqlStore& storeRef,
+        CurrentMemoryState& memoryRef
+    );
     ~memorybridge();
-
     bool init();
     // 读取：只能读 current，不访问数据库
     const CurrentMemoryState& read() const;
@@ -39,6 +27,6 @@ public:
     bool write(const MemoryWrite& req);
 private:
     SqlStore& store;
-    CurrentMemoryState current;   
+    CurrentMemoryState& current;   
     std::string lastError;
 };

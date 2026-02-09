@@ -75,7 +75,6 @@ std::string MemoryAI::runuser(
         currentText,
         ai.memory49prompt_get()
     );
-
     // 调用 AIController（user 4-9 + 人格通道）
     std::string jsonOut = ai.allairun(
         true,                       // 读取短期记忆
@@ -86,14 +85,28 @@ std::string MemoryAI::runuser(
         ai.memory49prompt_get(),    // user 4-9 prompt
         personaText                 // ★ 上一次已确认的用户长期记忆
     );
-
     // 解析 JSON
     bool ok = parseMemoryJson(jsonOut, false);
-
     // 结束 Trace
     trace.end(ok, jsonOut);
-
     return jsonOut;
+}
+std::string MemoryAI::getMemoryContent(int memoryKeyId)
+{
+    // self 1-3
+    if (memoryKeyId >= 1 && memoryKeyId <= 3)
+    {
+        return state.selfMemory[memoryKeyId - 1].content;
+    }
+
+    // user 4-9
+    if (memoryKeyId >= 4 && memoryKeyId <= 9)
+    {
+        return state.userMemory[memoryKeyId - 4].content;
+    }
+
+    // 非法 key，返回错误文本
+    return u8"[error] 无效的 memoryKeyId";
 }
 
 // 统一 JSON 解析
@@ -131,7 +144,6 @@ bool MemoryAI::parseMemoryJson(
 
         if (isSelf)
         {
-            // self 1-3
             if (name == "self.identity")
             {
                 state.selfMemory[0].keyPath = name;

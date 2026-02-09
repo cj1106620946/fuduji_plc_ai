@@ -459,7 +459,7 @@ void Console::menuTestA10()
         int rack = 0;
         int slot = 0;
         std::string desc;
-
+        int a;
         // 调用 WorkspaceAI
         std::string result = workspace->runPlcOnce(
             utf8,
@@ -467,10 +467,11 @@ void Console::menuTestA10()
             ip,
             rack,
             slot,
-            desc
+            desc,
+            a
         );
 
-        if (result != "OK")
+        if (a)
         {
             printUTF8("[A4] Workspace 返回提示:\n");
             printUTF8(result);
@@ -512,14 +513,7 @@ void Console::menuTestA10()
 //A11:简单模块测试
 void Console::menuTestA11()
 {
-    printUTF8("\n--- 模块化 AI 系统测试模式 ---\n");
-    printUTF8("此模式将进入 AiManager\n");
-    printUTF8("由系统接管输入输出\n");
-    AiManager manager;
-    manager.run();
 
-    printUTF8("\n--- 已退出模块化 AI 系统 ---\n");
-    printUTF8("返回主菜单\n\n");
 }
 void Console::menuTestA12()
 {
@@ -722,13 +716,14 @@ void Console::menuTestA18()
 
         // 关键修改点：使用 vector 接收多个变量
         std::vector<SignalWorkspaceData> worksignals;
-
+        int a;
         std::string result = workspace->runSignalOnce(
             utf8,
-            worksignals
+            worksignals,
+            a
         );
 
-        if (result != "OK")
+        if (a)
         {
             printUTF8("[A18] Workspace 返回提示:\n");
             printUTF8(result);
@@ -888,7 +883,7 @@ void Console::menuTestA21()
             return;
         }
 
-        memory = new memorybridge(*store);
+
     }
 
     if (!memory->init())

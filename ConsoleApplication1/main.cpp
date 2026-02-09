@@ -1,14 +1,11 @@
-﻿
-#include <QApplication>
-#include "qtmain.h"
+﻿#include <QApplication>
+#include "ai_plc_delegate.h"
 
 int main(int argc, char* argv[])
 {
     QApplication app(argc, argv);
-
-    qtmain w;
-    w.show();
-
+    ai_plc_delegate delegate;
+    delegate.run();
     return app.exec();
 }
 

@@ -11,21 +11,16 @@ uppermachine::uppermachine(
       store(storeRef),
       runState(runStateRef),
       currentPlc(plcRefInfo),
-      worksignals(signalRefList),
-      boolread(false),
-      boolwrite(false)
+      worksignals(signalRefList)
 {
 }
-
-
-
 uppermachine::~uppermachine()
 {
     if (readThread.joinable())
-        readThread.join();
+        readThread.detach();   
 
     if (writeThread.joinable())
-        writeThread.join();
+        writeThread.detach(); 
 }
 
 
@@ -130,8 +125,6 @@ bool uppermachine::createSignalRow(
     lastError.clear();
     return true;
 }
-
-
 bool uppermachine::readplc(
     const std::string& plcAddress,
     std::string& outResult
@@ -191,47 +184,114 @@ bool uppermachine::init()
 {
     logOp("init", "初始化开始");
 
-    runState.life = 1; // starting
-
-    plcinfo info;
-    if (!store.readPlcInfo(info))
+    // ===== 1. 加载配置与变量（必须成功）=====
+    if (!initloadConfig())
     {
-        lastError = store.getLastErrorText();
-        logOp("init", "读取 PLC 信息失败: " + lastError);
-        runState.life = 0;
+        logOp("init", "加载配置失败，初始化中止");
         return false;
     }
-    currentPlc = info;
-    logOp(
-        "init",
-        "当前 PLC: IP=" + currentPlc.ipAddress +
-        " rack=" + std::to_string(currentPlc.rack) +
-        " slot=" + std::to_string(currentPlc.slot)
-    );
 
-    std::vector<signalinfo> dbSignals;
-    if (!store.readAllSignalInfo(dbSignals))
+    // ===== 2. 尝试连接 PLC（允许失败）=====
+    if (!initconnectPlc())
     {
-        lastError = store.getLastErrorText();
-        logOp("init", "读取变量列表失败: " + lastError);
-        runState.life = 0;
-        return false;
+        logOp(
+            "init",
+            "PLC 未连接成功，初始化继续，允许后续重新连接"
+        );
+        // 注意：这里不 return false
     }
-    worksignals = dbSignals;
-    logOp("init", "加载变量数量: " + std::to_string(worksignals.size()));
-    logOp("init", "尝试连接 PLC");
+
+    // ===== 3. 记录初始化完成事实 =====
+    runState.upperInited = true;
+    runState.readInited = true;
+    runState.writeThreadInited = true;
+
+    logOp("init", "初始化完成");
+    lastError.clear();
+    return true;
+}
+
+bool uppermachine::initloadConfig()
+    {
+        logOp("loadConfig", "开始加载 PLC 配置与变量定义");
+        currentPlc = plcinfo{};
+        worksignals.clear();
+        plcinfo info;
+        if (!store.readPlcInfo(info))
+        {
+            lastError = store.getLastErrorText();
+            logOp("loadConfig", "读取 PLC 信息失败: " + lastError);
+            return false;
+        }
+
+        currentPlc = info;
+
+        currentPlc.isActive = 0;
+        currentPlc.updatedAt = static_cast<int>(time(nullptr));
+
+        logOp(
+            "loadConfig",
+            "当前 PLC: IP=" + currentPlc.ipAddress +
+            " rack=" + std::to_string(currentPlc.rack) +
+            " slot=" + std::to_string(currentPlc.slot)
+        );
+
+
+        std::vector<signalinfo> dbSignals;
+        if (!store.readAllSignalInfo(dbSignals))
+        {
+            lastError = store.getLastErrorText();
+            logOp("loadConfig", "读取变量列表失败: " + lastError);
+            return false;
+        }
+
+        int now = static_cast<int>(time(nullptr));
+        for (signalinfo& sig : dbSignals)
+        {
+            sig.currentValue.clear();   // 尚未读取 PLC
+            sig.readOk = 0;             // 尚未进行读取
+            sig.writeFlag = 0;          // 清空写请求
+            sig.isAvailable = 1;        // 初始化认为可用
+            sig.lastOpAt = now;
+        }
+
+        worksignals = dbSignals;
+        signalIndexByAddr.clear();
+        for (size_t i = 0; i < worksignals.size(); ++i)
+        {
+            signalIndexByAddr[worksignals[i].plcAddress] = i;
+        }
+
+        logOp(
+            "loadConfig",
+            "变量加载完成，数量=" + std::to_string(worksignals.size())
+        );
+
+        lastError.clear();
+        return true;
+    }
+bool uppermachine::initconnectPlc()
+{
+    logOp("connectPlc", "开始连接 PLC");
+
+    // 默认认为未连接成功
+    currentPlc.isActive = 0;
+
     if (!plc.connectPLC(
         currentPlc.ipAddress,
         currentPlc.rack,
         currentPlc.slot))
     {
         lastError = plc.getLastErrorText();
-        logOp("init", "PLC 连接失败: " + lastError);
-        runState.life = 0;
+        logOp("connectPlc", "PLC 连接失败: " + lastError);
         return false;
     }
 
-    logOp("init", "PLC 连接成功，开始读取 PLC 实际身份信息");
+    // 连接成功，记录事实状态
+    currentPlc.isActive = 1;
+
+    logOp("connectPlc", "PLC 连接成功，读取身份信息");
+
     PlcIdentity identity;
     if (plc.getPlcIdentity(identity))
     {
@@ -239,7 +299,7 @@ bool uppermachine::init()
         currentPlc.plcModel = identity.moduleName;
 
         logOp(
-            "init",
+            "connectPlc",
             std::string("PLC 身份信息读取成功，型号: ") +
             currentPlc.plcModel +
             " 订货号: " +
@@ -249,56 +309,80 @@ bool uppermachine::init()
     else
     {
         logOp(
-            "init",
+            "connectPlc",
             std::string("PLC 身份信息读取失败: ") +
             plc.getLastErrorText()
         );
-        // 注意：这里不 return false
-        // 连接已成功，允许系统继续运行
+        // 连接已成功，仅身份信息缺失
     }
-    runState.read = 0;
-    runState.write = 0;
-    runState.fatalReason = 0;
-    runState.life = 2;
-    boolwrite = true;
-    boolread = true;
-    logOp("init", "初始化完成，进入运行状态");
+
     lastError.clear();
     return true;
 }
+bool uppermachine::stop()
+{
+    logOp("stop", "请求停止上位机");
+
+    // ===== 未初始化则无需停止 =====
+    if (!runState.upperInited)
+    {
+        logOp("stop", "上位机未初始化，无需停止");
+        return true;
+    }
+
+    // ===== 发出停止请求 =====
+    runState.upperRunning = false;
+
+    if (runState.readRunning)
+        runState.readStopping = true;
+
+    if (runState.writeThreadRunning)
+        runState.writeThreadStopping = true;
+
+    // ===== 等待读写线程确认停止 =====
+    while (runState.readStopping || runState.writeThreadStopping)
+    {
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(50)
+        );
+    }
+
+    // ===== 线程已进入稳定停止态 =====
+    runState.readRunning = false;
+    runState.writeThreadRunning = false;
+    runState.upperRunning = false;
+
+    logOp("stop", "上位机已停止");
+    lastError.clear();
+    return true;
+}
+
 
 bool uppermachine::run()
 {
     lastError.clear();
     logOp("run", "run 启动");
-
-    // 1. 初始化
-    if (!init())
+    if (!runState.upperInited)
     {
-        logOp("run", "init 失败，run 中止");
+        lastError = "uppermachine 尚未完成初始化";
+        logOp("run", lastError);
         return false;
     }
-
-    // 2. 启动线程
-    readThread = std::thread(&uppermachine::readThreadProc, this);
-    writeThread = std::thread(&uppermachine::writeThreadProc, this);
-
-    logOp("run", "读写线程已启动");
-
-    // 3. 进入运行循环（占位生命周期）
-    while (runState.life == 2) // running
+    // ===== 启动读取线程 =====
+    if (!runState.readRunning)
     {
-        // 当前阶段不做任何事情
-        // 后续可在此加入：
-        // - 健康检测
-        // - 心跳
-        // - 状态同步
-        std::this_thread::sleep_for(
-            std::chrono::milliseconds(500)
-        );
+        readThread = std::thread(&uppermachine::readThreadProc, this);
+        runState.readRunning = true;
     }
-
-    logOp("run", "run 退出");
+    // ===== 启动写入线程 =====
+    if (!runState.writeThreadRunning)
+    {
+        writeThread = std::thread(&uppermachine::writeThreadProc, this);
+        runState.writeThreadRunning = true;
+    }
+    // ===== 记录上位机运行事实 =====
+    runState.upperRunning = true;
+    logOp("run", "线程启动完成");
     return true;
 }
 void uppermachine::readThreadProc()
@@ -307,8 +391,19 @@ void uppermachine::readThreadProc()
 
     while (1)
     {
-        // 读取未启用时，线程保持存活但不工作
-        if (!boolread)
+        if (runState.readStopping)
+        {
+            runState.readRunning = false;
+            runState.readStopping = false;  
+            std::this_thread::sleep_for(
+                std::chrono::milliseconds(200)
+            );
+            continue;
+        }
+
+
+        // ===== 未处于运行态，仅保持线程存活 =====
+        if (!runState.readRunning)
         {
             std::this_thread::sleep_for(
                 std::chrono::milliseconds(1000)
@@ -316,6 +411,7 @@ void uppermachine::readThreadProc()
             continue;
         }
 
+        // ===== 正常读取 PLC =====
         for (signalinfo& sig : worksignals)
         {
             int32_t value = 0;
@@ -325,10 +421,13 @@ void uppermachine::readThreadProc()
             {
                 sig.currentValue = std::to_string(value);
                 sig.readOk = 1;
+                sig.lastOpAt = static_cast<int>(time(nullptr));
             }
             else
             {
                 sig.readOk = 0;
+                sig.lastOpAt = static_cast<int>(time(nullptr));
+
                 logOp(
                     "readThreadProc",
                     "读取失败 地址=" + sig.plcAddress
@@ -347,8 +446,17 @@ void uppermachine::writeThreadProc()
 
     while (1)
     {
-        // 写入未启用时，线程保持存活但不工作
-        if (!boolwrite)
+        if (runState.writeThreadStopping)
+        {
+            runState.writeThreadRunning = false;
+            runState.writeThreadStopping = false; 
+            std::this_thread::sleep_for(
+                std::chrono::milliseconds(200)
+            );
+            continue;
+        }
+
+        if (!runState.writeThreadRunning)
         {
             std::this_thread::sleep_for(
                 std::chrono::milliseconds(500)
@@ -368,7 +476,6 @@ void uppermachine::writeThreadProc()
             }
             catch (...)
             {
-                // 非法写入值，结束本次写请求，避免死循环
                 sig.writeFlag = 0;
 
                 logOp(
@@ -383,10 +490,10 @@ void uppermachine::writeThreadProc()
 
             if (ok)
             {
-                // 写入成功，清除写请求并同步镜像值
                 sig.writeFlag = 0;
                 sig.currentValue = sig.targetValue;
                 sig.readOk = 1;
+                sig.lastOpAt = static_cast<int>(time(nullptr));
 
                 logOp(
                     "writeThreadProc",
@@ -396,8 +503,8 @@ void uppermachine::writeThreadProc()
             }
             else
             {
-                // 写入失败，不清 writeFlag，允许后续重试
                 sig.readOk = 0;
+                sig.lastOpAt = static_cast<int>(time(nullptr));
 
                 logOp(
                     "writeThreadProc",

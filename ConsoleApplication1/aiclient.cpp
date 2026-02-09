@@ -95,7 +95,6 @@ std::string AIClient::askChat(
     const std::string& systemPrompt,
     const std::string& extraSystemText
 )
-
 {
     return callChatAPI(
         readHistory,
@@ -105,7 +104,6 @@ std::string AIClient::askChat(
         systemPrompt,
         extraSystemText
     );
-
 }
 
 // 本地聊天接口

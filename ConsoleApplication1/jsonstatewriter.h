@@ -2,10 +2,7 @@
 
 #include <string>
 
-// plcai 侧 Live2D 状态写入器
-// 职责：
-// 1 初始化时创建 json 文件
-// 2 写入 dirty + value
+
 class JsonStateWriter
 {
 public:

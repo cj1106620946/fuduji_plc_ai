@@ -176,13 +176,14 @@
     <ClCompile Include="console.cpp" />
     <ClCompile Include="decisionai.cpp" />
     <ClCompile Include="aiclient.cpp" />
+    <ClCompile Include="initpanel.cpp" />
     <ClCompile Include="jsonstatewriter.cpp" />
     <ClCompile Include="judgmentai.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="jsoncpp.cpp" />
     <ClCompile Include="memoryai.cpp" />
     <ClCompile Include="memorybridge.cpp" />
-    <ClCompile Include="personabuilder.cpp" />
+    <ClCompile Include="personamanager.cpp" />
     <ClCompile Include="piperengine.cpp" />
     <ClCompile Include="plcclient.cpp" />
     <ClCompile Include="projectmanager.cpp" />
@@ -215,11 +216,12 @@
     <ClInclude Include="console.h" />
     <ClInclude Include="decisionai.h" />
     <ClInclude Include="aiclient.h" />
+    <QtMoc Include="initpanel.h" />
     <ClInclude Include="jsonstatewriter.h" />
     <ClInclude Include="judgmentai.h" />
     <ClInclude Include="memoryai.h" />
     <ClInclude Include="memorybridge.h" />
-    <ClInclude Include="personabuilder.h" />
+    <ClInclude Include="personamanager.h" />
     <ClInclude Include="piperengine.h" />
     <ClInclude Include="plcclient.h" />
     <QtMoc Include="qtmain.h" />
@@ -232,6 +234,7 @@
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="chatpanel.ui" />
+    <QtUic Include="initpanel.ui" />
     <QtUic Include="qtmain.ui" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

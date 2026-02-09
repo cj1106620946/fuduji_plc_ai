@@ -21,8 +21,6 @@ void AIController::buildWorkspacePrompt()
         u8"你是工业控制系统的【上位机工作区生成 AI】。\n"
         u8"根据用户的自然语音，生成用于创建或更新 PLC 上位机的配置 JSON。\n"
         u8"用户输入的是自然语音，需要进行进行分析，看看哪些内容与结构相似，并进行组装\n"
-        u8"当用户输入不属于创建或更新工作区的内容时，\n"
-        u8"你必须用严厉的自然语音，通过 error 字段明确告诉用户告知缺少的部分，并引导用户进行创建。\n"
         u8"用户可以一次只提供部分信息，你可以通过记忆来进行存储，创建必须完整。\n"
         u8" 你生成的内容必须是 JSON，不允许输出解释性文本。\n"
         u8"\n"
@@ -41,7 +39,7 @@ void AIController::buildWorkspacePrompt()
         u8"\n"
         u8"字段说明：\n"
         u8"- success：是否进行生成\n"
-        u8"- error：用于解释为什么无法创建\n"
+        u8"- error：用于解释为什么无法创建，或者创建成功的操作说明\n"
         u8"- plc_name：plc运行的逻辑名称，例如“工厂水泵控制系统”。\n"
         u8"- ip_address：PLC IP 地址，必须是合法 IPv4，例如 192.168.0.1。\n"
         u8"- rack：PLC 机架号，必须是整数。\n"
@@ -57,8 +55,6 @@ void AIController::buildWorkspacePrompt()
         u8"用户可以一次定义一个或多个变量，你必须完整列出所有变量。\n"
         u8"变量名称和中文说明允许在不改变含义的前提下进行合理补全。\n"
         u8"PLC 地址必须严格遵守西门子plc的变成MIO等等。\n"
-        u8"当用户输入不属于变量创建的内容时，\n"
-        u8"你必须用严厉的自然语音，通过 error 字段明确告诉用户告知缺少的部分，并引导用户进行创建。\n"
         u8"用户可以一次只提供部分信息，你可以通过记忆来进行存储\n"
         u8"此外，用户可以只提供简单的变量名称或用途说明，你需要根据上下文合理补全。\n"
         u8"你生成的内容必须是 JSON，不允许输出解释性文本。\n"
@@ -79,7 +75,7 @@ void AIController::buildWorkspacePrompt()
         u8"\n"
         u8"字段说明：\n"
         u8"- success：是否进行生成\n"
-        u8"- error：用于解释为什么无法创建\n"
+        u8"- error：用于解释为什么无法创建，或者创建成功的操作说明\n"
         u8"- action：固定为 create，表示创建新变量。\n"
         u8"- name：变量逻辑名称，例如“水泵启动信号”。\n"
         u8"- plc_address：PLC 变量地址，例如 M0.0、Q0.1、DB1.DBW2。\n"
@@ -396,10 +392,6 @@ std::string AIController::callAI(
     const std::string& prompt
 )
 {
-    switch (ai_mode)
-    {
-        // 云端 Chat
-    case AI_C_C:
         return ai.askChat(
             readHistory,
             pd,
@@ -408,65 +400,7 @@ std::string AIController::callAI(
             prompt
         );
 
-        // 本地 Chat
-    case AI_L_C:
-        return ai.askChatLocal(
-            readHistory,
-            pd,
-            memkey,
-            user_text,
-            prompt
-        );
-
-        // 云端 Reason（不使用人格）
-    case AI_C_R:
-        return ai.askReason(
-            user_text,
-            prompt
-        );
-
-        // 本地 Reason（不使用人格）
-    case AI_L_R:
-        return ai.askReasonLocal(
-            user_text,
-            prompt
-        );
-
-    default:
-        return u8"invalid ai mode";
-    }
 }
-
-
-// 分类接口
-//rd:是否读取记忆，wt是否写入记忆，ai_mode:ai模式，memkey:记忆槽，text:用户输入
-// execute AI（执行）
-std::string AIController::execute(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
-{
-    return callAI(rd, wt, ai_mode, memkey, text, execute_prompt);
-}
-// Chat AI（对话）
-std::string AIController::chat(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
-{
-    return callAI(rd, wt, ai_mode, memkey, text, response_prompt);
-}
-// Workspace AI（结构生成）
-std::string AIController::workspace(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
-{
-    return callAI(rd, wt, ai_mode, memkey, text, workspaceplc_prompt);
-}
-// Decision AI（决策）
-std::string AIController::decision(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
-{
-    return callAI(rd, wt, ai_mode, memkey, text, decision_prompt);
-}
-// judgment AI（判决）
-std::string AIController::judgment(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
-{
-    return callAI(rd, wt, ai_mode, memkey, text, Judgment_prompt);
-}
-
-
 
 
 

@@ -39,7 +39,6 @@ struct PersonaSlot
 class PersonaBuilder
 {
 public:
-    // 构造：直接接管数据库
     explicit PersonaBuilder(SqlStore& storeRef);
     ~PersonaBuilder();
 
@@ -76,7 +75,6 @@ private:
 
     // 将镜像写入 memory / memory_pointer
     bool writeToDatabase();
-
     // 组装人格文本
     void buildPersonaText(std::string& outText) const;
 

@@ -25,6 +25,9 @@
     <Filter Include="源文件\ai类">
       <UniqueIdentifier>{0016aa05-800b-4ecb-8b31-14d7775adb1d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="manager">
+      <UniqueIdentifier>{48107628-257c-45ec-9395-3a6f1d3c3a9c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="console.cpp">
@@ -66,12 +69,6 @@
     <ClCompile Include="memoryai.cpp">
       <Filter>源文件\ai类</Filter>
     </ClCompile>
-    <ClCompile Include="uppermachine.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="personabuilder.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="aitrace.cpp">
       <Filter>源文件\ai类</Filter>
     </ClCompile>
@@ -96,15 +93,6 @@
     <ClCompile Include="..\..\c-cpp\src\sqlite3.c">
       <Filter>外部文件</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="memorybridge.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="projectmanager.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="ai_plc_delegate.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -113,6 +101,22 @@
     </ClCompile>
     <ClCompile Include="qtmain.cpp">
       <Filter>QTUI</Filter>
+    </ClCompile>
+    <ClCompile Include="personamanager.cpp">
+      <Filter>manager</Filter>
+    </ClCompile>
+    <ClCompile Include="projectmanager.cpp">
+      <Filter>manager</Filter>
+    </ClCompile>
+    <ClCompile Include="uppermachine.cpp">
+      <Filter>manager</Filter>
+    </ClCompile>
+    <ClCompile Include="memorybridge.cpp">
+      <Filter>manager</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="initpanel.cpp">
+      <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -155,9 +159,6 @@
     <ClInclude Include="memoryai.h">
       <Filter>头文件\ai类</Filter>
     </ClInclude>
-    <ClInclude Include="personabuilder.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="aiclient.h">
       <Filter>头文件\ai类</Filter>
     </ClInclude>
@@ -173,20 +174,23 @@
     <ClInclude Include="aitrace.h">
       <Filter>头文件\ai类</Filter>
     </ClInclude>
-    <ClInclude Include="uppermachine.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\c-cpp\include\snap7.h">
       <Filter>外部文件</Filter>
     </ClInclude>
-    <ClInclude Include="memorybridge.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="projectmanager.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="ai_plc_delegate.h">
       <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="personamanager.h">
+      <Filter>manager</Filter>
+    </ClInclude>
+    <ClInclude Include="projectmanager.h">
+      <Filter>manager</Filter>
+    </ClInclude>
+    <ClInclude Include="uppermachine.h">
+      <Filter>manager</Filter>
+    </ClInclude>
+    <ClInclude Include="memorybridge.h">
+      <Filter>manager</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -196,12 +200,18 @@
     <QtMoc Include="qtmain.h">
       <Filter>QTUI</Filter>
     </QtMoc>
+    <QtMoc Include="initpanel.h">
+      <Filter>头文件</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="qtmain.ui">
       <Filter>QTUI</Filter>
     </QtUic>
     <QtUic Include="chatpanel.ui">
+      <Filter>QTUI</Filter>
+    </QtUic>
+    <QtUic Include="initpanel.ui">
       <Filter>QTUI</Filter>
     </QtUic>
   </ItemGroup>

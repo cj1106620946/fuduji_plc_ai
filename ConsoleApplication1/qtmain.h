@@ -20,7 +20,7 @@ public:
     ~qtmain();
 
 protected:
-    // Live2D 嵌入相关
+    // Live2D 宓屽叆鐩稿叧
     void showEvent(QShowEvent* event) override;
     void resizeEvent(QResizeEvent* event) override;
 
@@ -30,7 +30,7 @@ private slots:
 private:
     Ui::qtmain ui;
 
-    // ================= 中间聊天面板 =================
+    // ================= 涓棿鑱婂ぉ闈㈡澘 =================
     chatpanel* chat = nullptr;
 
     // ================= Console =================
@@ -38,7 +38,7 @@ private:
     std::unique_ptr<Console> consoleApp;
     std::thread consoleThread;
 
-    // ================= Live2D 相关 =================
+    // ================= Live2D 鐩稿叧 =================
     HWND hostHwnd = nullptr;
     HWND liveHwnd = nullptr;
     PROCESS_INFORMATION livePi{};

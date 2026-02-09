@@ -15,9 +15,11 @@ std::string WorkspaceAI::runPlcOnce(
     std::string& ip_address,
     int& rack,
     int& slot,
-    std::string& description
-)
-{
+    std::string& description,
+    int& canProceed
+) {
+    canProceed = 0;
+
     trace.begin(
         "workspace_plc",
         aicode,
@@ -36,26 +38,43 @@ std::string WorkspaceAI::runPlcOnce(
         description
     );
 
-    trace.end(err == "OK", output);
+    // ===== 可执行最小判断（由 WorkspaceAI 决定）=====
+    if (err.empty())
+    {
+        if (!ip_address.empty() && rack >= 0 && slot >= 0)
+            canProceed = 1;
+    }
+
+    trace.end(canProceed == 1, output);
     return err;
 }
 
+
 std::string WorkspaceAI::runSignalOnce(
     const std::string& user_input,
-    std::vector<SignalWorkspaceData>& worksignals
-)
-{
+    std::vector<SignalWorkspaceData>& worksignals,
+    int& canProceed
+) {
+    canProceed = 0;
+
     trace.begin(
         "workspace_signal",
         aicode,
         user_input,
         ai.workspacesigprompt_get()
     );
+
     std::string output = callSignalAI(user_input);
     std::string err = parseSignalJson(output, worksignals);
-    trace.end(err == "OK", output);
+
+    // ===== 可执行最小判断 =====
+    if (err.empty() && !worksignals.empty())
+        canProceed = 1;
+
+    trace.end(canProceed == 1, output);
     return err;
 }
+
 
 std::string WorkspaceAI::parsePlcJson(
     const std::string& jsonText,
@@ -64,8 +83,7 @@ std::string WorkspaceAI::parsePlcJson(
     int& rack,
     int& slot,
     std::string& description
-)
-{
+) {
     Json::Value root;
     Json::Reader reader;
 
@@ -75,8 +93,7 @@ std::string WorkspaceAI::parsePlcJson(
     if (!root.isMember("success") || !root["success"].isBool())
         return "missing success";
 
-    if (!root["success"].asBool())
-    {
+    if (!root["success"].asBool()) {
         if (root.isMember("error") && root["error"].isString())
             return root["error"].asString();
         return "unknown error";
@@ -87,29 +104,38 @@ std::string WorkspaceAI::parsePlcJson(
 
     Json::Value plc = root["plc_info"];
 
-    plc_name = plc.isMember("plc_name") && plc["plc_name"].isString()
-        ? plc["plc_name"].asString() : "";
+    plc_name =
+        plc.isMember("plc_name") && plc["plc_name"].isString()
+        ? plc["plc_name"].asString()
+        : "";
 
-    ip_address = plc.isMember("ip_address") && plc["ip_address"].isString()
-        ? plc["ip_address"].asString() : "";
+    ip_address =
+        plc.isMember("ip_address") && plc["ip_address"].isString()
+        ? plc["ip_address"].asString()
+        : "";
 
-    rack = plc.isMember("rack") && plc["rack"].isInt()
-        ? plc["rack"].asInt() : 0;
+    rack =
+        plc.isMember("rack") && plc["rack"].isInt()
+        ? plc["rack"].asInt()
+        : 0;
 
-    slot = plc.isMember("slot") && plc["slot"].isInt()
-        ? plc["slot"].asInt() : 0;
+    slot =
+        plc.isMember("slot") && plc["slot"].isInt()
+        ? plc["slot"].asInt()
+        : 0;
 
-    description = plc.isMember("description") && plc["description"].isString()
-        ? plc["description"].asString() : "";
+    description =
+        plc.isMember("description") && plc["description"].isString()
+        ? plc["description"].asString()
+        : "";
 
-    return "OK";
+    return "";
 }
 
 std::string WorkspaceAI::parseSignalJson(
     const std::string& jsonText,
     std::vector<SignalWorkspaceData>& worksignals
-)
-{
+) {
     worksignals.clear();
 
     Json::Value root;
@@ -121,8 +147,7 @@ std::string WorkspaceAI::parseSignalJson(
     if (!root.isMember("success") || !root["success"].isBool())
         return "missing success";
 
-    if (!root["success"].asBool())
-    {
+    if (!root["success"].asBool()) {
         if (root.isMember("error") && root["error"].isString())
             return root["error"].asString();
         return "unknown error";
@@ -135,8 +160,7 @@ std::string WorkspaceAI::parseSignalJson(
     if (arr.empty())
         return "worksignals empty";
 
-    for (Json::ArrayIndex i = 0; i < arr.size(); ++i)
-    {
+    for (Json::ArrayIndex i = 0; i < arr.size(); ++i) {
         const Json::Value& sig = arr[i];
         if (!sig.isObject())
             continue;
@@ -164,8 +188,9 @@ std::string WorkspaceAI::parseSignalJson(
     if (worksignals.empty())
         return "no valid signal item";
 
-    return "OK";
+    return "";
 }
+
 
 // 调用 PLC Workspace AI
 std::string WorkspaceAI::callPlcAI(const std::string& user_input)

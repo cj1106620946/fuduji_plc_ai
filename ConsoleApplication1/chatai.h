@@ -3,6 +3,7 @@
 #include <string>
 class AIController;
 class AITrace;
+
 class ChatAI
 {
 private:
@@ -20,7 +21,6 @@ public:
     ChatAI(int aicode, AIController& aiRef, AITrace& traceRef);
 
     std::string runOnce(const std::string& user_input);
-
     std::string runOnce(
         const std::string& user_input,
         const std::string& personaText
@@ -30,7 +30,6 @@ public:
     int getControl();
     int getPriority();
     std::string getEmotion();
-
 private:
     // JSON 解析
     bool parseChatJson(const std::string& jsonText);

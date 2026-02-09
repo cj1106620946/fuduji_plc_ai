@@ -13,6 +13,36 @@ struct Message
     std::string role;     // "system" / "user" / "assistant"
     std::string content;  // 消息内容
 };
+// AI 服务提供方枚举
+enum class AIProvider
+{
+    // 云端
+    OpenAI,        // ChatGPT / OpenAI 官方
+    DeepSeek,      // DeepSeek 官方
+    Anthropic,     // Claude（预留）
+    Google,        // Gemini（预留）
+    // 本地
+    Ollama         // 本地 Ollama（唯一正式支持）
+};
+
+// AI 调用描述结构体（仅描述调用方式，不参与执行）
+struct AICallDesc
+{
+    // 是否使用云端
+    bool useCloud = true;
+    // AI 服务提供方
+    AIProvider provider = AIProvider::DeepSeek;
+    //Key
+    std::string apiKey;
+    // 模型
+    std::string modelName;
+    // 请求超时时间（秒）
+    int timeoutSec = 60;
+    // 生成温度（仅 Chat 使用）
+    double temperature = 0.7;
+    // 最大生成 token 数（仅 Chat 使用）
+    int maxTokens = 2048;
+};
 
 // AI 调用统一类
 class AIClient
@@ -20,9 +50,10 @@ class AIClient
 public:
     AIClient();
     ~AIClient();
-
     // 设置云端 API Key（仅用于云 API）
     void setAPIKey(const std::string& key);
+
+
 
     // 聊天接口（云端 Chat）
     std::string askChat(

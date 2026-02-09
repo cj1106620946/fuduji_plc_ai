@@ -50,11 +50,6 @@ std::string GBKtoUTF81(const std::string& gbk)
     return utf8;
 }
 // 构造函数：初始化各类 AI，对话线程与工作线程稍后启动
-AiManager::AiManager()
-    : aiController(ai)
-    ,   live2dWriter("live2dstate.json")
-{
-}
 // 析构函数：安全关闭线程并释放资源
 AiManager::~AiManager()
 {
