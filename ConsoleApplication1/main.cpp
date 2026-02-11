@@ -8,7 +8,6 @@ int main(int argc, char* argv[])
     delegate.run();
     return app.exec();
 }
-
 /*
 #include <iostream>
 #include <windows.h>

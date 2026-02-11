@@ -3,13 +3,14 @@
 #include <windows.h>
 
 // 构造函数
-Sqllient::Sqllient(const char* databaseName)
-    : dbName(databaseName),
+Sqllient::Sqllient(const std::string& databasePath)
+    : dbPath(databasePath),
     dbHandle(nullptr),
     available(false),
     lastError()
 {
 }
+
 
 // 析构函数
 Sqllient::~Sqllient()
@@ -23,14 +24,7 @@ bool Sqllient::open()
     if (available)
         return true;
 
-    // 创建数据库目录
-    CreateDirectoryA("sqlite", NULL);
-
-    char fullPath[MAX_PATH] = { 0 };
-    lstrcpyA(fullPath, "sqlite\\");
-    lstrcatA(fullPath, dbName);
-
-    int result = sqlite3_open(fullPath, &dbHandle);
+    int result = sqlite3_open(dbPath.c_str(), &dbHandle);
     if (result != SQLITE_OK)
     {
         if (dbHandle)

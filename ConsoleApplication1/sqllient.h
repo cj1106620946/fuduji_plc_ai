@@ -6,7 +6,7 @@
 class Sqllient
 {
 public:
-    explicit Sqllient(const char* databaseName);
+    explicit Sqllient(const std::string& databasePath);
     ~Sqllient();
 
     bool open();
@@ -28,7 +28,8 @@ public:
     bool rollbackTransaction();
 
 private:
-    const char* dbName;
+    std::string dbPath;
+
     sqlite3* dbHandle;
     bool available;
     std::string lastError;   

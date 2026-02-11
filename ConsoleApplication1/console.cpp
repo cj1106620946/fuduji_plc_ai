@@ -49,15 +49,27 @@ bool Console::checkBreak(const std::string& cmd)
 {
     return cmd == "break0";
 }
-
-Console::Console() :ai(),plc(),aiController(ai),aiTrace()
+Console::Console()
+    : aiDesc{
+        0,                   // useCloud
+        AIProvider::Ollama,   // provider
+        std::string(),          // apiKey
+        std::string(),          // modelName
+        60,                     // timeoutSec
+        0.7,                    // temperature
+        2048                    // maxTokens
+    },
+    ai(aiDesc),
+    plc(),
+    aiController(ai),
+    aiTrace()
 {
-    chat = new ChatAI(2,aiController,aiTrace);
-    execute = new ExecuteAI(2,aiController, aiTrace);
-    workspace = new WorkspaceAI(2,aiController, aiTrace);
-    decision = new DecisionAI(2,aiController, aiTrace);
-	judgment = new Judgmentai(2, aiController, aiTrace);
-	memoryai = new MemoryAI(2, aiController, aiTrace);
+    chat = new ChatAI(2, aiController, aiTrace);
+    execute = new ExecuteAI(2, aiController, aiTrace);
+    workspace = new WorkspaceAI(2, aiController, aiTrace);
+    decision = new DecisionAI(2, aiController, aiTrace);
+    judgment = new Judgmentai(2, aiController, aiTrace);
+    memoryai = new MemoryAI(2, aiController, aiTrace);
 }
 Console::~Console()
 {
@@ -192,17 +204,53 @@ void Console::menuTestA1()
     else
         printUTF8("PLC连接失败\n");
 }
-// A2: 设置 AI Key。提示用户输入并保存到 ai 对象。
+// A2: 设置 AI 调用参数（完整配置）
+// 从控制台读取并写入当前 AIClient 的调用描述结构体
 void Console::menuTestA2()
 {
-    printUTF8("请输入 AI Key：\n");
-    std::string key;
-    std::getline(std::cin, key);
-  
-    ai.setAPIKey(key);
-    hasAIKey = true;
-    printUTF8("AI Key 设置完成\n");
+    std::string input;
+
+    printUTF8("是否使用云端 AI？(1=是 0=否)：\n");
+    std::getline(std::cin, input);
+    aiDesc.useCloud = (input == "1");
+
+    printUTF8("选择 AI 服务提供方：0=OpenAI 1=DeepSeek 2=Anthropic 3=Google 4=Ollama\n");
+    std::getline(std::cin, input);
+    aiDesc.provider = static_cast<AIProvider>(std::stoi(input));
+
+    if (aiDesc.useCloud)
+    {
+        printUTF8("请输入 API Key：\n");
+        std::getline(std::cin, aiDesc.apiKey);
+        hasAIKey = !aiDesc.apiKey.empty();
+    }
+    else
+    {
+        aiDesc.apiKey.clear();
+        hasAIKey = false;
+    }
+
+    printUTF8("请输入模型名称（留空使用默认）：\n");
+    std::getline(std::cin, aiDesc.modelName);
+
+    printUTF8("请输入超时时间（秒）：\n");
+    std::getline(std::cin, input);
+    if (!input.empty())
+        aiDesc.timeoutSec = std::stoi(input);
+
+    printUTF8("请输入 temperature：\n");
+    std::getline(std::cin, input);
+    if (!input.empty())
+        aiDesc.temperature = std::stod(input);
+
+    printUTF8("请输入 maxTokens：\n");
+    std::getline(std::cin, input);
+    if (!input.empty())
+        aiDesc.maxTokens = std::stoi(input);
+
+    printUTF8("AI 调用配置已更新\n");
 }
+
 // A3:进入 PLC 手动控制模式，支持 read/write 命令和 break0退出。
 void Console::menuTestA3()
 {

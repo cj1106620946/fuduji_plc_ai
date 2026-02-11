@@ -116,7 +116,10 @@
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="initpanel.cpp">
-      <Filter>源文件</Filter>
+      <Filter>QTUI</Filter>
+    </ClCompile>
+    <ClCompile Include="createprojectdialog.cpp">
+      <Filter>QTUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -201,7 +204,10 @@
       <Filter>QTUI</Filter>
     </QtMoc>
     <QtMoc Include="initpanel.h">
-      <Filter>头文件</Filter>
+      <Filter>QTUI</Filter>
+    </QtMoc>
+    <QtMoc Include="createprojectdialog.h">
+      <Filter>QTUI</Filter>
     </QtMoc>
   </ItemGroup>
   <ItemGroup>

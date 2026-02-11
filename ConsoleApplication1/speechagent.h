@@ -1,16 +1,10 @@
-// speechagent.h
-#pragma once
 
+#pragma once
 #include <string>
 #include <vector>
 #include <deque>
 #include <mutex>
 
-// speechagent
-// 提供三套并行能力：
-// 1 getText：一体式 语音→文本（独立存在）
-// 2 push：只录制一句语音，放入队列
-// 3 pop：取出一条语音并进行处理
 class speechagent
 {
 public:
@@ -124,14 +118,8 @@ public:
         // 用于字幕或时间轴分析
         // 对话系统中一般关闭
     };
-
-
-
-    // 生命周期
     bool start();
     void stop();
-
-    // 一体调用接口（与 push / pop 无关）
     std::string getText();
     bool pushtext();
     std::string poptext();

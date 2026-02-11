@@ -1,75 +1,298 @@
 #include "ai_plc_delegate.h"
+#include <QObject>
 
-// ¹¹Ôìº¯Êı
-// Ö»¸ºÔğÈÃ¶ÔÏó´¦ÓÚ¡°¿É½øÈë init/run ½×¶Î¡±µÄ×´Ì¬
 ai_plc_delegate::ai_plc_delegate()
-    : ui(nullptr),
-    sqlClient(nullptr),
-    sqlStore(nullptr),
-    chatAi(nullptr),
-    memoryAi(nullptr),
-    workspaceAi(nullptr),
-    executeAi(nullptr),
-    decisionAi(nullptr),
-    project(nullptr),
-    persona(nullptr),
-    speech(nullptr),
-    live2dWriter("live2dstate.json")
 {
-    // ¹Ç¼Ü½×¶Î£º²»×öÈÎºÎ³õÊ¼»¯
 }
-
-// Îö¹¹º¯Êı
-// ¹Ç¼Ü½×¶Î²»¸ºÔğÊÍ·Å×ÊÔ´
 ai_plc_delegate::~ai_plc_delegate()
 {
-    // ºóĞøÓÉÄã¾ö¶¨ÊÇ·ñÔÚÕâÀïÊÍ·Å
+    // ===== ç®¡ç†å±‚ =====
+    if (managers.project)
+    {
+        delete managers.project;
+        managers.project = nullptr;
+    }
+
+    if (managers.persona)
+    {
+        delete managers.persona;
+        managers.persona = nullptr;
+    }
+
+    // ===== æ¨¡å—å±‚ =====
+    if (modules.chatAi)
+    {
+        delete modules.chatAi;
+        modules.chatAi = nullptr;
+    }
+
+    if (modules.memoryAi)
+    {
+        delete modules.memoryAi;
+        modules.memoryAi = nullptr;
+    }
+
+    if (modules.workspaceAi)
+    {
+        delete modules.workspaceAi;
+        modules.workspaceAi = nullptr;
+    }
+
+    if (modules.executeAi)
+    {
+        delete modules.executeAi;
+        modules.executeAi = nullptr;
+    }
+
+    if (modules.decisionAi)
+    {
+        delete modules.decisionAi;
+        modules.decisionAi = nullptr;
+    }
+
+    if (modules.speech)
+    {
+        delete modules.speech;
+        modules.speech = nullptr;
+    }
+
+    // ===== æ•°æ®åº“å±‚ =====
+    if (env.sqlStore)
+    {
+        env.sqlStore->close();
+        delete env.sqlStore;
+        env.sqlStore = nullptr;
+    }
+
+    if (env.sqlClient)
+    {
+        delete env.sqlClient;
+        env.sqlClient = nullptr;
+    }
+
+    // ===== UI =====
+    if (env.ui)
+    {
+        delete env.ui;
+        env.ui = nullptr;
+    }
+}
+
+
+void ai_plc_delegate::logError(
+    const std::string& fromFunc,
+    const std::string& reason
+)
+{
+    // ç¡®ä¿ error ç›®å½•å­˜åœ¨
+    CreateDirectoryA("error", NULL);
+
+    // æ‰“å¼€ delegate å±‚æ—¥å¿—æ–‡ä»¶
+    std::ofstream logFile("error//ai_plc_delegate.log", std::ios::app);
+    if (!logFile.is_open())
+        return;
+
+    // è·å–å½“å‰æ—¶é—´
+    auto now = std::chrono::system_clock::now();
+    auto time_t_now = std::chrono::system_clock::to_time_t(now);
+    std::tm local_tm;
+
+#if defined(_MSC_VER)
+    localtime_s(&local_tm, &time_t_now);
+#else
+    local_tm = *std::localtime(&time_t_now);
+#endif
+
+    char buf[32] = { 0 };
+    std::snprintf(
+        buf,
+        sizeof(buf),
+        "%04d-%02d-%02d %02d:%02d:%02d",
+        local_tm.tm_year + 1900,
+        local_tm.tm_mon + 1,
+        local_tm.tm_mday,
+        local_tm.tm_hour,
+        local_tm.tm_min,
+        local_tm.tm_sec
+    );
+
+    // å†™å…¥æ—¥å¿—
+    logFile
+        << "[" << buf << "] "
+        << fromFunc
+        << " | "
+        << reason
+        << std::endl;
+
+    logFile.close();
 }
 
 bool ai_plc_delegate::initQt()
 {
-
+if (pclailife.qtinit)
+{
+    logError("initQt", "Qt å·²ç»åˆå§‹åŒ–ï¼Œè·³è¿‡");
     return true;
 }
+static int argc = 0;
+static char* argv[] = { nullptr };
+static QApplication app(argc, argv);
 
-bool ai_plc_delegate::initSql()
+// è¿™é‡Œä¼ å…¥å¼•ç”¨
+env.ui = new qtmain(pclailife.ui, nullptr);
+if (!env.ui)
 {
-    // 1. ´´½¨ Sqllient£¨½ö¶ÔÏó£¬²»´¥·¢ÒµÎñ£©
-    //    Êı¾İ¿âÎÄ¼şÊÇ·ñ´æÔÚµÄÅĞ¶Ï£¬Ó¦ÔÚ Sqllient »ò´Ë´¦Íê³É
+    logError("initQt", "qtmain åˆ›å»ºå¤±è´¥");
+    return false;
+}
+env.ui->show();
+pclailife.qtinit = true;
+logError("initQt", "Qt åˆå§‹åŒ–å®Œæˆ");
+return true;
+}
 
-    // 2. ´´½¨ SqlStore£¨°ó¶¨ client£©
-    //    ²»×öÈÎºÎ¶ÁÈ¡¡¢²»¼ÓÔØ¾µÏñ
+bool ai_plc_delegate::initSql(const std::string& dbPath)
+{
+    logError("initSql", "å¼€å§‹åˆå§‹åŒ–æ•°æ®åº“: " + dbPath);
 
-    // 3. ´ò¿ªÊı¾İ¿â
-    //    - ÈôÊı¾İ¿â²»´æÔÚ£º´´½¨ĞÂÊı¾İ¿â + ³õÊ¼»¯ schema + ³õÊ¼¾µÏñ
-    //    - ÈôÊı¾İ¿â´æÔÚ£ºĞ£Ñé meta + schema + Ö¸Õë
-    //    ËùÓĞÂß¼­·â×°ÔÚ SqlStore::open() ÄÚ
+    if (env.sqlStore)
+    {
+        env.sqlStore->close();
+        delete env.sqlStore;
+        env.sqlStore = nullptr;
+    }
 
-    // 4. ´ò¿ªÊ§°Ü£º
-    //    - ¼ÇÂ¼´íÎó
-    //    - ·µ»Ø false£¬Ö÷Ñ­»·ÖÕÖ¹
+    if (env.sqlClient)
+    {
+        delete env.sqlClient;
+        env.sqlClient = nullptr;
+    }
 
-    // 5. ´ò¿ª³É¹¦£º
-    //    - ²»Ö÷¶¯ĞŞ¸ÄÈÎºÎÊı¾İ
-    //    - ²»Ğ´ÈëÈÎºÎ×´Ì¬
-    //    - ½ö´ú±í¡°¹¤³ÌÊÀ½çÒÑ»Ö¸´¡±
+    env.sqlClient = new Sqllient(dbPath);
+    env.sqlStore = new SqlStore(env.sqlClient);
 
+    if (!env.sqlStore->open())
+    {
+        lastError = env.sqlStore->getLastErrorText();
+        logError("initSql", "æ•°æ®åº“æ‰“å¼€å¤±è´¥: " + lastError);
+        return false;
+    }
+
+    logError("initSql", "æ•°æ®åº“æ‰“å¼€æˆåŠŸ");
+    pclailife.sqlinit = true;
     return true;
 }
 
 void ai_plc_delegate::run()
 {
     if (!initQt())
+    {
+        logError("run", "initQt failed");
         return;
+    }
+    QObject::connect(
+        env.ui,
+        &qtmain::uiTextSubmitted,
+        [this](const std::string& text)
+    {
+        logError("run", "æ”¶åˆ° UI æ–‡æœ¬: " + text);
+        UiMessage msg;
+        msg.type = UiMessageType::Text;
+        msg.text = text;
+        inputQueue.push(msg);
+        logError("run", "æ¶ˆæ¯å·²å…¥é˜Ÿ");
+        onUiText(text);
+    });
+
+    QObject::connect(
+        env.ui->getInitPanel(),
+        &initpanel::openRequested,
+        [this](const std::string& path)
+    {
+        if (!initSql(path))
+        {
+            env.ui->appendText("æ•°æ®åº“é”™è¯¯: " + lastError);
+            return;
+        }
+
+        env.ui->appendText("å·¥ç¨‹æ‰“å¼€æˆåŠŸ");
+    });
+
+    QObject::connect(
+        env.ui->getInitPanel(),
+        &initpanel::createRequested,
+        [this](const std::string& path)
+    {
+        if (!initSql(path))
+        {
+            env.ui->appendText("æ•°æ®åº“é”™è¯¯: " + lastError);
+            return;
+        }
+
+        env.ui->appendText("å·¥ç¨‹åˆ›å»ºæˆåŠŸ");
+    });
+
+
 
 }
 
-// ´íÎóÉÏ±¨½Ó¿Ú£¨Ö÷Ñ­»·Í³Ò»´¦Àí£©
-// ¹Ç¼Ü½×¶Î²»ÊµÏÖÈÎºÎĞĞÎª
-void ai_plc_delegate::logError(
-    const std::string& fromFunc,
-    const std::string& reason
-)
+void ai_plc_delegate::processInputOnce()
 {
-    // Ö®ºóÍ³Ò»ÔÚÕâÀï´¦ÀíÈÕÖ¾ / UI / ¿ØÖÆÌ¨
+    if (inputQueue.empty())
+    {
+        logError("processInputOnce", "é˜Ÿåˆ—ä¸ºç©º");
+        return;
+    }
+
+    UiMessage msg = inputQueue.front();
+    inputQueue.pop();
+
+    logError("processInputOnce", "å–å‡ºæ¶ˆæ¯: " + msg.text);
+
+    if (msg.type == UiMessageType::Text)
+    {
+        onUiText(msg.text);
+    }
 }
+
+void ai_plc_delegate::onUiText(const std::string& text)
+{
+    logError("onUiText", "å¼€å§‹å¤„ç†æ–‡æœ¬: " + text);
+
+    if (!env.ui)
+    {
+        logError("onUiText", "ui ä¸ºç©º");
+        return;
+    }
+
+    env.ui->appendText(text);
+
+    // ===== Live2D çŠ¶æ€è°ƒè¯• =====
+    if (text == "live2d=0")
+    {
+        pclailife.ui.live2dEnabled = 0;
+        env.ui->updateRenderState();
+        env.ui->appendText("Live2D å·²é”€æ¯");
+    }
+    else if (text == "live2d=1")
+    {
+        pclailife.ui.live2dEnabled = 1;
+        env.ui->updateRenderState();
+        env.ui->appendText("Live2D å·²åˆ›å»º");
+    }
+    else if (text == "live2d=2")
+    {
+        pclailife.ui.live2dEnabled = 2;
+        env.ui->updateRenderState();
+        env.ui->appendText("Live2D å·²æ¸²æŸ“");
+    }
+    else
+    {
+        std::string out = "è¾“å…¥ï¼š" + text;
+        env.ui->appendText(out);
+    }
+
+    logError("onUiText", "å¤„ç†å®Œæˆ");
+}
+
+

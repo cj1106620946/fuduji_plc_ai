@@ -20,27 +20,19 @@ bool SqlStore::open()
         available = false;
         return false;
     }
-
-    //  打开数据库文件
     if (!sql->open())
     {
         lastError = sql->getLastError();
         available = false;
         return false;
     }
-
-    //  meta 表确认与初始化（最先）
     if (!initmeta())
     {
-        // lastError 在 initmeta 内部设置
         available = false;
         return false;
     }
-
-    //  业务表结构补齐
     if (!inittables())
     {
-        // lastError 在 inittables 内部设置
         available = false;
         return false;
     }
@@ -49,66 +41,65 @@ bool SqlStore::open()
         available = false;
         return false;
     }
-
     // 初始化人格记忆快照（每个 key 至少一条 memory）
     if (!initMemorySnapshots())
     {
         available = false;
         return false;
     }
-
     // 初始化人格记忆指针（每个 key 一个 pointer）
     if (!initMemoryPointer())
     {
         available = false;
         return false;
     }
-
     //  数据库正式可用
     available = true;
     lastError.clear();
     return true;
 }
-//验证mate
 bool SqlStore::initmeta()
 {
-    // 1. 确保 meta 表存在
     const char* createmeta =
         "CREATE TABLE IF NOT EXISTS meta ("
         "key TEXT PRIMARY KEY,"
         "value TEXT"
         ");";
-
     if (!sql->execute(createmeta))
     {
         lastError = u8"创建 meta 表失败";
         return false;
     }
-
-    // 2. 判断 meta 表是否为空（是否为新建数据库）
-    const char* checkexist =
-        "SELECT COUNT(*) FROM meta;";
+    const char* checkTables =
+        "SELECT name FROM sqlite_master WHERE type='table';";
 
     sqlite3_stmt* stmt = nullptr;
-    if (!sql->prepare(checkexist, &stmt))
+
+    if (!sql->prepare(checkTables, &stmt))
     {
-        lastError = u8"检查 meta 表状态失败";
+        lastError = u8"检查数据库结构失败";
         return false;
     }
 
-    bool isNewDatabase = false;
-    if (sql->step(stmt))
+    int tableCount = 0;
+    bool onlyMeta = true;
+
+    while (sql->step(stmt))
     {
-        int count = sql->columnInt(stmt, 0);
-        if (count == 0)
+        const char* name = sql->columnText(stmt, 0);
+        if (name)
         {
-            isNewDatabase = true;
+            tableCount++;
+            if (std::string(name) != "meta")
+            {
+                onlyMeta = false;
+            }
         }
     }
+
     sql->finalize(stmt);
 
-    // 3. 新建数据库：直接写入 meta
-    if (isNewDatabase)
+    if (tableCount == 1 && onlyMeta)
     {
         const char* insertmeta =
             "INSERT INTO meta (key, value) VALUES "
@@ -124,7 +115,7 @@ bool SqlStore::initmeta()
         return true;
     }
 
-    // 4. 旧数据库：校验是否为本程序创建
+
     const char* checkappid =
         "SELECT value FROM meta WHERE key='app_id';";
 
@@ -135,6 +126,7 @@ bool SqlStore::initmeta()
     }
 
     bool valid = false;
+
     if (sql->step(stmt))
     {
         const char* value = sql->columnText(stmt, 0);
@@ -143,6 +135,7 @@ bool SqlStore::initmeta()
             valid = true;
         }
     }
+
     sql->finalize(stmt);
 
     if (!valid)
@@ -1462,9 +1455,6 @@ bool SqlStore::removeSignalInfo(const std::string& plcAddress)
 
     return true;
 }
-
-
-
 
 /*
 bool SqlStore::getAllSignalAddresses(

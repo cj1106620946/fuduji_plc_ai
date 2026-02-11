@@ -9,8 +9,8 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::stri
     response->append((char*)contents, totalSize);
     return totalSize;
 }
-// 构造函数
-AIClient::AIClient()
+AIClient::AIClient(AICallDesc& desc)
+    : callDesc(desc)
 {
     curl_global_init(CURL_GLOBAL_DEFAULT);
 }
@@ -19,11 +19,66 @@ AIClient::~AIClient()
 {
     curl_global_cleanup();
 }
-// 设置云端 API Key
-void AIClient::setAPIKey(const std::string& key)
+std::string AIClient::resolveCallDesc(
+    AICallDesc& desc,
+    std::string& errorText
+)
 {
-    apiKey = key;
+    errorText.clear();
+    // 参数兜底修正
+    if (desc.timeoutSec <= 0)
+        desc.timeoutSec = 60;
+    if (desc.maxTokens <= 0)
+        desc.maxTokens = 2048;
+    // 云端模式
+    if (desc.useCloud)
+    {
+        if (desc.apiKey.empty())
+        {
+            errorText = u8"云端调用未设置 apiKey";
+            return std::string();
+        }
+
+        switch (desc.provider)
+        {
+        case AIProvider::DeepSeek:
+            if (desc.modelName.empty())
+                desc.modelName = "deepseek-chat";
+            return "https://api.deepseek.com/v1/chat/completions";
+
+        case AIProvider::OpenAI:
+            if (desc.modelName.empty())
+                desc.modelName = "gpt-4o-mini";
+            return "https://api.openai.com/v1/chat/completions";
+
+        case AIProvider::Anthropic:
+            if (desc.modelName.empty())
+                desc.modelName = "claude-3-sonnet";
+            return "https://api.anthropic.com/v1/messages";
+
+        case AIProvider::Google:
+            if (desc.modelName.empty())
+                desc.modelName = "gemini-pro";
+            return "https://generativelanguage.googleapis.com/v1/models";
+
+        default:
+            errorText = u8"未知云端 AI 服务提供方";
+            return std::string();
+        }
+    }
+
+    // 本地模式
+    if (desc.provider != AIProvider::Ollama)
+    {
+        errorText = u8"本地模式下仅支持 Ollama";
+        return std::string();
+    }
+
+    if (desc.modelName.empty())
+        desc.modelName = "qwen2.5:7b-instruct-q4_K_M";
+    return "http://127.0.0.1:11434/api/chat";
 }
+
 // 添加一条消息到指定记忆槽
 void AIClient::addMessage(
     const std::string& memkey,
@@ -61,6 +116,7 @@ void AIClient::showHistory(const std::string& memkey)
 
     out.close();
 }
+//读取记忆
 std::string AIClient::getHistory(const std::string& memkey)
 {
     auto it = memories.find(memkey);
@@ -80,7 +136,6 @@ std::string AIClient::getHistory(const std::string& memkey)
 
     return history;  // 返回拼接的历史内容
 }
-
 // 清空指定记忆槽
 void AIClient::clearHistory(const std::string& memkey)
 {
@@ -105,24 +160,6 @@ std::string AIClient::askChat(
         extraSystemText
     );
 }
-
-// 本地聊天接口
-std::string AIClient::askChatLocal(
-    bool readHistory,
-    bool pd,
-    const std::string& memkey,
-    const std::string& userMessage,
-    const std::string& systemPrompt,
-    const std::string& extraSystemText
-)
-{
-    return callChatLocalAPI(readHistory,
-        pd,memkey, 
-        userMessage, 
-        systemPrompt, 
-        extraSystemText
-    );
-}
 // 聊天接口（无人格）
 std::string AIClient::askChat(
     bool readHistory,
@@ -141,64 +178,33 @@ std::string AIClient::askChat(
         std::string()   // extraSystemText 为空
     );
 }
-// 本地聊天接口（无人格）
-std::string AIClient::askChatLocal(
-    bool readHistory,
-    bool pd,
-    const std::string& memkey,
-    const std::string& userMessage,
-    const std::string& systemPrompt
-)
-{
-    return callChatLocalAPI(
-        readHistory,
-        pd,
-        memkey,
-        userMessage,
-        systemPrompt,
-        std::string()   // extraSystemText 为空
-    );
-}
-
-// 推理接口
-std::string AIClient::askReason(const std::string& userMessage,
-    const std::string& systemPrompt)
-{
-    return callReasonAPI(userMessage, systemPrompt);
-}
-
-// 本地推理接口
-std::string AIClient::askReasonLocal(const std::string& userMessage,
-    const std::string& systemPrompt)
-{
-    return callReasonLocalAPI(userMessage, systemPrompt);
-}
-
-// 云端 Chat（人格优先）
 std::string AIClient::callChatAPI(
     bool readHistory,
     bool messagepd,
     const std::string& memkey,
     const std::string& userMessage,
-    const std::string& systemPrompt,      // 规则 / JSON / control
-    const std::string& extraSystemText)   // 人格 / 记忆
+    const std::string& systemPrompt,
+    const std::string& extraSystemText
+)
 {
-    if (apiKey.empty())
-        return u8"api未绑定";
+    std::string errorText;
+    std::string requestUrl = resolveCallDesc(callDesc, errorText);
+    if (requestUrl.empty())
+        return errorText;
 
     std::string response;
     CURL* curl = curl_easy_init();
     if (!curl)
         return u8"CURL 初始化失败";
 
-    curl_easy_setopt(curl, CURLOPT_URL, "https://api.deepseek.com/v1/chat/completions");
+    curl_easy_setopt(curl, CURLOPT_URL, requestUrl.c_str());
     curl_easy_setopt(curl, CURLOPT_POST, 1L);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, callDesc.timeoutSec);
 
     Json::Value root;
     Json::Value messages(Json::arrayValue);
-    // [1] 人格 / 记忆 —— 第一优先级 system
-// 定义“我是谁”，影响整体身份与语气
+
+    // [1] 人格 / 记忆
     if (!extraSystemText.empty())
     {
         Json::Value persona;
@@ -206,9 +212,8 @@ std::string AIClient::callChatAPI(
         persona["content"] = extraSystemText;
         messages.append(persona);
     }
-    // [2] 行为规则 / JSON 约束 —— 第二优先级 system
-    // 只约束输出形式与 control 逻辑
-    // 不再定义“我是 AI”
+
+    // [2] 行为规则
     if (!systemPrompt.empty())
     {
         Json::Value rule;
@@ -217,10 +222,10 @@ std::string AIClient::callChatAPI(
         messages.append(rule);
     }
 
-    // [3] 短期记忆（历史对话）
+    // [3] 短期记忆
     if (readHistory)
     {
-        std::vector<Message>& mem = memories[memkey];
+        auto& mem = memories[memkey];
         for (auto& msg : mem)
         {
             Json::Value m;
@@ -230,7 +235,7 @@ std::string AIClient::callChatAPI(
         }
     }
 
-    // [4] 当前用户输入
+    // [4] 当前输入
     {
         Json::Value um;
         um["role"] = "user";
@@ -238,11 +243,13 @@ std::string AIClient::callChatAPI(
         messages.append(um);
     }
 
-    root["model"] = "deepseek-chat";
+    root["model"] = callDesc.modelName;
     root["messages"] = messages;
     root["stream"] = false;
-    root["max_tokens"] = 2048;
-    root["temperature"] = 0.7;
+
+    // Chat 参数仅在支持的情况下写入
+    root["max_tokens"] = callDesc.maxTokens;
+    root["temperature"] = callDesc.temperature;
 
     Json::StreamWriterBuilder builder;
     builder["indentation"] = "";
@@ -254,8 +261,12 @@ std::string AIClient::callChatAPI(
     headers = curl_slist_append(headers, "Content-Type: application/json");
     headers = curl_slist_append(headers, "Accept: application/json");
 
-    std::string auth = "Authorization: Bearer " + apiKey;
-    headers = curl_slist_append(headers, auth.c_str());
+    // 云端才需要 Authorization
+    if (callDesc.useCloud)
+    {
+        std::string auth = "Authorization: Bearer " + callDesc.apiKey;
+        headers = curl_slist_append(headers, auth.c_str());
+    }
 
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
@@ -269,10 +280,9 @@ std::string AIClient::callChatAPI(
     if (res != CURLE_OK)
         return u8"Request error: " + std::string(curl_easy_strerror(res));
 
-    // 写入短期记忆（user）
     if (messagepd)
     {
-        memories[memkey].push_back({ "user", userMessage });
+        addMessage(memkey, "user", userMessage);
     }
 
     return parseResponse(messagepd, memkey, response);
@@ -369,125 +379,6 @@ std::string AIClient::callChatLocalAPI(
     return parseResponse(messagepd, memkey, response);
 }
 
-// 云端 Reason
-std::string AIClient::callReasonAPI(const std::string&, const std::string& systemPrompt)
-{
-    if (apiKey.empty())
-        return u8"api未绑定";
-
-    std::string response;
-    CURL* curl = curl_easy_init();
-    if (!curl)
-        return u8"CURL 初始化失败";
-
-    curl_easy_setopt(curl, CURLOPT_URL, "https://api.deepseek.com/v1/completions");
-    curl_easy_setopt(curl, CURLOPT_POST, 1L);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
-
-    Json::Value root;
-    root["model"] = "deepseek-R1";
-    root["prompt"] = systemPrompt;
-    root["max_tokens"] = 1024;
-    root["temperature"] = 0.0;
-
-    Json::StreamWriterBuilder builder;
-    builder["indentation"] = "";
-    std::string requestData = Json::writeString(builder, root);
-
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, requestData.c_str());
-
-    struct curl_slist* headers = nullptr;
-    headers = curl_slist_append(headers, "Content-Type: application/json");
-    headers = curl_slist_append(headers, "Accept: application/json");
-
-    std::string auth = "Authorization: Bearer " + apiKey;
-    headers = curl_slist_append(headers, auth.c_str());
-
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-
-    CURLcode res = curl_easy_perform(curl);
-
-    curl_slist_free_all(headers);
-    curl_easy_cleanup(curl);
-
-    if (res != CURLE_OK)
-        return u8"Request error: " + std::string(curl_easy_strerror(res));
-
-    Json::Value rootResp;
-    Json::CharReaderBuilder reader;
-    std::string errors;
-    std::stringstream ss(response);
-
-    if (!Json::parseFromStream(reader, ss, &rootResp, &errors))
-        return u8"JSON 解析失败";
-
-    if (!rootResp.isMember("choices") || rootResp["choices"].empty())
-        return u8"v1 返回为空";
-
-    return rootResp["choices"][0]["text"].asString();
-}
-
-// 本地 Reason
-std::string AIClient::callReasonLocalAPI(
-    const std::string& userInput,
-    const std::string& systemPrompt)
-{
-    std::string response;
-    CURL* curl = curl_easy_init();
-    if (!curl)
-        return u8"CURL 初始化失败";
-
-    curl_easy_setopt(curl, CURLOPT_URL, "http://127.0.0.1:11434/api/generate");
-    curl_easy_setopt(curl, CURLOPT_POST, 1L);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 60L);
-
-    Json::Value root;
-
-    // 使用你本地真实存在的 R 模型
-    root["model"] = "deepseek-r1:7b";
-
-    // 本地 Ollama 不区分 system / user
-    // 所以 systemPrompt 本身就必须是完整推理提示
-    root["prompt"] = systemPrompt;
-
-    root["stream"] = false;
-
-    Json::StreamWriterBuilder builder;
-    builder["indentation"] = "";
-    std::string requestData = Json::writeString(builder, root);
-
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, requestData.c_str());
-
-    struct curl_slist* headers = nullptr;
-    headers = curl_slist_append(headers, "Content-Type: application/json");
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
-
-    CURLcode res = curl_easy_perform(curl);
-
-    curl_slist_free_all(headers);
-    curl_easy_cleanup(curl);
-
-    if (res != CURLE_OK)
-        return u8"Local request error: " + std::string(curl_easy_strerror(res));
-
-    Json::Value rootResp;
-    Json::CharReaderBuilder reader;
-    std::string errors;
-    std::stringstream ss(response);
-
-    if (!Json::parseFromStream(reader, ss, &rootResp, &errors))
-        return u8"JSON 解析失败";
-
-    if (!rootResp.isMember("response"))
-        return u8"Local reason 返回无 response 字段";
-
-    return rootResp["response"].asString();
-}
 
 // Chat 响应解析
 std::string AIClient::parseResponse(

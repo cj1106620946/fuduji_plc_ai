@@ -6,29 +6,10 @@
 
 class AIClient;
 
-// AIController
-// 职责：
-// 1. 定义 AI 角色（Chat / Workspace / Decision）
-// 2. 管理 Prompt
-// 3. 选择并调用 AIClient 的具体通道
 class AIController
 {
 public:
     explicit AIController(AIClient& aiRef);
-
-    // AI 调用通道约定
-    // 1 : 云端 Chat
-    // 2 : 本地 Chat
-    // 3 : 云端 Reason
-    // 4 : 本地 Reason
-    enum
-    {
-        AI_C_C = 1,
-        AI_L_C = 2,
-        AI_C_R = 3,
-        AI_L_R = 4
-    };
-
     // 总入口
     // 1 rd            : 是否读取短期记忆
     // 2 wt            : 是否写入短期记忆
@@ -60,23 +41,11 @@ public:
     std::string chatprompt_get();
     std::string workspaceplcprompt_get();
     std::string workspacesigprompt_get();
-
     std::string decisionprompt_get();
     std::string judgmentprompt_get();
     std::string chatexecuteprompt_get();
     std::string memory13prompt_get();
     std::string memory49prompt_get();
-   // Chatexcute AI（执行）
-    std::string execute(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
-    // ChatTalk AI（对话）
-    std::string chat(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
-    // Workspace AI（结构生成）
-    std::string workspace(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
-    // Decision AI（决策）
-    std::string decision(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
-    //judgment AI（判决）
-    std::string judgment(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
-
 
 private:
     std::string callAI(

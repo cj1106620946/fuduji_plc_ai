@@ -341,47 +341,15 @@ std::string AIController::callAI(
     const std::string& personaText
 )
 {
-    switch (ai_mode)
-    {
-        // 云端 Chat
-    case AI_C_C:
-        return ai.askChat(
-            readHistory,
-            pd,
-            memkey,
-            user_text,
-            prompt,
-            personaText
-        );
 
-        // 本地 Chat
-    case AI_L_C:
-        return ai.askChatLocal(
-            readHistory,
-            pd,
-            memkey,
-            user_text,
-            prompt,
-            personaText
-        );
-
-        // 云端 Reason（不使用人格）
-    case AI_C_R:
-        return ai.askReason(
-            user_text,
-            prompt
-        );
-
-        // 本地 Reason（不使用人格）
-    case AI_L_R:
-        return ai.askReasonLocal(
-            user_text,
-            prompt
-        );
-
-    default:
-        return u8"invalid ai mode";
-    }
+    return ai.askChat(
+        readHistory,
+        pd,
+        memkey,
+        user_text,
+        prompt,
+        personaText
+    );
 }
 std::string AIController::callAI(
     bool readHistory,

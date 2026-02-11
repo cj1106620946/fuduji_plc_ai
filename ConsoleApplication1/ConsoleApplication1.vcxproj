@@ -172,6 +172,7 @@
     <ClCompile Include="ai_plc_delegate.cpp" />
     <ClCompile Include="chatai.cpp" />
     <ClCompile Include="chatpanel.cpp" />
+    <ClCompile Include="createprojectdialog.cpp" />
     <ClCompile Include="executeai.cpp" />
     <ClCompile Include="console.cpp" />
     <ClCompile Include="decisionai.cpp" />
@@ -212,6 +213,7 @@
     <ClInclude Include="ai_plc_delegate.h" />
     <ClInclude Include="chatai.h" />
     <QtMoc Include="chatpanel.h" />
+    <QtMoc Include="createprojectdialog.h" />
     <ClInclude Include="executeai.h" />
     <ClInclude Include="console.h" />
     <ClInclude Include="decisionai.h" />

@@ -18,8 +18,8 @@ class SqlStore;
 struct RunState
 {
 
-    bool upperInited;          // 上位机是否完成初始化
-    bool upperRunning;         // 上位机是否处于运行状态
+    bool upperInited;          // 上位机初始化
+    bool upperRunning;         // 上位机运行状态
     bool upperStopping;        // 上位机是否处于停止流程中
 
     bool readInited;           // 读取线程是否完成初始化
@@ -45,8 +45,6 @@ public:
     bool init();
     bool initloadConfig();
     bool initconnectPlc();
-
-    // === 数据库操作（仍然允许） ===
     bool createPlcInfoRow(const plcinfo& info);
 
     bool createSignalRow(
@@ -55,8 +53,6 @@ public:
         int plcId,
         const std::string& description
     );
-
-    // === 执行接口（只操作镜像引用） ===
     bool readplc(
         const std::string& plcAddress,
         std::string& outResult
@@ -67,12 +63,9 @@ public:
         const std::string& value,
         std::string& outResult
     );
-
-    // 执行主循环（由 ProjectManager 调度）
     bool run();
     bool stop();
     const std::string& getLastError() const;
-
 private:
 
     void readThreadProc();
@@ -84,19 +77,13 @@ private:
     );
 
 private:
-    // === 外部资源 ===
     PLCClient plc;
     SqlStore& store;
-
-    // === 系统镜像（引用，不拥有） ===
     RunState& runState;
     plcinfo& currentPlc;
     std::vector<signalinfo>& worksignals;
-
-    // === 执行器内部状态 ===
     std::thread readThread;
     std::thread writeThread;
     std::string lastError;
-
     std::unordered_map<std::string, size_t> signalIndexByAddr;
 };

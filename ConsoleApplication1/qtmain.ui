@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>836</width>
-    <height>646</height>
+    <height>990</height>
    </rect>
   </property>
   <property name="palette">
@@ -510,7 +510,7 @@
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout" stretch="2,7,3">
       <item>
-       <widget class="QFrame" name="frame">
+       <widget class="QFrame" name="navpanel">
         <property name="frameShape">
          <enum>QFrame::Shape::Box</enum>
         </property>

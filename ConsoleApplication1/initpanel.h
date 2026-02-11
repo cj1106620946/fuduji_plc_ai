@@ -2,16 +2,25 @@
 
 #include <QWidget>
 #include "ui_initpanel.h"
+#include <string>
 
 class initpanel : public QWidget
 {
-	Q_OBJECT
+    Q_OBJECT
 
 public:
-	initpanel(QWidget *parent = nullptr);
-	~initpanel();
+    explicit initpanel(QWidget* parent = nullptr);
+    ~initpanel();
+
+signals:
+    void openRequested(const std::string& path);    // 打开已有工程
+    void createRequested(const std::string& path);  // 创建新工程
+
+private slots:
+    void onBrowseClicked();
+    void onOpenClicked();
+    void onCreateClicked();
 
 private:
-	Ui::initpanelClass ui;
+    Ui::initpanelClass ui;
 };
-

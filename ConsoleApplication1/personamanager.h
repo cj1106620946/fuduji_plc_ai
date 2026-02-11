@@ -76,16 +76,15 @@ public:
         const std::string& userText,
         PersonaMessageOut& outMsg
     );
-
     // 根据记忆 key 获取当前镜像中的记忆内容
     bool getCurrentMemory(int memoryKeyId, std::string& outContent) const;
-
+    void processOnce();
 private:
     void logError(
         const std::string& fromFunc,
         const std::string& reason
     );
-    void processOnce();
+
     std::thread personaMainThread;   // 人格主线程
     std::thread personaIoThread;      // 人格输入输出线程
     std::thread personaMemoryThread;  // 人格记忆管理线程
@@ -103,8 +102,6 @@ private:
 
     CurrentMemoryState& memoryState;   // 记忆状态（外部持有）
     PersonaState& state;               // 人格状态（外部持有）
-
-
 
     std::vector<PersonaMessageIn>  inputQueue;   // 输入队列
     std::vector<PersonaMessageOut> outputQueue;  // 输出队列

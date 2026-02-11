@@ -1,10 +1,11 @@
 #pragma once
 
 #include <QWidget>
+#include <QString>
 
-QT_BEGIN_NAMESPACE
-namespace Ui { class chatpanel; }
-QT_END_NAMESPACE
+namespace Ui {
+    class chatpanel;
+}
 
 class chatpanel : public QWidget
 {
@@ -13,18 +14,13 @@ class chatpanel : public QWidget
 public:
     explicit chatpanel(QWidget* parent = nullptr);
     ~chatpanel();
-
-    // 由外部调用，用于向输出区追加文本
+    // 外部调用：显示一行文本
     void appendOutput(const QString& text);
-
 signals:
-    // 用户在输入框按下回车后发出
+    // 输入提交给外部（qtmain / delegate）
     void inputSubmitted(const QString& text);
-
 private slots:
-    // 处理回车
     void onReturnPressed();
-
 private:
     Ui::chatpanel* ui;
 };

@@ -76,7 +76,7 @@ private:
 
     // 状态
     bool hasAIKey = false;
-
+    AICallDesc aiDesc;
 
 std::string GBKtoUTF8(const std::string& gbk);
 private:
