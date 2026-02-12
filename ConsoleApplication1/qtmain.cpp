@@ -3,6 +3,9 @@
 #include <QShowEvent>
 #include <QVBoxLayout>
 #include <QTreeWidgetItem>
+#include <QFile>
+#include <QCoreApplication>
+#include <QDebug>
 
 #include <windows.h>
 

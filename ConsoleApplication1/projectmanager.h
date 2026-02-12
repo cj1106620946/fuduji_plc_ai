@@ -53,7 +53,6 @@ public:
         WorkspaceAI& workspaceAI,
         ExecuteAI& executeAI,
         DecisionAI& decisionAI,
-        RunState& runStateRef,
         plcinfo& currentPlcRef,
         std::vector<signalinfo>& worksignalsRef,
         ProjectState& projectstateRef
@@ -127,7 +126,7 @@ private:
 
 
     // ===== 上位机运行状态镜像 =====
-    RunState& runState;
+    RunState runState;
 
     // ===== 当前 PLC 工程镜像 =====
     plcinfo& currentPlc;

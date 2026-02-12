@@ -5,7 +5,6 @@ ProjectManager::ProjectManager(
     WorkspaceAI& workspaceAI,
     ExecuteAI& executeAI,
     DecisionAI& decisionAI,
-    RunState& runStateRef,
     plcinfo& currentPlcRef,
     std::vector<signalinfo>& worksignalsRef,
     ProjectState& projectstateRef
@@ -14,7 +13,6 @@ ProjectManager::ProjectManager(
     workspaceAIRef(workspaceAI),
     executeAIRef(executeAI),
     decisionAIRef(decisionAI),
-    runState(runStateRef),
     currentPlc(currentPlcRef),
     worksignals(worksignalsRef),
     projectstate(projectstateRef)

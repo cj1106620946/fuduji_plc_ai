@@ -1,5 +1,9 @@
 #pragma once
 #include <vector>
+#include <queue>
+#include <string>
+#include <mutex>
+#include <condition_variable>
 #include "qtmain.h"
 #include "sqllient.h"
 #include "sqlstore.h"
@@ -12,10 +16,9 @@
 #include "personamanager.h"
 #include "jsonstatewriter.h"
 #include "speechagent.h"
-#include <queue>
-#include <string>
-#include <mutex>
-#include <condition_variable>
+#include "aiclient.h"
+#include "aicontroller.h"
+#include "aitrace.h" 
 enum class UiMessageType
 {
     Text = 0,      // 文本输入
@@ -33,10 +36,24 @@ struct UiMessage
 
 struct plcai
 {
-    bool qtinit;
-	bool sqlinit;
-    UiState ui;     // UI 状态控制
+    // ===== 初始化状态 =====
+    bool qtinit = false;
+    bool sqlinit = false;
+    bool aiinit = false;
+    bool projectinit = false;
+    bool personainit = false;
+
+    // ===== 线程运行控制 =====
+    bool upperThreadRunning = false;   // 上位机线程是否运行
+    bool upperThreadStopping = false;  // 上位机线程是否进入停止流程
+
+    bool ioThreadRunning = false;      // 输入输出线程是否运行
+    bool ioThreadStopping = false;     // 输入输出线程是否进入停止流程
+
+    UiState ui;
 };
+
+
 struct PlcAiMirror
 {
     // ===== 人格状态镜像 =====
@@ -66,13 +83,20 @@ struct RuntimeEnvironment
 
 struct RuntimeModules
 {
+    // ===== AI 底层 =====
+    AIClient* aiClient = nullptr;          // AI 调用客户端
+    AIController* aiController = nullptr;  // AI 调度控制器
+    AITrace* aiTrace = nullptr;            // AI 调用追踪工具
+
     ChatAI* chatAi = nullptr;
     MemoryAI* memoryAi = nullptr;
     WorkspaceAI* workspaceAi = nullptr;
     ExecuteAI* executeAi = nullptr;
     DecisionAI* decisionAi = nullptr;
+
     speechagent* speech = nullptr;
 };
+
 
 struct RuntimeManagers
 {
@@ -90,9 +114,9 @@ public:
 private:
     bool initQt();
     bool initSql(const std::string& dbPath);
-
-    bool initPersonaAI();   
-    bool initUpperMachine(); 
+    bool initpersona();
+    bool initproject();
+    bool initai();
 
     void onUiText(const std::string& text);
     void processInputOnce();
@@ -116,4 +140,11 @@ private:
         const std::string& fromFunc,
         const std::string& reason
     );
+    // ===== 线程 =====
+    std::thread upperThread;          // 上位机线程
+    std::thread ioThread;             // 输入输出处理线程
+    // 线程函数
+    void upperThreadProc();
+    void ioThreadProc();
+
 };

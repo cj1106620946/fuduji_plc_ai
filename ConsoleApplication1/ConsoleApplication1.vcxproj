@@ -178,6 +178,8 @@
     <ClCompile Include="decisionai.cpp" />
     <ClCompile Include="aiclient.cpp" />
     <ClCompile Include="initpanel.cpp" />
+    <ClCompile Include="initpersona.cpp" />
+    <ClCompile Include="initproject.cpp" />
     <ClCompile Include="jsonstatewriter.cpp" />
     <ClCompile Include="judgmentai.cpp" />
     <ClCompile Include="main.cpp" />
@@ -219,6 +221,8 @@
     <ClInclude Include="decisionai.h" />
     <ClInclude Include="aiclient.h" />
     <QtMoc Include="initpanel.h" />
+    <QtMoc Include="initproject.h" />
+    <QtMoc Include="initpersona.h" />
     <ClInclude Include="jsonstatewriter.h" />
     <ClInclude Include="judgmentai.h" />
     <ClInclude Include="memoryai.h" />
@@ -237,6 +241,8 @@
   <ItemGroup>
     <QtUic Include="chatpanel.ui" />
     <QtUic Include="initpanel.ui" />
+    <QtUic Include="initpersona.ui" />
+    <QtUic Include="initproject.ui" />
     <QtUic Include="qtmain.ui" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

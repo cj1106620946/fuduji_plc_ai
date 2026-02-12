@@ -9,9 +9,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="头文件\ai类">
-      <UniqueIdentifier>{fc4be915-5a81-4786-b57e-0c6918eb043f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="QTUI">
       <UniqueIdentifier>{0a1904fa-dd74-47ae-929f-6f5a8d7ea695}</UniqueIdentifier>
     </Filter>
@@ -22,11 +19,11 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="源文件\ai类">
-      <UniqueIdentifier>{0016aa05-800b-4ecb-8b31-14d7775adb1d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="manager">
       <UniqueIdentifier>{48107628-257c-45ec-9395-3a6f1d3c3a9c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ai类">
+      <UniqueIdentifier>{0016aa05-800b-4ecb-8b31-14d7775adb1d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -37,19 +34,19 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="workspaceai.cpp">
-      <Filter>源文件\ai类</Filter>
+      <Filter>ai类</Filter>
     </ClCompile>
     <ClCompile Include="chatai.cpp">
-      <Filter>源文件\ai类</Filter>
+      <Filter>ai类</Filter>
     </ClCompile>
     <ClCompile Include="decisionai.cpp">
-      <Filter>源文件\ai类</Filter>
+      <Filter>ai类</Filter>
     </ClCompile>
     <ClCompile Include="executeai.cpp">
-      <Filter>源文件\ai类</Filter>
+      <Filter>ai类</Filter>
     </ClCompile>
     <ClCompile Include="judgmentai.cpp">
-      <Filter>源文件\ai类</Filter>
+      <Filter>ai类</Filter>
     </ClCompile>
     <ClCompile Include="speechagent.cpp">
       <Filter>源文件</Filter>
@@ -67,22 +64,22 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="memoryai.cpp">
-      <Filter>源文件\ai类</Filter>
+      <Filter>ai类</Filter>
     </ClCompile>
     <ClCompile Include="aitrace.cpp">
-      <Filter>源文件\ai类</Filter>
+      <Filter>ai类</Filter>
     </ClCompile>
     <ClCompile Include="aiclient.cpp">
-      <Filter>源文件\ai类</Filter>
+      <Filter>ai类</Filter>
     </ClCompile>
     <ClCompile Include="aicontroller.cpp">
-      <Filter>源文件\ai类</Filter>
+      <Filter>ai类</Filter>
     </ClCompile>
     <ClCompile Include="aimanager.cpp">
-      <Filter>源文件\ai类</Filter>
+      <Filter>ai类</Filter>
     </ClCompile>
     <ClCompile Include="aimanagerui.cpp">
-      <Filter>源文件\ai类</Filter>
+      <Filter>ai类</Filter>
     </ClCompile>
     <ClCompile Include="jsoncpp.cpp">
       <Filter>外部文件</Filter>
@@ -121,6 +118,12 @@
     <ClCompile Include="createprojectdialog.cpp">
       <Filter>QTUI</Filter>
     </ClCompile>
+    <ClCompile Include="initproject.cpp">
+      <Filter>QTUI</Filter>
+    </ClCompile>
+    <ClCompile Include="initpersona.cpp">
+      <Filter>QTUI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="console.h">
@@ -135,21 +138,6 @@
     <ClInclude Include="jsonstatewriter.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="chatai.h">
-      <Filter>头文件\ai类</Filter>
-    </ClInclude>
-    <ClInclude Include="decisionai.h">
-      <Filter>头文件\ai类</Filter>
-    </ClInclude>
-    <ClInclude Include="executeai.h">
-      <Filter>头文件\ai类</Filter>
-    </ClInclude>
-    <ClInclude Include="judgmentai.h">
-      <Filter>头文件\ai类</Filter>
-    </ClInclude>
-    <ClInclude Include="workspaceai.h">
-      <Filter>头文件\ai类</Filter>
-    </ClInclude>
     <ClInclude Include="sqlstore.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -158,24 +146,6 @@
     </ClInclude>
     <ClInclude Include="plcclient.h">
       <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="memoryai.h">
-      <Filter>头文件\ai类</Filter>
-    </ClInclude>
-    <ClInclude Include="aiclient.h">
-      <Filter>头文件\ai类</Filter>
-    </ClInclude>
-    <ClInclude Include="aicontroller.h">
-      <Filter>头文件\ai类</Filter>
-    </ClInclude>
-    <ClInclude Include="aimanager.h">
-      <Filter>头文件\ai类</Filter>
-    </ClInclude>
-    <ClInclude Include="aimanagerui.h">
-      <Filter>头文件\ai类</Filter>
-    </ClInclude>
-    <ClInclude Include="aitrace.h">
-      <Filter>头文件\ai类</Filter>
     </ClInclude>
     <ClInclude Include="..\..\c-cpp\include\snap7.h">
       <Filter>外部文件</Filter>
@@ -195,6 +165,39 @@
     <ClInclude Include="memorybridge.h">
       <Filter>manager</Filter>
     </ClInclude>
+    <ClInclude Include="aiclient.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="aicontroller.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="aimanager.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="aimanagerui.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="aitrace.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="chatai.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="decisionai.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="executeai.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="judgmentai.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="memoryai.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="workspaceai.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="chatpanel.h">
@@ -209,6 +212,12 @@
     <QtMoc Include="createprojectdialog.h">
       <Filter>QTUI</Filter>
     </QtMoc>
+    <QtMoc Include="initpersona.h">
+      <Filter>QTUI</Filter>
+    </QtMoc>
+    <QtMoc Include="initproject.h">
+      <Filter>QTUI</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="qtmain.ui">
@@ -218,6 +227,12 @@
       <Filter>QTUI</Filter>
     </QtUic>
     <QtUic Include="initpanel.ui">
+      <Filter>QTUI</Filter>
+    </QtUic>
+    <QtUic Include="initproject.ui">
+      <Filter>QTUI</Filter>
+    </QtUic>
+    <QtUic Include="initpersona.ui">
       <Filter>QTUI</Filter>
     </QtUic>
   </ItemGroup>
