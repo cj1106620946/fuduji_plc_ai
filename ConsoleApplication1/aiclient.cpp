@@ -141,6 +141,7 @@ void AIClient::clearHistory(const std::string& memkey)
 {
     memories[memkey].clear();
 }
+
 // 聊天接口
 std::string AIClient::askChat(
     bool readHistory,
@@ -178,6 +179,8 @@ std::string AIClient::askChat(
         std::string()   // extraSystemText 为空
     );
 }
+
+
 std::string AIClient::callChatAPI(
     bool readHistory,
     bool messagepd,
@@ -287,8 +290,6 @@ std::string AIClient::callChatAPI(
 
     return parseResponse(messagepd, memkey, response);
 }
-
-
 
 // 本地 Chat（Ollama，人格优先）
 std::string AIClient::callChatLocalAPI(

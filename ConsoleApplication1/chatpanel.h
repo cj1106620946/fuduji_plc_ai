@@ -1,11 +1,9 @@
 #pragma once
 
 #include <QWidget>
-#include <QString>
 
-namespace Ui {
-    class chatpanel;
-}
+class Ui_chatpanel;
+class QVBoxLayout;
 
 class chatpanel : public QWidget
 {
@@ -14,13 +12,19 @@ class chatpanel : public QWidget
 public:
     explicit chatpanel(QWidget* parent = nullptr);
     ~chatpanel();
-    // 外部调用：显示一行文本
-    void appendOutput(const QString& text);
+
+    void appendOutput(const QString& text, int renderType);
+
 signals:
-    // 输入提交给外部（qtmain / delegate）
     void inputSubmitted(const QString& text);
+
 private slots:
     void onReturnPressed();
+    QWidget* thinkingBubble = nullptr;
+    int thinkingActive = 0;
 private:
-    Ui::chatpanel* ui;
+    Ui_chatpanel* ui;
+
+    QWidget* messageContainer;
+    QVBoxLayout* messageLayout;
 };

@@ -16,6 +16,9 @@ initpanel::initpanel(QWidget* parent)
         this, &initpanel::onOpenClicked);
     connect(ui.btnCreate, &QPushButton::clicked,
         this, &initpanel::onCreateClicked);
+    connect(ui.btnClose,  &QPushButton::clicked,
+        this, &initpanel::onCloseClicked);
+
 }
 
 initpanel::~initpanel()
@@ -58,4 +61,8 @@ void initpanel::onCreateClicked()
             emit createRequested(path);
         }
     }
+}
+void initpanel::onCloseClicked()
+{
+    emit closeRequested();
 }

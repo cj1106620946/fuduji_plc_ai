@@ -61,9 +61,6 @@ struct CurrentMemoryState
 
 
 
-
-
-
 class SqlStore
 {
 public:

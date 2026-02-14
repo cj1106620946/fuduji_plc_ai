@@ -1,6 +1,5 @@
 #include "ai_plc_delegate.h"
 #include <QObject>
-
 ai_plc_delegate::ai_plc_delegate()
 {
 }
@@ -76,9 +75,13 @@ ai_plc_delegate::~ai_plc_delegate()
         delete env.ui;
         env.ui = nullptr;
     }
+    if (ioThread.joinable())
+    {
+        pclailife.ioThreadStopping = true;
+        ioThread.join();
+    }
+
 }
-
-
 void ai_plc_delegate::logError(
     const std::string& fromFunc,
     const std::string& reason
@@ -129,16 +132,20 @@ void ai_plc_delegate::logError(
 
 bool ai_plc_delegate::initQt()
 {
+    // ===== 已初始化检查 =====
     if (pclailife.qtinit)
     {
         logError("initQt", "Qt 已经初始化，跳过");
         return true;
     }
 
+    // ===== 创建 Qt 应用对象 =====
+    // 使用静态变量保证 QApplication 只创建一次
     static int argc = 0;
     static char* argv[] = { nullptr };
     static QApplication app(argc, argv);
 
+    // ===== 创建主界面 =====
     env.ui = new qtmain(pclailife.ui, nullptr);
     if (!env.ui)
     {
@@ -147,23 +154,44 @@ bool ai_plc_delegate::initQt()
     }
 
     env.ui->show();
+    // ===== 创建主线程调度定时器 =====
+    QTimer* timer = new QTimer(env.ui);
+    QObject::connect(timer, &QTimer::timeout, [this]()
+    {
+        // ===== 消费输出队列 =====
+        while (!outputQueue.empty())
+        {
+            UiMessage msg = outputQueue.front();
+            outputQueue.pop();
+            // 主线程安全更新 UI
+            if (env.ui)
+            {
+                env.ui->appendText(msg.text,0);
+            }
+        }
+    });
+    // 每 10ms 执行一次
+    timer->start(10);
 
+    // ===== 标记 Qt 初始化完成 =====
     pclailife.qtinit = true;
     logError("initQt", "Qt 初始化完成");
-
     return true;
 }
 
-
 bool ai_plc_delegate::initSql(const std::string& dbPath)
 {
+    // ===== 已打开则拒绝 =====
     if (pclailife.sqlinit)
     {
-        logError("initSql", "数据库已初始化，重新打开");
+        logError("initSql", "数据库已打开，拒绝重复打开");
+        lastError = "数据库已打开，请先关闭当前工程";
+        return false;
     }
 
     logError("initSql", "开始初始化数据库: " + dbPath);
 
+    // ===== 清理旧对象（理论上不会执行，但保持安全） =====
     if (env.sqlStore)
     {
         env.sqlStore->close();
@@ -177,10 +205,12 @@ bool ai_plc_delegate::initSql(const std::string& dbPath)
         env.sqlClient = nullptr;
     }
 
+    // ===== 创建数据库客户端 =====
     env.sqlClient = new Sqllient(dbPath);
     if (!env.sqlClient)
     {
         logError("initSql", "Sqllient 创建失败");
+        lastError = "数据库客户端创建失败";
         return false;
     }
 
@@ -188,18 +218,44 @@ bool ai_plc_delegate::initSql(const std::string& dbPath)
     if (!env.sqlStore)
     {
         logError("initSql", "SqlStore 创建失败");
+        lastError = "数据库存储对象创建失败";
+        delete env.sqlClient;
+        env.sqlClient = nullptr;
         return false;
     }
 
+    // ===== 打开数据库 =====
     if (!env.sqlStore->open())
     {
         lastError = env.sqlStore->getLastErrorText();
         logError("initSql", "数据库打开失败: " + lastError);
+
+        delete env.sqlStore;
+        env.sqlStore = nullptr;
+
+        delete env.sqlClient;
+        env.sqlClient = nullptr;
+
         return false;
     }
 
+    // ===== 标记数据库初始化成功 =====
     pclailife.sqlinit = true;
     logError("initSql", "数据库打开成功");
+
+    // ===== 初始化 AI =====
+    if (!initai())
+    {
+        pclailife.sqlinit = false;
+        return false;
+    }
+
+    // ===== 初始化 人格 =====
+    if (!initpersona())
+    {
+        pclailife.sqlinit = false;
+        return false;
+    }
 
     return true;
 }
@@ -225,6 +281,7 @@ bool ai_plc_delegate::initai()
     if (!modules.aiClient)
     {
         logError("initai", "AIClient 创建失败");
+        env.ui->showError("ai初始化失败: " + lastError);
         return false;
     }
 
@@ -232,6 +289,7 @@ bool ai_plc_delegate::initai()
     if (!modules.aiController)
     {
         logError("initai", "AIController 创建失败");
+        env.ui->showError("ai初始化失败: " + lastError);
         return false;
     }
 
@@ -239,6 +297,7 @@ bool ai_plc_delegate::initai()
     if (!modules.aiTrace)
     {
         logError("initai", "AITrace 创建失败");
+        env.ui->showError("ai初始化失败: " + lastError);
         return false;
     }
 
@@ -299,7 +358,7 @@ bool ai_plc_delegate::initpersona()
         *modules.memoryAi,
         *env.sqlStore,
         mirror.memoryState,
-        mirror.personaState
+        pclailife.personaState
     );
 
     if (!managers.persona)
@@ -312,10 +371,21 @@ bool ai_plc_delegate::initpersona()
     managers.persona->initMemory();
     managers.persona->initAI();
 
-    mirror.personaState.inited = true;
+    pclailife.personaState.inited = true;
     pclailife.personainit = true;
+    if (!pclailife.ioThreadRunning)
+    {
+        pclailife.ioThreadStopping = false;
+        ioThread = std::thread(&ai_plc_delegate::ioThreadProc, this);
+    }
 
     logError("initpersona", "人格AI初始化完成");
+    // ===== 初始化完成后刷新人格镜像到UI =====
+    if (env.ui)
+    {
+        std::vector<std::string> rows = parsePersonaMirror();
+        env.ui->updatePersonaMirror(rows, 1);
+    }
 
     return true;
 }
@@ -341,7 +411,7 @@ bool ai_plc_delegate::initproject()
     }
 
     modules.workspaceAi = new WorkspaceAI(
-        3,
+        1,
         *modules.aiController,
         *modules.aiTrace
     );
@@ -353,7 +423,7 @@ bool ai_plc_delegate::initproject()
     }
 
     modules.executeAi = new ExecuteAI(
-        4,
+        1,
         *modules.aiController,
         *modules.aiTrace
     );
@@ -383,7 +453,7 @@ bool ai_plc_delegate::initproject()
         *modules.decisionAi,
         mirror.currentPlc,
         mirror.worksignals,
-        mirror.projectState
+        pclailife.projectState
     );
 
     if (!managers.project)
@@ -398,14 +468,12 @@ bool ai_plc_delegate::initproject()
         return false;
     }
 
-    mirror.projectState.projectInited = true;
+
+    pclailife.projectState.projectInited = true;
     pclailife.projectinit = true;
-
     logError("initproject", "Project 初始化完成");
-
     return true;
 }
-
 
 void ai_plc_delegate::run()
 {
@@ -414,18 +482,24 @@ void ai_plc_delegate::run()
         logError("run", "initQt failed");
         return;
     }
+
     QObject::connect(
         env.ui,
         &qtmain::uiTextSubmitted,
         [this](const std::string& text)
     {
+        if (!pclailife.personainit)
+        {
+            env.ui->showMiniTip("人格AI未初始化");
+
+            return;
+        }
         logError("run", "收到 UI 文本: " + text);
         UiMessage msg;
         msg.type = UiMessageType::Text;
         msg.text = text;
-        inputQueue.push(msg);
         logError("run", "消息已入队");
-        onUiText(text);
+        onUiText(msg.text);
     });
 
     QObject::connect(
@@ -433,14 +507,21 @@ void ai_plc_delegate::run()
         &initpanel::openRequested,
         [this](const std::string& path)
     {
-        if (!initSql(path))
+        // 已经打开则拒绝
+        if (pclailife.sqlinit)
         {
-            env.ui->appendText("数据库错误: " + lastError);
+            env.ui->showMiniTip("工程已打开，请先关闭当前工程");
             return;
         }
 
-        env.ui->appendText("工程打开成功");
+        if (!initSql(path))
+        {
+            env.ui->showError("数据库错误: " + lastError);
+            return;
+        }
+        env.ui->showMiniTip("工程打开成功");
     });
+
 
     QObject::connect(
         env.ui->getInitPanel(),
@@ -449,14 +530,72 @@ void ai_plc_delegate::run()
     {
         if (!initSql(path))
         {
-            env.ui->appendText("数据库错误: " + lastError);
+            env.ui->showError("数据库错误: " + lastError);
+            return;
+        }
+        env.ui->showMiniTip("工程创建成功");
+    });
+
+    QObject::connect(
+        env.ui->getInitPanel(),
+        &initpanel::closeRequested,
+        [this]()
+    {
+        if (!pclailife.sqlinit)
+        {
+            env.ui->showMiniTip("当前没有打开工程");
             return;
         }
 
-        env.ui->appendText("工程创建成功");
+        pclailife.personainit = false;
+        pclailife.projectinit = false;
+
+        // 如果 IO 线程依赖人格运行，可以在这里控制
+        // 这里只做基础回退，不销毁模块
+
+        if (env.sqlStore)
+        {
+            env.sqlStore->close();
+        }
+
+        // 重置数据库状态
+        pclailife.sqlinit = false;
+
+        // 清空镜像（可选但推荐）
+        mirror.memoryState = CurrentMemoryState();
+        mirror.worksignals.clear();
+
+        // 刷新 UI 镜像为空
+        std::vector<std::string> emptyRows;
+        env.ui->updatePersonaMirror(emptyRows, 1);
+
+        env.ui->showMiniTip("工程已关闭");
     });
 
 
+    QObject::connect(
+        env.ui,
+        &qtmain::personaMirrorEdited,
+        [this](const std::string& key, const std::string& content)
+    {
+        for (int i = 0; i < 3; ++i)
+        {
+            if (mirror.memoryState.selfMemory[i].keyPath == key)
+            {
+                mirror.memoryState.selfMemory[i].content = content;
+                return;
+            }
+        }
+
+        for (int i = 0; i < 6; ++i)
+        {
+            if (mirror.memoryState.userMemory[i].keyPath == key)
+            {
+                mirror.memoryState.userMemory[i].content = content;
+                return;
+            }
+        }
+    });
 
 }
 
@@ -486,34 +625,154 @@ void ai_plc_delegate::onUiText(const std::string& text)
         return;
     }
 
-    env.ui->appendText(text);
-
-    // ===== Live2D 状态调试 =====
-    if (text == "live2d=0")
-    {
-        pclailife.ui.live2dEnabled = 0;
-        env.ui->updateRenderState();
-        env.ui->appendText("Live2D 已销毁");
-    }
-    else if (text == "live2d=1")
-    {
-        pclailife.ui.live2dEnabled = 1;
-        env.ui->updateRenderState();
-        env.ui->appendText("Live2D 已创建");
-    }
-    else if (text == "live2d=2")
-    {
-        pclailife.ui.live2dEnabled = 2;
-        env.ui->updateRenderState();
-        env.ui->appendText("Live2D 已渲染");
-    }
-    else
-    {
-        std::string out = "输入：" + text;
-        env.ui->appendText(out);
-    }
-
+    // 主线程回显输入
+    std::string out = "输入：" + text;
+    env.ui->appendText(out,0);
+    // 构造消息
+    UiMessage msg;
+    msg.type = UiMessageType::Text;
+    msg.text = text;
+    env.ui->appendText("AI 正在思考...", 1);
+    // 入队
+    inputQueue.push(msg);
+    logError("onUiText", "文本已入队");
     logError("onUiText", "处理完成");
+}
+
+void ai_plc_delegate::ioThreadProc()
+{
+    logError("ioThreadProc", "IO线程创建完成");
+    pclailife.ioThreadRunning = true;
+    pclailife.ioThreadStopping = false;
+    while (!pclailife.ioThreadStopping)
+    {
+        if (!inputQueue.empty())
+        {
+            UiMessage msg = inputQueue.front();
+            inputQueue.pop();
+
+            UiMessage outMsg;
+            outMsg.type = UiMessageType::Text;
+
+            // ===== Live2D 指令处理 =====
+            if (msg.text == "live2d=0")
+            {
+                pclailife.ui.live2dEnabled = 0;
+                outMsg.text = "Live2D 已销毁";
+            }
+            else if (msg.text == "live2d=1")
+            {
+                pclailife.ui.live2dEnabled = 1;
+                outMsg.text = "Live2D 已创建";
+            }
+            else if (msg.text == "live2d=2")
+            {
+                pclailife.ui.live2dEnabled = 2;
+                outMsg.text = "Live2D 已渲染";
+            }
+           // ===== 记忆测试指令 =====
+            else if (msg.text == "memory1")
+            {
+                if (!pclailife.personainit || !managers.persona)
+                {
+                    outMsg.text = "人格未初始化";
+                }
+                else
+                {
+                    if (managers.persona->writeSelfLongMemory())
+                    {
+                        // ===== 重新解析镜像 =====
+                        std::vector<std::string> rows = parsePersonaMirror();
+
+                        // ===== 刷新 UI =====
+                        if (env.ui)
+                        {
+                            env.ui->updatePersonaMirror(rows, 1);
+                        }
+
+                        outMsg.text = "人格1-3长期记忆已更新";
+                    }
+                    else
+                    {
+                        outMsg.text = "人格1-3更新失败";
+                    }
+                }
+            }
+            else if (msg.text == "memory2")
+            {
+                if (!pclailife.personainit || !managers.persona)
+                {
+                    outMsg.text = "人格未初始化";
+                }
+                else
+                {
+                    if (managers.persona->writeUserLongMemory())
+                    {
+                        // ===== 重新解析镜像 =====
+                        std::vector<std::string> rows = parsePersonaMirror();
+
+                        // ===== 刷新 UI =====
+                        if (env.ui)
+                        {
+                            env.ui->updatePersonaMirror(rows, 1);
+                        }
+
+                        outMsg.text = "用户4-9长期记忆已更新";
+                    }
+                    else
+                    {
+                        outMsg.text = "用户4-9更新失败";
+                    }
+                }
+            }
+            else if (msg.text == "memoryoff")
+            {
+                if (!pclailife.personainit || !managers.persona)
+                {
+                    outMsg.text = "人格未初始化";
+                }
+                else
+                {
+                    // ===== 清空 Chat 短期记忆 =====
+                    modules.chatAi->clearShortHistory();
+
+                    outMsg.text = "短期记忆已清空";
+                }
+            }
+
+            else
+            {
+                if (!pclailife.personainit || !managers.persona)
+                {
+                    outMsg.text = "人格AI未初始化";
+                }
+                else
+                {
+                    logError("ioThreadProc", "进入人格ai调用");
+                    PersonaMessageIn inMsg;
+                    inMsg.type = 1;
+                    inMsg.text = msg.text;
+                    inMsg.createdAt = static_cast<int>(time(nullptr));
+                    managers.persona->pushInput(inMsg);
+                    managers.persona->processOnce();
+                    PersonaMessageOut personaOut;
+                    if (managers.persona->popOutput(personaOut))
+                    {
+                        outMsg.text = personaOut.text;
+                    }
+                    else
+                    {
+                        outMsg.text = "人格AI无输出";
+                    }
+                }
+            }
+            outputQueue.push(outMsg);
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+
+    pclailife.ioThreadRunning = false;
+    logError("ioThreadProc", "IO线程退出");
 }
 
 void ai_plc_delegate::upperThreadProc()
@@ -531,18 +790,34 @@ void ai_plc_delegate::upperThreadProc()
     pclailife.upperThreadRunning = false;
     logError("upperThreadProc", "上位机线程退出");
 }
-void ai_plc_delegate::ioThreadProc()
+
+std::vector<std::string> ai_plc_delegate::parsePersonaMirror()
 {
-    logError("ioThreadProc", "IO线程创建完成");
+    std::vector<std::string> rows;
 
-    pclailife.ioThreadRunning = true;
-    pclailife.ioThreadStopping = false;
-
-    while (!pclailife.ioThreadStopping)
+    // ===== 解析 selfMemory =====
+    for (int i = 0; i < 3; ++i)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        const CurrentMemory& mem = mirror.memoryState.selfMemory[i];
+
+        std::string line = mem.keyPath;
+        line += "|";
+        line += mem.content;
+
+        rows.push_back(line);
     }
 
-    pclailife.ioThreadRunning = false;
-    logError("ioThreadProc", "IO线程退出");
+    // ===== 解析 userMemory =====
+    for (int i = 0; i < 6; ++i)
+    {
+        const CurrentMemory& mem = mirror.memoryState.userMemory[i];
+
+        std::string line = mem.keyPath;
+        line += "|";
+        line += mem.content;
+
+        rows.push_back(line);
+    }
+
+    return rows;
 }

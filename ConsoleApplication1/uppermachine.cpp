@@ -23,9 +23,6 @@ uppermachine::~uppermachine()
         writeThread.detach(); 
 }
 
-
-
-
 void uppermachine::logOp(
     const std::string& fromFunc,   // 函数名（例如 init / readThreadProc）
     const std::string& action      // 执行的操作（例如 初始化开始）
@@ -178,8 +175,6 @@ bool uppermachine::writeplc(
 
     return true;
 }
-
-
 bool uppermachine::init()
 {
     logOp("init", "初始化开始");
@@ -190,7 +185,6 @@ bool uppermachine::init()
         logOp("init", "加载配置失败，初始化中止");
         return false;
     }
-
     // ===== 2. 尝试连接 PLC（允许失败）=====
     if (!initconnectPlc())
     {
@@ -198,19 +192,15 @@ bool uppermachine::init()
             "init",
             "PLC 未连接成功，初始化继续，允许后续重新连接"
         );
-        // 注意：这里不 return false
     }
-
     // ===== 3. 记录初始化完成事实 =====
     runState.upperInited = true;
     runState.readInited = true;
     runState.writeThreadInited = true;
-
     logOp("init", "初始化完成");
     lastError.clear();
     return true;
 }
-
 bool uppermachine::initloadConfig()
     {
         logOp("loadConfig", "开始加载 PLC 配置与变量定义");

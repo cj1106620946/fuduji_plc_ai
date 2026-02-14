@@ -24,8 +24,6 @@ ProjectManager::ProjectManager(
         worksignals
     );
 }
-
-
 ProjectManager::~ProjectManager()
 {
     if (upperRef)

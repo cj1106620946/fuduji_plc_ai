@@ -185,7 +185,6 @@ void AIController::buildResponsePrompt()
         u8"  2 = 紧急。\n"
         u8"\n"
         u8"请严格按照上述格式输出 JSON。";
-
 }
 // 构建 记忆 AI Prompt
 void AIController::buildMemoryaiPrompt()
@@ -368,6 +367,10 @@ std::string AIController::callAI(
             prompt
         );
 
+}
+AIClient& AIController::getClient()
+{
+    return ai;
 }
 
 

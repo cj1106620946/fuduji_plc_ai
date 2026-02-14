@@ -21,7 +21,7 @@
 #include "aitrace.h" 
 enum class UiMessageType
 {
-    Text = 0,      // 文本输入
+    Text = 0,      // 文本输
     Command = 1,   // 指令类输入
     System = 2     // 系统事件
 };
@@ -49,17 +49,17 @@ struct plcai
 
     bool ioThreadRunning = false;      // 输入输出线程是否运行
     bool ioThreadStopping = false;     // 输入输出线程是否进入停止流程
-
     UiState ui;
+    // ===== 人格生命周期=====
+    PersonaState personaState;
+    // ===== project生命周期 =====
+    ProjectState projectState;
 };
 
 
 struct PlcAiMirror
 {
-    // ===== 人格状态镜像 =====
-    PersonaState personaState;
-    // ===== 项目状态镜像 =====
-    ProjectState projectState;
+
     // ===== PLC 当前镜像 =====
     plcinfo currentPlc;
     // ===== 信号镜像 =====
@@ -117,10 +117,8 @@ private:
     bool initpersona();
     bool initproject();
     bool initai();
-
     void onUiText(const std::string& text);
     void processInputOnce();
-
 signals:
     void uiTextSubmitted(const std::string& text);
 
@@ -128,7 +126,6 @@ private:
     RuntimeEnvironment env;
     RuntimeModules modules;
     RuntimeManagers managers;
-
     plcai pclailife;
     PlcAiMirror mirror;
 
@@ -136,6 +133,10 @@ private:
     std::string lastError;
     // 输入池
     std::queue<UiMessage> inputQueue;
+    std::queue<UiMessage> outputQueue;
+
+    std::vector<std::string> parsePersonaMirror();
+
     void logError(
         const std::string& fromFunc,
         const std::string& reason

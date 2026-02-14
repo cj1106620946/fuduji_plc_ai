@@ -111,7 +111,6 @@
     <ClCompile Include="memorybridge.cpp">
       <Filter>manager</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp" />
     <ClCompile Include="initpanel.cpp">
       <Filter>QTUI</Filter>
     </ClCompile>
@@ -122,6 +121,12 @@
       <Filter>QTUI</Filter>
     </ClCompile>
     <ClCompile Include="initpersona.cpp">
+      <Filter>QTUI</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>资源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="projectpanel.cpp">
       <Filter>QTUI</Filter>
     </ClCompile>
   </ItemGroup>
@@ -218,6 +223,9 @@
     <QtMoc Include="initproject.h">
       <Filter>QTUI</Filter>
     </QtMoc>
+    <QtMoc Include="projectpanel.h">
+      <Filter>QTUI</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="qtmain.ui">
@@ -235,5 +243,13 @@
     <QtUic Include="initpersona.ui">
       <Filter>QTUI</Filter>
     </QtUic>
+    <QtUic Include="projectpanel.ui">
+      <Filter>QTUI</Filter>
+    </QtUic>
+  </ItemGroup>
+  <ItemGroup>
+    <QtRcc Include="resourcesqrc.qrc">
+      <Filter>资源文件</Filter>
+    </QtRcc>
   </ItemGroup>
 </Project>

@@ -68,10 +68,10 @@ public:
     bool popOutput(PersonaMessageOut& outMsg);
 
     // 生成并写入 self 1-3 的长期记忆
-    bool writeSelfLongMemory(const std::string& text);
+    bool writeSelfLongMemory();
     // 生成并写入 user 4-9 的长期记忆
-    bool writeUserLongMemory(const std::string& text);
-
+    bool writeUserLongMemory();
+    bool updateAllLongMemory();
     bool runChatWithPersona(
         const std::string& userText,
         PersonaMessageOut& outMsg

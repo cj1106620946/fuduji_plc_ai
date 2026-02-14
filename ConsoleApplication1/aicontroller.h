@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <cstdint>
+#include "aiclient.h"
 
 class AIClient;
 
@@ -35,6 +36,7 @@ public:
         const std::string& text,
         const std::string& prompt
     );
+    AIClient& getClient();
 
     // 读取 Prompt 接口
     std::string executeprompt_get();

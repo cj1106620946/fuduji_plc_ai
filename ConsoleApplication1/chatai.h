@@ -25,6 +25,9 @@ public:
         const std::string& user_input,
         const std::string& personaText
     );
+    std::string getShortHistory();
+    void clearShortHistory();
+
     std::string getAiName();
     std::string getText();
     int getControl();

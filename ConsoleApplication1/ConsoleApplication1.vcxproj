@@ -190,6 +190,7 @@
     <ClCompile Include="piperengine.cpp" />
     <ClCompile Include="plcclient.cpp" />
     <ClCompile Include="projectmanager.cpp" />
+    <ClCompile Include="projectpanel.cpp" />
     <ClCompile Include="qtmain.cpp">
       <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">input</DynamicSource>
       <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(Filename).moc</QtMocFileName>
@@ -232,6 +233,7 @@
     <ClInclude Include="plcclient.h" />
     <QtMoc Include="qtmain.h" />
     <ClInclude Include="projectmanager.h" />
+    <QtMoc Include="projectpanel.h" />
     <ClInclude Include="speechagent.h" />
     <ClInclude Include="sqlstore.h" />
     <ClInclude Include="sqllient.h" />
@@ -243,7 +245,11 @@
     <QtUic Include="initpanel.ui" />
     <QtUic Include="initpersona.ui" />
     <QtUic Include="initproject.ui" />
+    <QtUic Include="projectpanel.ui" />
     <QtUic Include="qtmain.ui" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtRcc Include="resourcesqrc.qrc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$(QtMsBuild)\qt.targets" Condition="Exists('$(QtMsBuild)\qt.targets')" />

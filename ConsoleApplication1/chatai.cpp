@@ -168,3 +168,13 @@ bool ChatAI::parseChatJson(const std::string& jsonText)
 
     return true;
 }
+std::string ChatAI::getShortHistory()
+{
+    // "chat" 是你当前固定使用的记忆槽
+    return ai.getClient().getHistory("chat");
+}
+
+void ChatAI::clearShortHistory()
+{
+    ai.getClient().clearHistory("chat");
+}

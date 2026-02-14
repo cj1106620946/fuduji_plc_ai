@@ -15,11 +15,13 @@ public:
 signals:
     void openRequested(const std::string& path);    // 打开已有工程
     void createRequested(const std::string& path);  // 创建新工程
+    void closeRequested();
 
 private slots:
     void onBrowseClicked();
     void onOpenClicked();
     void onCreateClicked();
+    void onCloseClicked();
 
 private:
     Ui::initpanelClass ui;
