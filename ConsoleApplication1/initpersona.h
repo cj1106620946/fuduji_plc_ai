@@ -21,7 +21,6 @@ signals:
         const std::string& key,
         const std::string& content
     );
-
 private:
     Ui::initpersonaClass ui;
 };

@@ -24,6 +24,7 @@
 #include "initpanel.h"
 #include"projectpanel.h"
 #include "initpersona.h"
+#include"initproject.h"
 class initpersona;
 struct UiState
 {
@@ -78,7 +79,7 @@ private:
 
     // 左侧导航树
     QTreeWidget* navTree = nullptr;
-    projectpanel* project = nullptr;
+    initproject* project = nullptr;
     // 中间页面
     initpanel* init = nullptr;
     // 当前页面指针

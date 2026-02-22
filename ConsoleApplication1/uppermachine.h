@@ -17,7 +17,6 @@ class PLCClient;
 class SqlStore;
 struct RunState
 {
-
     bool upperInited;          // 上位机初始化
     bool upperRunning;         // 上位机运行状态
     bool upperStopping;        // 上位机是否处于停止流程中

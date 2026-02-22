@@ -34,7 +34,6 @@ qtmain::qtmain(UiState& stateRef, QWidget* parent)
         statusLayout->setContentsMargins(10, 0, 10, 0);
         statusLayout->setSpacing(15);
     }
-
     QHBoxLayout* statusLayout =
         qobject_cast<QHBoxLayout*>(ui.statuspanel->layout());
 
@@ -96,7 +95,7 @@ qtmain::qtmain(UiState& stateRef, QWidget* parent)
     ui.pageInit->layout()->addWidget(init);
 
     // project 页面
-    project = new projectpanel(ui.pageProject);
+    project = new initproject(ui.pageProject);
     if (!ui.pageProject->layout())
     {
         QVBoxLayout* layout = new QVBoxLayout(ui.pageProject);
@@ -104,6 +103,7 @@ qtmain::qtmain(UiState& stateRef, QWidget* parent)
         layout->setSpacing(0);
     }
 
+	// persona 页面
     persona = new initpersona(ui.pagePersona);
     if (!ui.pagePersona->layout())
     {
@@ -207,7 +207,7 @@ void qtmain::appendText(const std::string& text, int renderType)
 {
     if (!chat)
         return;
-
+    updateRenderState();
     chat->appendOutput(
         QString::fromStdString(text),
         renderType
@@ -235,7 +235,6 @@ void qtmain::showMiniTip(const std::string& text)
         Qt::WindowDoesNotAcceptFocus
     );
     tip->setAttribute(Qt::WA_TranslucentBackground);
-
     QLabel* label = new QLabel(QString::fromStdString(text), tip);
     label->setStyleSheet(
         "QLabel {"
@@ -246,7 +245,6 @@ void qtmain::showMiniTip(const std::string& text)
         "font-size: 13px;"
         "}"
     );
-
     QVBoxLayout* layout = new QVBoxLayout(tip);
     layout->addWidget(label);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -268,18 +266,24 @@ void qtmain::updatePersonaMirror(
     int mirrorType
 )
 {
-    if (!persona)
-        return;
     if (mirrorType == 1)
     {
-        // 人格镜像写入
+        if (!persona)
+            return;
         persona->refreshRows(rows);
     }
     else if (mirrorType == 2)
     {
-        // 预留工程镜像写入
+        if (!project)
+            return;
+        // 工程镜像直接交给 project 解析
+        project->refreshRows(rows);
     }
 }
+
+
+
+
 // 窗口尺寸变化时同步 Live2D
 void qtmain::resizeEvent(QResizeEvent* event)
 {
@@ -440,7 +444,5 @@ void qtmain::updateRenderState()
 }
 void qtmain::updateProjectMirror(const std::vector<std::string>& vars)
 {
-    if (!project)
-        return;
-    project->refreshVariables(vars);
+
 }

@@ -136,7 +136,7 @@ private:
     std::queue<UiMessage> outputQueue;
 
     std::vector<std::string> parsePersonaMirror();
-
+    std::vector<std::string> parseProjectMirror();
     void logError(
         const std::string& fromFunc,
         const std::string& reason

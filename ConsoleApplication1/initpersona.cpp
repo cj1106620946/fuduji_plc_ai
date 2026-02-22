@@ -5,14 +5,14 @@ initpersona::initpersona(QWidget* parent)
     : QWidget(parent)
 {
     ui.setupUi(this);
-    // ÉèÖÃÁ½ÁĞ
+    // è®¾ç½®ä¸¤åˆ—
     ui.table->setColumnCount(2);
     QStringList headers;
     headers << "Key" << "Content";
     ui.table->setHorizontalHeaderLabels(headers);
-    // µÚÒ»ÁĞ×Ô¶¯ÊÊÓ¦ÄÚÈİ
+    // ç¬¬ä¸€åˆ—è‡ªåŠ¨é€‚åº”å†…å®¹
     ui.table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    // µÚ¶şÁĞÀ­Éì
+    // ç¬¬äºŒåˆ—æ‹‰ä¼¸
     ui.table->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Stretch);
     ui.table->verticalHeader()->setVisible(false);
     ui.table->setRowCount(0);
@@ -36,14 +36,14 @@ void initpersona::onItemChanged(QTableWidgetItem* item)
     int row = item->row();
     int col = item->column();
 
-    // Ö»´¦ÀíµÚ¶şÁĞ£¨Content ÁĞ£©
+    // åªå¤„ç†ç¬¬äºŒåˆ—ï¼ˆContent åˆ—ï¼‰
     if (col != 1)
         return;
 
     QString key = ui.table->item(row, 0)->text();
     QString content = item->text();
 
-    // ·¢ĞÅºÅ¸øÉÏ²ã
+    // å‘ä¿¡å·ç»™ä¸Šå±‚
     emit personaContentChanged(
         key.toStdString(),
         content.toStdString()
@@ -81,7 +81,7 @@ void initpersona::refreshRows(const std::vector<std::string>& rows)
         QTableWidgetItem* contentItem =
             new QTableWidgetItem(QString::fromStdString(content));
 
-        // µÚÒ»ÁĞ½ûÖ¹±à¼­
+        // ç¬¬ä¸€åˆ—ç¦æ­¢ç¼–è¾‘
         keyItem->setFlags(keyItem->flags() & ~Qt::ItemIsEditable);
 
         ui.table->setItem(i, 0, keyItem);

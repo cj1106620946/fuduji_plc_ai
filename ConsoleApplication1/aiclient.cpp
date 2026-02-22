@@ -45,7 +45,6 @@ std::string AIClient::resolveCallDesc(
             if (desc.modelName.empty())
                 desc.modelName = "deepseek-chat";
             return "https://api.deepseek.com/v1/chat/completions";
-
         case AIProvider::OpenAI:
             if (desc.modelName.empty())
                 desc.modelName = "gpt-4o-mini";
@@ -66,14 +65,12 @@ std::string AIClient::resolveCallDesc(
             return std::string();
         }
     }
-
     // 本地模式
     if (desc.provider != AIProvider::Ollama)
     {
         errorText = u8"本地模式下仅支持 Ollama";
         return std::string();
     }
-
     if (desc.modelName.empty())
         desc.modelName = "qwen2.5:7b-instruct-q4_K_M";
     return "http://127.0.0.1:11434/api/chat";

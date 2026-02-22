@@ -132,48 +132,35 @@ void ai_plc_delegate::logError(
 
 bool ai_plc_delegate::initQt()
 {
-    // ===== 已初始化检查 =====
     if (pclailife.qtinit)
     {
         logError("initQt", "Qt 已经初始化，跳过");
         return true;
     }
-
-    // ===== 创建 Qt 应用对象 =====
-    // 使用静态变量保证 QApplication 只创建一次
     static int argc = 0;
     static char* argv[] = { nullptr };
     static QApplication app(argc, argv);
-
-    // ===== 创建主界面 =====
     env.ui = new qtmain(pclailife.ui, nullptr);
     if (!env.ui)
     {
         logError("initQt", "qtmain 创建失败");
         return false;
     }
-
     env.ui->show();
-    // ===== 创建主线程调度定时器 =====
     QTimer* timer = new QTimer(env.ui);
     QObject::connect(timer, &QTimer::timeout, [this]()
     {
-        // ===== 消费输出队列 =====
         while (!outputQueue.empty())
         {
             UiMessage msg = outputQueue.front();
             outputQueue.pop();
-            // 主线程安全更新 UI
             if (env.ui)
             {
                 env.ui->appendText(msg.text,0);
             }
         }
     });
-    // 每 10ms 执行一次
     timer->start(10);
-
-    // ===== 标记 Qt 初始化完成 =====
     pclailife.qtinit = true;
     logError("initQt", "Qt 初始化完成");
     return true;
@@ -181,7 +168,6 @@ bool ai_plc_delegate::initQt()
 
 bool ai_plc_delegate::initSql(const std::string& dbPath)
 {
-    // ===== 已打开则拒绝 =====
     if (pclailife.sqlinit)
     {
         logError("initSql", "数据库已打开，拒绝重复打开");
@@ -190,8 +176,6 @@ bool ai_plc_delegate::initSql(const std::string& dbPath)
     }
 
     logError("initSql", "开始初始化数据库: " + dbPath);
-
-    // ===== 清理旧对象（理论上不会执行，但保持安全） =====
     if (env.sqlStore)
     {
         env.sqlStore->close();
@@ -204,8 +188,6 @@ bool ai_plc_delegate::initSql(const std::string& dbPath)
         delete env.sqlClient;
         env.sqlClient = nullptr;
     }
-
-    // ===== 创建数据库客户端 =====
     env.sqlClient = new Sqllient(dbPath);
     if (!env.sqlClient)
     {
@@ -223,8 +205,6 @@ bool ai_plc_delegate::initSql(const std::string& dbPath)
         env.sqlClient = nullptr;
         return false;
     }
-
-    // ===== 打开数据库 =====
     if (!env.sqlStore->open())
     {
         lastError = env.sqlStore->getLastErrorText();
@@ -238,26 +218,21 @@ bool ai_plc_delegate::initSql(const std::string& dbPath)
 
         return false;
     }
-
-    // ===== 标记数据库初始化成功 =====
     pclailife.sqlinit = true;
     logError("initSql", "数据库打开成功");
-
-    // ===== 初始化 AI =====
     if (!initai())
     {
         pclailife.sqlinit = false;
         return false;
     }
-
-    // ===== 初始化 人格 =====
     if (!initpersona())
     {
         pclailife.sqlinit = false;
         return false;
     }
-
+    initproject();
     return true;
+
 }
 
 bool ai_plc_delegate::initai()
@@ -267,7 +242,6 @@ bool ai_plc_delegate::initai()
         logError("initai", "AI 基础层已初始化，跳过");
         return true;
     }
-
     static AICallDesc callDesc;
     callDesc.useCloud = 0;
     callDesc.provider = AIProvider::Ollama;
@@ -276,7 +250,6 @@ bool ai_plc_delegate::initai()
     callDesc.timeoutSec = 60;
     callDesc.temperature = 0.7;
     callDesc.maxTokens = 2048;
-
     modules.aiClient = new AIClient(callDesc);
     if (!modules.aiClient)
     {
@@ -284,7 +257,6 @@ bool ai_plc_delegate::initai()
         env.ui->showError("ai初始化失败: " + lastError);
         return false;
     }
-
     modules.aiController = new AIController(*modules.aiClient);
     if (!modules.aiController)
     {
@@ -292,7 +264,6 @@ bool ai_plc_delegate::initai()
         env.ui->showError("ai初始化失败: " + lastError);
         return false;
     }
-
     modules.aiTrace = new AITrace();
     if (!modules.aiTrace)
     {
@@ -300,12 +271,9 @@ bool ai_plc_delegate::initai()
         env.ui->showError("ai初始化失败: " + lastError);
         return false;
     }
-
     modules.aiTrace->setRootDir("ai_trace");
-
     pclailife.aiinit = true;
     logError("initai", "AI 基础层初始化完成");
-
     return true;
 }
 
@@ -467,8 +435,11 @@ bool ai_plc_delegate::initproject()
         logError("initproject", "ProjectManager init 失败");
         return false;
     }
-
-
+    if (env.ui)
+    {
+        std::vector<std::string> rows = parseProjectMirror();
+        env.ui->updatePersonaMirror(rows, 2);
+    }
     pclailife.projectState.projectInited = true;
     pclailife.projectinit = true;
     logError("initproject", "Project 初始化完成");
@@ -568,10 +539,8 @@ void ai_plc_delegate::run()
         // 刷新 UI 镜像为空
         std::vector<std::string> emptyRows;
         env.ui->updatePersonaMirror(emptyRows, 1);
-
         env.ui->showMiniTip("工程已关闭");
     });
-
 
     QObject::connect(
         env.ui,
@@ -653,8 +622,6 @@ void ai_plc_delegate::ioThreadProc()
 
             UiMessage outMsg;
             outMsg.type = UiMessageType::Text;
-
-            // ===== Live2D 指令处理 =====
             if (msg.text == "live2d=0")
             {
                 pclailife.ui.live2dEnabled = 0;
@@ -670,7 +637,6 @@ void ai_plc_delegate::ioThreadProc()
                 pclailife.ui.live2dEnabled = 2;
                 outMsg.text = "Live2D 已渲染";
             }
-           // ===== 记忆测试指令 =====
             else if (msg.text == "memory1")
             {
                 if (!pclailife.personainit || !managers.persona)
@@ -681,10 +647,7 @@ void ai_plc_delegate::ioThreadProc()
                 {
                     if (managers.persona->writeSelfLongMemory())
                     {
-                        // ===== 重新解析镜像 =====
                         std::vector<std::string> rows = parsePersonaMirror();
-
-                        // ===== 刷新 UI =====
                         if (env.ui)
                         {
                             env.ui->updatePersonaMirror(rows, 1);
@@ -708,10 +671,7 @@ void ai_plc_delegate::ioThreadProc()
                 {
                     if (managers.persona->writeUserLongMemory())
                     {
-                        // ===== 重新解析镜像 =====
                         std::vector<std::string> rows = parsePersonaMirror();
-
-                        // ===== 刷新 UI =====
                         if (env.ui)
                         {
                             env.ui->updatePersonaMirror(rows, 1);
@@ -733,7 +693,6 @@ void ai_plc_delegate::ioThreadProc()
                 }
                 else
                 {
-                    // ===== 清空 Chat 短期记忆 =====
                     modules.chatAi->clearShortHistory();
 
                     outMsg.text = "短期记忆已清空";
@@ -770,7 +729,6 @@ void ai_plc_delegate::ioThreadProc()
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
-
     pclailife.ioThreadRunning = false;
     logError("ioThreadProc", "IO线程退出");
 }
@@ -781,42 +739,101 @@ void ai_plc_delegate::upperThreadProc()
 
     pclailife.upperThreadRunning = true;
     pclailife.upperThreadStopping = false;
-
     while (!pclailife.upperThreadStopping)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-
     pclailife.upperThreadRunning = false;
     logError("upperThreadProc", "上位机线程退出");
 }
+
 
 std::vector<std::string> ai_plc_delegate::parsePersonaMirror()
 {
     std::vector<std::string> rows;
 
-    // ===== 解析 selfMemory =====
+    // ===== 解析 selfMemory（人格自身记忆）=====
+    const char* selfTitles[3] = {
+        u8"AI自我.自我认知",
+        u8"AI自我.情感基调",
+        u8"AI自我.处事方式"
+    };
+
     for (int i = 0; i < 3; ++i)
     {
         const CurrentMemory& mem = mirror.memoryState.selfMemory[i];
 
-        std::string line = mem.keyPath;
+        // 第一列显示中文标题，第二列显示内容
+        std::string line = selfTitles[i];
         line += "|";
         line += mem.content;
 
         rows.push_back(line);
     }
 
-    // ===== 解析 userMemory =====
+    // ===== 解析 userMemory（用户相关记忆）=====
+    const char* userTitles[6] = {
+        u8"面向用户.用户总结",
+        u8"面向用户.用户偏好",
+        u8"面向用户.称呼方式",
+        u8"面向用户.交互策略",
+        u8"面向用户.情境背景",
+        u8"面向用户.长期边界"
+    };
+
     for (int i = 0; i < 6; ++i)
     {
         const CurrentMemory& mem = mirror.memoryState.userMemory[i];
 
-        std::string line = mem.keyPath;
+        std::string line = userTitles[i];
         line += "|";
         line += mem.content;
 
         rows.push_back(line);
+    }
+
+    return rows;
+}
+std::vector<std::string> ai_plc_delegate::parseProjectMirror()
+{
+    std::vector<std::string> rows;
+
+    // ===== PLC 信息组（根节点）=====
+    rows.push_back("#A#PLC信息");
+    plcinfo& plc = mirror.currentPlc;
+    rows.push_back("任务描述|" + plc.taskDesc);
+    rows.push_back("任务域|" + plc.taskDomain);
+    rows.push_back("来源文本|" + plc.sourceText);
+    rows.push_back("PLC型号|" + plc.plcModel);
+    rows.push_back("订货号|" + plc.orderCode);
+    rows.push_back("IP地址|" + plc.ipAddress);
+    rows.push_back("机架|" + std::to_string(plc.rack));
+    rows.push_back("槽号|" + std::to_string(plc.slot));
+    rows.push_back("连接状态|" + std::string(plc.isActive ? "已连接" : "未连接"));
+
+    // ===== 变量列表（PLC信息下的子节点）=====
+    rows.push_back("#A#变量列表");
+    // ===== 遍历所有变量 =====
+    for (auto& s : mirror.worksignals)
+    {
+        // 每个变量作为变量列表下的子节点
+        rows.push_back("#B#" + s.name);
+        // 变量的属性
+        rows.push_back("信号ID|" + std::to_string(s.signalId));
+        rows.push_back("变量名|" + s.name);
+        rows.push_back("PLC地址|" + s.plcAddress);
+        rows.push_back("所属PLC ID|" + std::to_string(s.plcId));
+        rows.push_back("说明|" + s.description);
+        rows.push_back("创建时间|" + std::to_string(s.createdAt));
+        rows.push_back("当前值|" + s.currentValue);
+        rows.push_back("读取状态|" + std::string(s.readOk ? "成功" : "失败"));
+        rows.push_back("目标值|" + s.targetValue);
+        rows.push_back("写入标记|" + std::string(s.writeFlag ? "等待写入" : "无"));
+        rows.push_back("最后操作时间|" + std::to_string(s.lastOpAt));
+        rows.push_back("可用状态|" + std::string(s.isAvailable ? "可用" : "不可用"));
+
+        // 关键：添加一个标记让界面层把栈退回上一级
+        rows.push_back("#BACK#");
     }
 
     return rows;
