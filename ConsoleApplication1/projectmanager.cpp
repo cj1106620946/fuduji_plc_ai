@@ -1,5 +1,6 @@
 #include "projectmanager.h"
 
+// 构造函数：初始化引用成员并创建上位机对象 uppermachine
 ProjectManager::ProjectManager(
     SqlStore& store,
     WorkspaceAI& workspaceAI,
@@ -24,6 +25,8 @@ ProjectManager::ProjectManager(
         worksignals
     );
 }
+
+// 析构函数：释放上位机对象资源
 ProjectManager::~ProjectManager()
 {
     if (upperRef)
@@ -33,6 +36,7 @@ ProjectManager::~ProjectManager()
     }
 }
 
+// 日志记录：把错误信息追加到项目管理层日志文件（包含时间戳和来源函数）
 void ProjectManager::logError(
     const std::string& fromFunc,
     const std::string& reason
@@ -77,6 +81,7 @@ void ProjectManager::logError(
     logFile.close();
 }
 
+// 初始化项目：设置 ProjectState / RunState 初始值并从数据库加载镜像
 bool ProjectManager::init()
 {
     // ===== ProjectState：项目级生命周期 =====
@@ -108,29 +113,21 @@ bool ProjectManager::init()
     runState.writeThreadRunning = false;
     runState.writeThreadStopping = false;
 
-    // ===== plcinfo：PLC 镜像 =====
-    currentPlc.taskDesc.clear();
-    currentPlc.taskDomain.clear();
-    currentPlc.sourceText.clear();
-
-    currentPlc.plcModel.clear();
-    currentPlc.orderCode.clear();
-    currentPlc.ipAddress.clear();
-    currentPlc.rack = 0;
-    currentPlc.slot = 0;
-    currentPlc.signalRootId = 0;
-
-    currentPlc.isActive = 0;
-    currentPlc.createdAt = 0;
-    currentPlc.updatedAt = 0;
-
-    // ===== signalinfo：变量镜像 =====
-    worksignals.clear();
-
+    // ===== 从数据库加载配置到镜像 =====
+    if (upperRef)
+    {
+        if (!upperRef->initloadConfig())
+        {
+            lastError = upperRef->getLastError();
+            logError("init", "从数据库加载配置失败: " + lastError);
+            return false;
+        }
+    }
     lastError.clear();
     return true;
 }
 
+// 上位机初始化：若未创建上位机或初始化失败则返回错误信息
 bool ProjectManager::upperinit()
 {
     // 已经初始化过则直接返回
@@ -156,6 +153,7 @@ bool ProjectManager::upperinit()
     return true;
 }
 
+// PLC 连接初始化：调用上位机的连接接口并更新 currentPlc.isActive 状态
 bool ProjectManager::connectplcinit()
 {
     if (!upperRef)
@@ -178,6 +176,7 @@ bool ProjectManager::connectplcinit()
     return true;
 }
 
+// AI 通道初始化：准备 AI 队列与状态位，要求项目已初始化
 bool ProjectManager::aiinit()
 {
     // AI 初始化只允许在项目已初始化后进行
@@ -206,6 +205,7 @@ bool ProjectManager::aiinit()
     return true;
 }
 
+// 停止项目：协调停止各线程与上位机，并清理运行标志
 void ProjectManager::stop()
 {
     // 已经在停止流程中，直接返回
@@ -239,11 +239,13 @@ void ProjectManager::stop()
     projectstate.stopping = false;
 }
 
+// 检查准备状态：当前实现始终返回 true（保留扩展点）
 bool ProjectManager::isReady() const
 {
     return true;
 }
 
+// 推送 AI 消息：将用户输入封装为 AIMessage 并追加到队列（要求 AI 通道已初始化）
 bool ProjectManager::pushAIMessage(const std::string& text, int source, int type)
 {
     if (!projectstate.stringThreadInited)
@@ -259,6 +261,7 @@ bool ProjectManager::pushAIMessage(const std::string& text, int source, int type
     return true;
 }
 
+// 推送项目消息：将消息追加到 projectMessageQueue（供 UI 或日志消费）
 void ProjectManager::pushProjectMessage(
     const std::string& text,
     int source
@@ -272,6 +275,7 @@ void ProjectManager::pushProjectMessage(
     projectMessageQueue.push_back(msg);
 }
 
+// 弹出项目消息：从队列取出最先入队的一条消息并返回
 bool ProjectManager::popProjectMessage(ProjectMessage& outMsg)
 {
     if (projectMessageQueue.empty())
@@ -282,11 +286,13 @@ bool ProjectManager::popProjectMessage(ProjectMessage& outMsg)
     return true;
 }
 
+// 获取最近错误信息的只读引用
 const std::string& ProjectManager::getLastError() const
 {
     return lastError;
 }
 
+// 使用 WorkspaceAI 解析输入并通过 uppermachine 创建 PLC（最小信息写入）
 bool ProjectManager::createPlcByAI(const std::string& userInput)
 {
     std::string plcName;
@@ -313,9 +319,10 @@ bool ProjectManager::createPlcByAI(const std::string& userInput)
         return false;
     }
 
-    // 2. 组装 plcinfo（这里只做最小赋值）
+    // 2. 组装 plcinfo
     plcinfo info;
     info.taskDesc = description;
+    info.sourceText = userInput;  // 把用户原始输入作为 sourceText
     info.ipAddress = ip;
     info.rack = rack;
     info.slot = slot;
@@ -333,6 +340,7 @@ bool ProjectManager::createPlcByAI(const std::string& userInput)
     return true;
 }
 
+// 使用 WorkspaceAI 生成信号列表并逐条通过 uppermachine 创建信号
 bool ProjectManager::createSignalsByAI(const std::string& userInput)
 {
     std::vector<SignalWorkspaceData> aiSignals;
@@ -366,6 +374,7 @@ bool ProjectManager::createSignalsByAI(const std::string& userInput)
     return true;
 }
 
+// 从本地变量镜像中读取指定 PLC 地址的信息并格式化返回
 bool ProjectManager::readSignal(
     const std::string& plcAddress,
     std::string& outResult
@@ -389,6 +398,7 @@ bool ProjectManager::readSignal(
     return false;
 }
 
+// 在本地变量镜像中登记写入请求（设置 targetValue 与 writeFlag）
 bool ProjectManager::writeSignal(
     const std::string& plcAddress,
     const std::string& value,
@@ -418,6 +428,7 @@ bool ProjectManager::writeSignal(
     return false;
 }
 
+// 使用 ExecuteAI 生成执行项并按类型处理（支持 read/write），收集并返回执行结果文本列表
 bool ProjectManager::executeByAI(
     const std::string& userInput,
     std::vector<std::string>& outMessages
@@ -483,6 +494,7 @@ bool ProjectManager::executeByAI(
     return true;
 }
 
+// 使用 WorkspaceAI 创建 PLC 工作区并写入数据库，返回创建过程中的信息回流
 bool ProjectManager::createPlcWorkspaceByAI(
     const std::string& userInput,
     std::vector<std::string>& outMessages
@@ -522,11 +534,11 @@ bool ProjectManager::createPlcWorkspaceByAI(
     // 2. 组装最小 plcinfo
     plcinfo info{};
     info.taskDesc = description;
+    info.sourceText = userInput;  // 加上这一行
     info.ipAddress = ip;
     info.rack = rack;
     info.slot = slot;
     info.isActive = 0;
-
     // 3. 写入数据库
     if (!upperRef->createPlcInfoRow(info))
     {
@@ -541,6 +553,7 @@ bool ProjectManager::createPlcWorkspaceByAI(
     return true;
 }
 
+// 使用 WorkspaceAI 创建变量工作区并写入数据库，返回创建数量信息
 bool ProjectManager::createSignalWorkspaceByAI(
     const std::string& userInput,
     std::vector<std::string>& outMessages
@@ -585,7 +598,6 @@ bool ProjectManager::createSignalWorkspaceByAI(
             return false;
         }
     }
-
     // 成功回流
     outMessages.push_back(
         u8"变量工作区创建完成，数量: " +
@@ -595,15 +607,16 @@ bool ProjectManager::createSignalWorkspaceByAI(
     return true;
 }
 
+// 项目主运行线程体：当前为空转循环，保留作为扩展点
 void ProjectManager::runThreadProc()
 {
     while (projectstate.projectInited)
     {
-
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
 
+// 上位机线程体：在允许运行时触发 uppermachine.run 并空转等待停止
 void ProjectManager::upperThreadProc()
 {
     while (projectstate.projectInited)
@@ -631,6 +644,7 @@ void ProjectManager::upperThreadProc()
     projectstate.upperStopping = false;
 }
 
+// AI 线程体：从 aiQueue 取消息并按类型分发到对应处理函数，记录回流日志
 void ProjectManager::aiThreadProc()
 {
     while (projectstate.projectInited)
@@ -729,6 +743,7 @@ void ProjectManager::aiThreadProc()
     projectstate.aiBusy = false;
 }
 
+// 启动项目运行线程（如果尚未启动并且项目已初始化）
 void ProjectManager::createRunThread()
 {
     // 项目必须已初始化
@@ -742,6 +757,7 @@ void ProjectManager::createRunThread()
     projectstate.projectRunning = 1;
 }
 
+// 启动上位机线程（在项目和上位机已初始化时）
 void ProjectManager::createUpperThread()
 {
     // 项目 + 上位机必须已初始化
@@ -758,6 +774,7 @@ void ProjectManager::createUpperThread()
     projectstate.upperRunning = 1;
 }
 
+// 启动 AI 处理线程（在项目和 AI 通道已初始化时）
 void ProjectManager::createAIThread()
 {
     // 项目 + AI 通道必须已初始化
@@ -774,6 +791,7 @@ void ProjectManager::createAIThread()
     projectstate.stringThreadRunning = 1;
 }
 
+// 等待并销毁项目运行线程（阻塞直到线程结束）
 void ProjectManager::destroyRunThread()
 {
     if (!runThread.joinable())
@@ -783,6 +801,7 @@ void ProjectManager::destroyRunThread()
     projectstate.projectRunning = 0;
 }
 
+// 等待并销毁上位机线程（阻塞直到线程结束）
 void ProjectManager::destroyUpperThread()
 {
     if (!upperThread.joinable())
@@ -792,6 +811,7 @@ void ProjectManager::destroyUpperThread()
     projectstate.upperRunning = 0;
 }
 
+// 等待并销毁 AI 线程（阻塞直到线程结束）
 void ProjectManager::destroyAIThread()
 {
     if (!aiThread.joinable())

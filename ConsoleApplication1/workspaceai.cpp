@@ -131,7 +131,7 @@ std::string WorkspaceAI::parsePlcJson(
 
     return "";
 }
-
+// 解析 Signal Workspace AI 输出的 JSON，提取变量列表
 std::string WorkspaceAI::parseSignalJson(
     const std::string& jsonText,
     std::vector<SignalWorkspaceData>& worksignals
@@ -153,12 +153,12 @@ std::string WorkspaceAI::parseSignalJson(
         return "unknown error";
     }
 
-    if (!root.isMember("worksignals") || !root["worksignals"].isArray())
-        return "missing worksignals";
+    if (!root.isMember("signals") || !root["signals"].isArray())
+        return "missing signals";
 
-    const Json::Value& arr = root["worksignals"];
+    const Json::Value& arr = root["signals"];
     if (arr.empty())
-        return "worksignals empty";
+        return "signals empty";
 
     for (Json::ArrayIndex i = 0; i < arr.size(); ++i) {
         const Json::Value& sig = arr[i];

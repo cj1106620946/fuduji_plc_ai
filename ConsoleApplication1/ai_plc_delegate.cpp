@@ -243,9 +243,9 @@ bool ai_plc_delegate::initai()
         return true;
     }
     static AICallDesc callDesc;
-    callDesc.useCloud = 0;
-    callDesc.provider = AIProvider::Ollama;
-    callDesc.apiKey.clear();
+    callDesc.useCloud = 1;
+    callDesc.provider = AIProvider::DeepSeek;
+    callDesc.apiKey="sk-bb3b9af89db147eda4eedf1c0412c5f2";
     callDesc.modelName.clear();
     callDesc.timeoutSec = 60;
     callDesc.temperature = 0.7;
@@ -435,6 +435,22 @@ bool ai_plc_delegate::initproject()
         logError("initproject", "ProjectManager init 失败");
         return false;
     }
+
+    // 添加调试输出，查看镜像内容
+    qDebug() << "===== 初始化后镜像内容 =====";
+    qDebug() << "currentPlc.taskDesc:" << QString::fromStdString(mirror.currentPlc.taskDesc);
+    qDebug() << "currentPlc.ipAddress:" << QString::fromStdString(mirror.currentPlc.ipAddress);
+    qDebug() << "currentPlc.rack:" << mirror.currentPlc.rack;
+    qDebug() << "currentPlc.slot:" << mirror.currentPlc.slot;
+    qDebug() << "worksignals 数量:" << mirror.worksignals.size();
+    for (size_t i = 0; i < mirror.worksignals.size(); ++i)
+    {
+        qDebug() << "信号" << i << "名称:" << QString::fromStdString(mirror.worksignals[i].name);
+        qDebug() << "信号" << i << "地址:" << QString::fromStdString(mirror.worksignals[i].plcAddress);
+        qDebug() << "信号" << i << "当前值:" << QString::fromStdString(mirror.worksignals[i].currentValue);
+    }
+    qDebug() << "==========================";
+
     if (env.ui)
     {
         std::vector<std::string> rows = parseProjectMirror();
@@ -698,7 +714,76 @@ void ai_plc_delegate::ioThreadProc()
                     outMsg.text = "短期记忆已清空";
                 }
             }
+            else if (msg.text == "/p")
+            {
+                if (!pclailife.projectinit || !managers.project)
+                {
+                    outMsg.text = "工程未初始化";
+                }
+                else
+                {
+                    std::vector<std::string> outMessages;
+                    // 提供一个完整的测试输入
+                    std::string testInput = "创建一个新的PLC，PLC名称叫测试控制器，IP地址192.168.1.100，机架0，槽号1，用于水泵测试";
+                    if (managers.project->createPlcWorkspaceByAI(testInput, outMessages))
+                    {
+                        // 刷新镜像
+                        std::vector<std::string> rows = parseProjectMirror();
+                        env.ui->updateProjectMirror(rows);
 
+                        std::string result;
+                        for (const auto& msg : outMessages)
+                        {
+                            result += msg + "\n";
+                        }
+                        outMsg.text = result;
+                    }
+                    else
+                    {
+                        std::string result;
+                        for (const auto& msg : outMessages)
+                        {
+                            result += msg + "\n";
+                        }
+                        outMsg.text = result;
+                    }
+                }
+            }
+            else if (msg.text == "/s")
+            {
+                if (!pclailife.projectinit || !managers.project)
+                {
+                    outMsg.text = "工程未初始化";
+                }
+                else
+                {
+                    std::vector<std::string> outMessages;
+                    // 提供一个完整的测试输入，创建几个变量
+                    std::string testInput = "创建三个变量，水泵1地址M0.0，水泵2地址M0.1，报警灯地址Q0.0，";
+                    if (managers.project->createSignalWorkspaceByAI(testInput, outMessages))
+                    {
+                        // 刷新镜像
+                        std::vector<std::string> rows = parseProjectMirror();
+                        env.ui->updateProjectMirror(rows);
+
+                        std::string result;
+                        for (const auto& msg : outMessages)
+                        {
+                            result += msg + "\n";
+                        }
+                        outMsg.text = result;
+                    }
+                    else
+                    {
+                        std::string result;
+                        for (const auto& msg : outMessages)
+                        {
+                            result += msg + "\n";
+                        }
+                        outMsg.text = result;
+                    }
+                }
+                }
             else
             {
                 if (!pclailife.personainit || !managers.persona)
@@ -746,8 +831,6 @@ void ai_plc_delegate::upperThreadProc()
     pclailife.upperThreadRunning = false;
     logError("upperThreadProc", "上位机线程退出");
 }
-
-
 std::vector<std::string> ai_plc_delegate::parsePersonaMirror()
 {
     std::vector<std::string> rows;
