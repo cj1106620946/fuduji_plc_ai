@@ -15,7 +15,6 @@ void projectpanel::refreshVariables(const std::vector<std::string>& vars)
     ui.variableTable->setRowCount(static_cast<int>(vars.size()));
     ui.variableTable->setColumnCount(1);
     ui.variableTable->setHorizontalHeaderLabels(QStringList() << "鍙橀噺");
-
     for (int i = 0; i < vars.size(); ++i)
     {
         ui.variableTable->setItem(

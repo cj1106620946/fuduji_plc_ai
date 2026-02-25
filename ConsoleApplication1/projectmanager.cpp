@@ -123,10 +123,12 @@ bool ProjectManager::init()
             return false;
         }
     }
+    upperinit();
+    connectplcinit();
+    aiinit();
     lastError.clear();
     return true;
 }
-
 // 上位机初始化：若未创建上位机或初始化失败则返回错误信息
 bool ProjectManager::upperinit()
 {
@@ -152,7 +154,6 @@ bool ProjectManager::upperinit()
 
     return true;
 }
-
 // PLC 连接初始化：调用上位机的连接接口并更新 currentPlc.isActive 状态
 bool ProjectManager::connectplcinit()
 {
@@ -175,7 +176,6 @@ bool ProjectManager::connectplcinit()
     currentPlc.isActive = 1;
     return true;
 }
-
 // AI 通道初始化：准备 AI 队列与状态位，要求项目已初始化
 bool ProjectManager::aiinit()
 {
@@ -238,7 +238,34 @@ void ProjectManager::stop()
     projectstate.stringThreadStopping = false;
     projectstate.stopping = false;
 }
+// 加载镜像：只从数据库读取配置到镜像，不改变运行状态
+bool ProjectManager::loadProjectMirror()
+{
+    // 项目必须已经初始化
+    if (!projectstate.projectInited)
+    {
+        lastError = "project not inited";
+        return false;
+    }
 
+    if (!upperRef)
+    {
+        lastError = "upperRef null";
+        return false;
+    }
+
+    // 只读取数据库中的镜像数据
+    if (!upperRef->initloadConfig())
+    {
+        lastError = upperRef->getLastError();
+        logError("loadProjectMirror", lastError);
+        return false;
+    }
+
+    // 不修改 upperInited
+    lastError.clear();
+    return true;
+}
 // 检查准备状态：当前实现始终返回 true（保留扩展点）
 bool ProjectManager::isReady() const
 {
@@ -250,13 +277,11 @@ bool ProjectManager::pushAIMessage(const std::string& text, int source, int type
 {
     if (!projectstate.stringThreadInited)
         return false;
-
     AIMessage msg;
     msg.text = text;
     msg.source = source;
     msg.type = type;
     msg.createdAt = static_cast<int>(time(nullptr));
-
     aiQueue.push_back(msg);
     return true;
 }
@@ -615,7 +640,6 @@ void ProjectManager::runThreadProc()
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 }
-
 // 上位机线程体：在允许运行时触发 uppermachine.run 并空转等待停止
 void ProjectManager::upperThreadProc()
 {
@@ -643,7 +667,6 @@ void ProjectManager::upperThreadProc()
     projectstate.upperRunning = false;
     projectstate.upperStopping = false;
 }
-
 // AI 线程体：从 aiQueue 取消息并按类型分发到对应处理函数，记录回流日志
 void ProjectManager::aiThreadProc()
 {
@@ -743,54 +766,88 @@ void ProjectManager::aiThreadProc()
     projectstate.aiBusy = false;
 }
 
+
 // 启动项目运行线程（如果尚未启动并且项目已初始化）
 void ProjectManager::createRunThread()
 {
+    logError("createRunThread", "尝试启动 runThread");
+
     // 项目必须已初始化
     if (!projectstate.projectInited)
+    {
+        logError("createRunThread", "projectstate.projectInited = false");
         return;
+    }
 
     if (runThread.joinable())
+    {
+        logError("createRunThread", "runThread 已存在");
         return;
+    }
 
     runThread = std::thread(&ProjectManager::runThreadProc, this);
     projectstate.projectRunning = 1;
-}
 
+    logError("createRunThread", "runThread 启动成功");
+}
 // 启动上位机线程（在项目和上位机已初始化时）
 void ProjectManager::createUpperThread()
 {
+    logError("createUpperThread", "尝试启动 upperThread");
+
     // 项目 + 上位机必须已初始化
     if (!projectstate.projectInited)
+    {
+        logError("createUpperThread", "projectstate.projectInited = false");
         return;
+    }
 
     if (!projectstate.upperInited)
+    {
+        logError("createUpperThread", "upper 未初始化");
         return;
+    }
 
     if (upperThread.joinable())
+    {
+        logError("createUpperThread", "upperThread 已存在");
         return;
+    }
 
     upperThread = std::thread(&ProjectManager::upperThreadProc, this);
     projectstate.upperRunning = 1;
-}
 
+    logError("createUpperThread", "upperThread 启动成功");
+}
 // 启动 AI 处理线程（在项目和 AI 通道已初始化时）
 void ProjectManager::createAIThread()
 {
+    logError("createAIThread", "尝试启动 aiThread");
+
     // 项目 + AI 通道必须已初始化
     if (!projectstate.projectInited)
+    {
+        logError("createAIThread", "projectstate.projectInited = false");
         return;
+    }
 
     if (!projectstate.stringThreadInited)
+    {
+        logError("createAIThread", "AI 通道未初始化");
         return;
+    }
 
     if (aiThread.joinable())
+    {
+        logError("createAIThread", "aiThread 已存在");
         return;
+    }
 
     aiThread = std::thread(&ProjectManager::aiThreadProc, this);
     projectstate.stringThreadRunning = 1;
-}
 
+    logError("createAIThread", "aiThread 启动成功");
+}
 // 等待并销毁项目运行线程（阻塞直到线程结束）
 void ProjectManager::destroyRunThread()
 {
@@ -800,7 +857,6 @@ void ProjectManager::destroyRunThread()
     runThread.join();
     projectstate.projectRunning = 0;
 }
-
 // 等待并销毁上位机线程（阻塞直到线程结束）
 void ProjectManager::destroyUpperThread()
 {
@@ -810,7 +866,6 @@ void ProjectManager::destroyUpperThread()
     upperThread.join();
     projectstate.upperRunning = 0;
 }
-
 // 等待并销毁 AI 线程（阻塞直到线程结束）
 void ProjectManager::destroyAIThread()
 {

@@ -27,21 +27,24 @@ qtmain::qtmain(UiState& stateRef, QWidget* parent)
     ui.splitter_3->setSizes(sizes3);
 
     // ================= 顶部状态面板初始化 =================
-    // 创建水平布局（如果没有）
-    if (!ui.statuspanel->layout())
-    {
+    // 在 qtmain.cpp 的构造函数或初始化函数中添加
+    if (!ui.statuspanel->layout()) {
         QHBoxLayout* statusLayout = new QHBoxLayout(ui.statuspanel);
         statusLayout->setContentsMargins(10, 0, 10, 0);
         statusLayout->setSpacing(15);
     }
-    QHBoxLayout* statusLayout =
-        qobject_cast<QHBoxLayout*>(ui.statuspanel->layout());
 
-    // 创建状态标签
-    plcStatusLabel = new QLabel("PLC", ui.statuspanel);
-    aiStatusLabel = new QLabel("AI", ui.statuspanel);
-    liveStatusLabel = new QLabel("LIVE2D", ui.statuspanel);
+    QHBoxLayout* statusLayout = qobject_cast<QHBoxLayout*>(ui.statuspanel->layout());
 
+    // 创建带图片的 QLabel
+    QLabel* plcStatusLabel = new QLabel(ui.statuspanel);
+    QLabel* aiStatusLabel = new QLabel(ui.statuspanel);
+    QLabel* liveStatusLabel = new QLabel(ui.statuspanel);
+
+    // 调大尺寸，比如 48x48 或 64x64
+    plcStatusLabel->setPixmap(QPixmap(":/new/prefix1/icons/png (7).png").scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    aiStatusLabel->setPixmap(QPixmap(":/new/prefix1/icons/png (8).png").scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    liveStatusLabel->setPixmap(QPixmap(":/new/prefix1/icons/png (9).png").scaled(48, 48, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     // 添加到布局
     statusLayout->addWidget(plcStatusLabel);
     statusLayout->addWidget(aiStatusLabel);
@@ -202,6 +205,11 @@ initpanel* qtmain::getInitPanel()
 {
     return init;
 }
+initproject* qtmain::getInitProject()
+{
+    return project;
+}
+
 //输出文本
 void qtmain::appendText(const std::string& text, int renderType)
 {
@@ -276,7 +284,6 @@ void qtmain::updatePersonaMirror(
     {
         if (!project)
             return;
-        // 工程镜像直接交给 project 解析
         project->refreshRows(rows);
     }
 }

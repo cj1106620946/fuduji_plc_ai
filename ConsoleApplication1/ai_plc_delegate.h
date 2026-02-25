@@ -32,8 +32,6 @@ struct UiMessage
     UiMessageType type;
     std::string text;
 };
-
-
 struct plcai
 {
     // ===== 初始化状态 =====
@@ -42,11 +40,6 @@ struct plcai
     bool aiinit = false;
     bool projectinit = false;
     bool personainit = false;
-
-    // ===== 线程运行控制 =====
-    bool upperThreadRunning = false;   // 上位机线程是否运行
-    bool upperThreadStopping = false;  // 上位机线程是否进入停止流程
-
     bool ioThreadRunning = false;      // 输入输出线程是否运行
     bool ioThreadStopping = false;     // 输入输出线程是否进入停止流程
     UiState ui;
@@ -55,8 +48,6 @@ struct plcai
     // ===== project生命周期 =====
     ProjectState projectState;
 };
-
-
 struct PlcAiMirror
 {
 
@@ -145,7 +136,6 @@ private:
     std::thread upperThread;          // 上位机线程
     std::thread ioThread;             // 输入输出处理线程
     // 线程函数
-    void upperThreadProc();
     void ioThreadProc();
 
 };

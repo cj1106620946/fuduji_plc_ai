@@ -3,7 +3,6 @@
 #include <chrono>
 #include <ctime>
 #include <cstdio>
-
 personamanager::personamanager(
     ChatAI& chatRef,
     MemoryAI& memoryAiRef,
@@ -24,7 +23,6 @@ personamanager::personamanager(
         logError("personamanager.ctor", u8"记忆桥接初始化失败");
     }
 }
-
 personamanager::~personamanager()
 {
     if (bridge)
@@ -72,7 +70,6 @@ void personamanager::logError(
         << reason
         << std::endl;
 }
-
 void personamanager::init()
 {
     // ===== 重置生命周期状态 =====
@@ -93,7 +90,6 @@ void personamanager::init()
     state.inited = true;
     state.inputEnabled = true;
 }
-
 void personamanager::initMemory()
 {
     state.memoryInited = false;
@@ -127,7 +123,6 @@ void personamanager::initMemory()
 
     state.memoryInited = true;
 }
-
 void personamanager::initAI()
 {
     state.busy = false;
@@ -281,8 +276,6 @@ bool personamanager::updateAllLongMemory()
 
     return true;
 }
-
-
 bool personamanager::getCurrentMemory(
     int memoryKeyId,
     std::string& outContent
@@ -310,7 +303,6 @@ bool personamanager::getCurrentMemory(
 
     return false;
 }
-
 bool personamanager::runChatWithPersona(
     const std::string& userText,
     PersonaMessageOut& outMsg
@@ -412,14 +404,11 @@ void personamanager::processOnce()
         logError("processOnce", "输入队列为空，直接返回");
         return;
     }
-
     // ===== 取出输入 =====
     PersonaMessageIn inMsg = inputQueue.front();
     inputQueue.erase(inputQueue.begin());
-
     logError("processOnce", "收到输入内容: " + inMsg.text);
     logError("processOnce", "输入类型: " + std::to_string(inMsg.type));
-
     PersonaMessageOut outMsg;
     outMsg.source = 0;
     outMsg.control = 0;
@@ -482,13 +471,84 @@ void personamanager::processOnce()
         logError("processOnce", "未知输入类型: " + std::to_string(inMsg.type));
         outMsg.text = u8"未知输入类型";
     }
-
     logError("processOnce", "输出内容: " + outMsg.text);
-
     // ===== 输出入队 =====
     outputQueue.push_back(outMsg);
-
     logError("processOnce", "处理完成并入输出队列");
 }
 
+bool personamanager::runOnce(
+    const PersonaMessageIn& inMsg,
+    PersonaMessageOut& outMsg
+)
+{
+    logError("runOnce", "开始处理一条输入");
 
+    // ===== 初始化输出 =====
+    outMsg.source = 0;
+    outMsg.control = 0;
+    outMsg.priority = 0;
+    outMsg.emotion.clear();
+    outMsg.createdAt = inMsg.createdAt;
+
+    logError("runOnce", "收到输入内容: " + inMsg.text);
+    logError("runOnce", "输入类型: " + std::to_string(inMsg.type));
+
+    // ===== type 分发 =====
+    if (inMsg.type == 0)
+    {
+        logError("runOnce", "类型0: 无法识别");
+        outMsg.text = u8"无法识别输入内容";
+    }
+    else if (inMsg.type == 1)
+    {
+        logError("runOnce", "类型1: 调用人格Chat");
+
+        if (!runChatWithPersona(inMsg.text, outMsg))
+        {
+            outMsg.text = u8"人格对话失败";
+            logError("runOnce.chat", u8"runChatWithPersona 执行失败");
+            return false;
+        }
+
+        logError("runOnce.chat", "runChatWithPersona 执行成功");
+    }
+    else if (inMsg.type == 2)
+    {
+        logError("runOnce", "类型2: 写入 self 长期记忆");
+
+        if (!writeSelfLongMemory())
+        {
+            outMsg.text = u8"人格记忆更新失败";
+            logError("runOnce.writeSelf", u8"写入 self 1-3 失败");
+            return false;
+        }
+
+        outMsg.text = u8"人格长期记忆已更新";
+        logError("runOnce.writeSelf", u8"写入 self 1-3 成功");
+    }
+    else if (inMsg.type == 3)
+    {
+        logError("runOnce", "类型3: 写入 user 长期记忆");
+
+        if (!writeUserLongMemory())
+        {
+            outMsg.text = u8"用户记忆更新失败";
+            logError("runOnce.writeUser", u8"写入 user 4-9 失败");
+            return false;
+        }
+
+        outMsg.text = u8"用户长期记忆已更新";
+        logError("runOnce.writeUser", u8"写入 user 4-9 成功");
+    }
+    else
+    {
+        logError("runOnce", "未知输入类型: " + std::to_string(inMsg.type));
+        outMsg.text = u8"未知输入类型";
+    }
+
+    logError("runOnce", "输出内容: " + outMsg.text);
+    logError("runOnce", "处理完成");
+
+    return true;
+}

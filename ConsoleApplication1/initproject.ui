@@ -6,27 +6,71 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>600</width>
-    <height>400</height>
+    <width>742</width>
+    <height>529</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>initproject</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
    <item>
-    <widget class="QTreeWidget" name="tree">
-     <column>
-      <property name="text">
-       <string>NAME</string>
+    <widget class="QWidget" name="widget" native="true">
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="spacing">
+       <number>0</number>
       </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>VALUE</string>
+      <property name="leftMargin">
+       <number>0</number>
       </property>
-     </column>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <item>
+       <widget class="QPushButton" name="con1">
+        <property name="text">
+         <string>创建新的plc</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="con2">
+        <property name="text">
+         <string>创建新的变量</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="con3">
+        <property name="text">
+         <string>尝试连接plc</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="con4">
+        <property name="text">
+         <string>保留空位</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
+   </item>
+   <item>
+    <widget class="QTreeWidget" name="tree"/>
    </item>
   </layout>
  </widget>

@@ -63,6 +63,9 @@ public:
 
     // 生命周期接口
     bool init();
+
+    bool loadProjectMirror();
+
     bool upperinit();
     bool connectplcinit();
     bool aiinit();

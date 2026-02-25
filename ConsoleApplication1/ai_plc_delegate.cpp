@@ -161,6 +161,25 @@ bool ai_plc_delegate::initQt()
         }
     });
     timer->start(10);
+    // 新增：project 镜像刷新定时器
+    QTimer* projectTimer = new QTimer(env.ui);
+    QObject::connect(projectTimer, &QTimer::timeout, [this]()
+    {
+        if (!pclailife.projectinit)
+            return;
+
+        if (!managers.project)
+            return;
+
+        std::vector<std::string> rows = parseProjectMirror();
+
+        if (env.ui)
+        {
+            env.ui->updatePersonaMirror(rows, 2);
+        }
+    });
+    projectTimer->start(200); // 200ms 刷新一次
+
     pclailife.qtinit = true;
     logError("initQt", "Qt 初始化完成");
     return true;
@@ -357,7 +376,6 @@ bool ai_plc_delegate::initpersona()
 
     return true;
 }
-
 bool ai_plc_delegate::initproject()
 {
     if (pclailife.projectinit)
@@ -436,21 +454,27 @@ bool ai_plc_delegate::initproject()
         return false;
     }
 
-    // 添加调试输出，查看镜像内容
+    // ===== 启动三个核心线程 =====
+    managers.project->createRunThread();
+    managers.project->createUpperThread();
+    managers.project->createAIThread();
+
+    // ===== 调试输出 =====
     qDebug() << "===== 初始化后镜像内容 =====";
     qDebug() << "currentPlc.taskDesc:" << QString::fromStdString(mirror.currentPlc.taskDesc);
     qDebug() << "currentPlc.ipAddress:" << QString::fromStdString(mirror.currentPlc.ipAddress);
     qDebug() << "currentPlc.rack:" << mirror.currentPlc.rack;
     qDebug() << "currentPlc.slot:" << mirror.currentPlc.slot;
     qDebug() << "worksignals 数量:" << mirror.worksignals.size();
+
     for (size_t i = 0; i < mirror.worksignals.size(); ++i)
     {
         qDebug() << "信号" << i << "名称:" << QString::fromStdString(mirror.worksignals[i].name);
         qDebug() << "信号" << i << "地址:" << QString::fromStdString(mirror.worksignals[i].plcAddress);
         qDebug() << "信号" << i << "当前值:" << QString::fromStdString(mirror.worksignals[i].currentValue);
     }
-    qDebug() << "==========================";
 
+    qDebug() << "==========================";
     if (env.ui)
     {
         std::vector<std::string> rows = parseProjectMirror();
@@ -461,7 +485,6 @@ bool ai_plc_delegate::initproject()
     logError("initproject", "Project 初始化完成");
     return true;
 }
-
 void ai_plc_delegate::run()
 {
     if (!initQt())
@@ -582,8 +605,43 @@ void ai_plc_delegate::run()
         }
     });
 
-}
+    QObject::connect(
+        env.ui->getInitProject(),
+        &initproject::con1Clicked,  // 改成信号，不是槽函数
+        [this]()
+    {
+        env.ui->showMiniTip("con1按钮被点击");
+        // TODO: 添加con1的具体处理逻辑
+    });
 
+    QObject::connect(
+        env.ui->getInitProject(),
+        &initproject::con2Clicked,  // 改成信号
+        [this]()
+    {
+        env.ui->showMiniTip("con2按钮被点击");
+        // TODO: 添加con2的具体处理逻辑
+    });
+
+    QObject::connect(
+        env.ui->getInitProject(),
+        &initproject::con3Clicked,  // 改成信号
+        [this]()
+    {
+        env.ui->showMiniTip("con3按钮被点击");
+        // TODO: 添加con3的具体处理逻辑
+    });
+
+    QObject::connect(
+        env.ui->getInitProject(),
+        &initproject::con4Clicked,  // 改成信号
+        [this]()
+    {
+        env.ui->showMiniTip("con4按钮被点击");
+        // TODO: 添加con4的具体处理逻辑
+    });
+
+}
 void ai_plc_delegate::processInputOnce()
 {
     if (inputQueue.empty())
@@ -599,17 +657,14 @@ void ai_plc_delegate::processInputOnce()
         onUiText(msg.text);
     }
 }
-
 void ai_plc_delegate::onUiText(const std::string& text)
 {
     logError("onUiText", "开始处理文本: " + text);
-
     if (!env.ui)
     {
         logError("onUiText", "ui 为空");
         return;
     }
-
     // 主线程回显输入
     std::string out = "输入：" + text;
     env.ui->appendText(out,0);
@@ -623,12 +678,12 @@ void ai_plc_delegate::onUiText(const std::string& text)
     logError("onUiText", "文本已入队");
     logError("onUiText", "处理完成");
 }
-
 void ai_plc_delegate::ioThreadProc()
 {
     logError("ioThreadProc", "IO线程创建完成");
     pclailife.ioThreadRunning = true;
     pclailife.ioThreadStopping = false;
+
     while (!pclailife.ioThreadStopping)
     {
         if (!inputQueue.empty())
@@ -638,176 +693,62 @@ void ai_plc_delegate::ioThreadProc()
 
             UiMessage outMsg;
             outMsg.type = UiMessageType::Text;
-            if (msg.text == "live2d=0")
-            {
-                pclailife.ui.live2dEnabled = 0;
-                outMsg.text = "Live2D 已销毁";
-            }
-            else if (msg.text == "live2d=1")
-            {
-                pclailife.ui.live2dEnabled = 1;
-                outMsg.text = "Live2D 已创建";
-            }
-            else if (msg.text == "live2d=2")
-            {
-                pclailife.ui.live2dEnabled = 2;
-                outMsg.text = "Live2D 已渲染";
-            }
-            else if (msg.text == "memory1")
-            {
-                if (!pclailife.personainit || !managers.persona)
-                {
-                    outMsg.text = "人格未初始化";
-                }
-                else
-                {
-                    if (managers.persona->writeSelfLongMemory())
-                    {
-                        std::vector<std::string> rows = parsePersonaMirror();
-                        if (env.ui)
-                        {
-                            env.ui->updatePersonaMirror(rows, 1);
-                        }
 
-                        outMsg.text = "人格1-3长期记忆已更新";
-                    }
-                    else
-                    {
-                        outMsg.text = "人格1-3更新失败";
-                    }
-                }
-            }
-            else if (msg.text == "memory2")
-            {
-                if (!pclailife.personainit || !managers.persona)
-                {
-                    outMsg.text = "人格未初始化";
-                }
-                else
-                {
-                    if (managers.persona->writeUserLongMemory())
-                    {
-                        std::vector<std::string> rows = parsePersonaMirror();
-                        if (env.ui)
-                        {
-                            env.ui->updatePersonaMirror(rows, 1);
-                        }
+            std::string text = msg.text;
 
-                        outMsg.text = "用户4-9长期记忆已更新";
-                    }
-                    else
-                    {
-                        outMsg.text = "用户4-9更新失败";
-                    }
-                }
-            }
-            else if (msg.text == "memoryoff")
+            // ================= 指令解析区 =================
+            std::vector<std::string> commands;
+            size_t start = 0;
+            while (true)
             {
-                if (!pclailife.personainit || !managers.persona)
-                {
-                    outMsg.text = "人格未初始化";
-                }
-                else
-                {
-                    modules.chatAi->clearShortHistory();
+                size_t pos1 = text.find('/', start);
+                if (pos1 == std::string::npos)
+                    break;
 
-                    outMsg.text = "短期记忆已清空";
-                }
+                size_t pos2 = text.find('#', pos1);
+                if (pos2 == std::string::npos)
+                    break;
+
+                std::string cmd = text.substr(pos1 + 1, pos2 - pos1 - 1);
+                commands.push_back(cmd);
+
+                start = pos2 + 1;
             }
-            else if (msg.text == "/p")
-            {
-                if (!pclailife.projectinit || !managers.project)
-                {
-                    outMsg.text = "工程未初始化";
-                }
-                else
-                {
-                    std::vector<std::string> outMessages;
-                    // 提供一个完整的测试输入
-                    std::string testInput = "创建一个新的PLC，PLC名称叫测试控制器，IP地址192.168.1.100，机架0，槽号1，用于水泵测试";
-                    if (managers.project->createPlcWorkspaceByAI(testInput, outMessages))
-                    {
-                        // 刷新镜像
-                        std::vector<std::string> rows = parseProjectMirror();
-                        env.ui->updateProjectMirror(rows);
 
-                        std::string result;
-                        for (const auto& msg : outMessages)
-                        {
-                            result += msg + "\n";
-                        }
-                        outMsg.text = result;
-                    }
-                    else
-                    {
-                        std::string result;
-                        for (const auto& msg : outMessages)
-                        {
-                            result += msg + "\n";
-                        }
-                        outMsg.text = result;
-                    }
-                }
+            // ================= 指令处理入口（暂时空骨架） =================
+            for (size_t i = 0; i < commands.size(); ++i)
+            {
+                std::string& cmd = commands[i];
+
+                // 这里后面接入你的指令表
+                logError("command", cmd);
             }
-            else if (msg.text == "/s")
-            {
-                if (!pclailife.projectinit || !managers.project)
-                {
-                    outMsg.text = "工程未初始化";
-                }
-                else
-                {
-                    std::vector<std::string> outMessages;
-                    // 提供一个完整的测试输入，创建几个变量
-                    std::string testInput = "创建三个变量，水泵1地址M0.0，水泵2地址M0.1，报警灯地址Q0.0，";
-                    if (managers.project->createSignalWorkspaceByAI(testInput, outMessages))
-                    {
-                        // 刷新镜像
-                        std::vector<std::string> rows = parseProjectMirror();
-                        env.ui->updateProjectMirror(rows);
 
-                        std::string result;
-                        for (const auto& msg : outMessages)
-                        {
-                            result += msg + "\n";
-                        }
-                        outMsg.text = result;
-                    }
-                    else
-                    {
-                        std::string result;
-                        for (const auto& msg : outMessages)
-                        {
-                            result += msg + "\n";
-                        }
-                        outMsg.text = result;
-                    }
-                }
-                }
+            // ================= 纯文本进入人格AI =================
+            if (!pclailife.personainit || !managers.persona)
+            {
+                outMsg.text = "人格AI未初始化";
+            }
             else
             {
-                if (!pclailife.personainit || !managers.persona)
+                PersonaMessageIn inMsg;
+                inMsg.type = 1;
+                inMsg.text = text;
+                inMsg.createdAt = static_cast<int>(time(nullptr));
+                PersonaMessageOut personaOut;
+                if (managers.persona->runOnce(inMsg, personaOut))
                 {
-                    outMsg.text = "人格AI未初始化";
+                    outMsg.text =
+                        "中文：控制标志|" + std::to_string(personaOut.control) + "\n" +
+                        "中文：创建时间|" + std::to_string(personaOut.createdAt) + "\n" +
+                        "中文：情绪|" + personaOut.emotion + "\n" +
+                        "中文：优先级|" + std::to_string(personaOut.priority) + "\n" +
+                        "中文：来源|" + std::to_string(personaOut.source) + "\n" +
+                        "中文：文本|" + personaOut.text;
                 }
                 else
                 {
-                    logError("ioThreadProc", "进入人格ai调用");
-                    PersonaMessageIn inMsg;
-                    inMsg.type = 1;
-                    inMsg.text = msg.text;
-                    inMsg.createdAt = static_cast<int>(time(nullptr));
-                    managers.persona->pushInput(inMsg);
-                    managers.persona->processOnce();
-                    PersonaMessageOut personaOut;
-                    if (managers.persona->popOutput(personaOut))
-                    {
-                        outMsg.text = personaOut.text;
-                    }
-                    else
-                    {
-                        outMsg.text = "人格AI无输出";
-                    }
+                    outMsg.text = "人格AI执行失败";
                 }
             }
             outputQueue.push(outMsg);
@@ -816,20 +757,6 @@ void ai_plc_delegate::ioThreadProc()
     }
     pclailife.ioThreadRunning = false;
     logError("ioThreadProc", "IO线程退出");
-}
-
-void ai_plc_delegate::upperThreadProc()
-{
-    logError("upperThreadProc", "上位机线程创建完成");
-
-    pclailife.upperThreadRunning = true;
-    pclailife.upperThreadStopping = false;
-    while (!pclailife.upperThreadStopping)
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    }
-    pclailife.upperThreadRunning = false;
-    logError("upperThreadProc", "上位机线程退出");
 }
 std::vector<std::string> ai_plc_delegate::parsePersonaMirror()
 {

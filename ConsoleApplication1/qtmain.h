@@ -41,6 +41,7 @@ public:
     );
     ~qtmain();
     initpanel* getInitPanel();
+	initproject* getInitProject();
     // 外部调用：显示一行文本到聊天面板 
     void updateProjectMirror(const std::vector<std::string>& vars);
     void appendText(const std::string& text, int renderType);

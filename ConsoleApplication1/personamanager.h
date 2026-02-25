@@ -66,7 +66,10 @@ public:
     void pushInput(const PersonaMessageIn& msg);
     // 输出：获取输出队列（由输出线程调用）
     bool popOutput(PersonaMessageOut& outMsg);
-
+    bool runOnce(
+        const PersonaMessageIn& inMsg,
+        PersonaMessageOut& outMsg
+    );
     // 生成并写入 self 1-3 的长期记忆
     bool writeSelfLongMemory();
     // 生成并写入 user 4-9 的长期记忆
@@ -84,11 +87,6 @@ private:
         const std::string& fromFunc,
         const std::string& reason
     );
-
-    std::thread personaMainThread;   // 人格主线程
-    std::thread personaIoThread;      // 人格输入输出线程
-    std::thread personaMemoryThread;  // 人格记忆管理线程
-
 
 private:
     // 对话 AI

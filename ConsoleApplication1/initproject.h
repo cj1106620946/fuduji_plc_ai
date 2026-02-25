@@ -24,7 +24,16 @@ private:
         const QString& name,
         const QString& value
     );
-
+signals:
+    void con1Clicked();
+    void con2Clicked();
+    void con3Clicked();
+    void con4Clicked();
+private slots:
+    void onCon1Clicked();
+    void onCon2Clicked();
+    void onCon3Clicked();
+    void onCon4Clicked();
 private:
     Ui::initprojectClass ui;
     QTreeWidget* tree = nullptr;
