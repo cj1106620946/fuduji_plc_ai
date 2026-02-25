@@ -25,7 +25,21 @@ enum class UiMessageType
     Command = 1,   // 指令类输入
     System = 2     // 系统事件
 };
+enum class CommandType
+{
+    None = 0,
 
+    Live2DOff,
+    Live2DCreate,
+    Live2DRender,
+
+    MemorySelf,
+    MemoryUser,
+    MemoryClear,
+
+    ProjectCreatePlc,
+    ProjectCreateSignal
+};
 // 输入消息结构
 struct UiMessage
 {
@@ -110,8 +124,9 @@ private:
     bool initai();
     void onUiText(const std::string& text);
     void processInputOnce();
+    CommandType parseCommandType(const std::string& token);
 signals:
-    void uiTextSubmitted(const std::string& text);
+    void uiTextSubmitted(const std::string& text,int mode);
 
 private:
     RuntimeEnvironment env;
@@ -125,6 +140,9 @@ private:
     // 输入池
     std::queue<UiMessage> inputQueue;
     std::queue<UiMessage> outputQueue;
+
+    void handleCommandMessage(const UiMessage& msg);
+    void handleTextMessage(const UiMessage& msg);
 
     std::vector<std::string> parsePersonaMirror();
     std::vector<std::string> parseProjectMirror();

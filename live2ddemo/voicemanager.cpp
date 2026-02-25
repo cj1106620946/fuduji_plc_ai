@@ -26,8 +26,8 @@ void VoiceManager::start()
     running = true;
     // ´´½¨ piper
     piper = new PiperDemo();
-    //piper->init("piper"); 
-    piper->init("qwen3tts"); 
+    piper->init("piper"); 
+    //piper->init("qwen3tts"); 
 
     worker = std::thread(&VoiceManager::threadLoop, this);
 }

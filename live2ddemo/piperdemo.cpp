@@ -45,7 +45,7 @@ bool PiperDemo::generate(const std::string& text)
     UINT originalOutputCP = GetConsoleOutputCP();
     UINT originalInputCP = GetConsoleCP();
 
-    /*
+   
     std::string cmd =
         "cmd.exe /c \""
         "\"\\piper\\piper.exe\" "
@@ -53,13 +53,13 @@ bool PiperDemo::generate(const std::string& text)
         "--config voices\\zh_CN\\huayan\\medium\\zh_CN-huayan-medium.onnx.json "
         "--output_file output.wav < input.txt"
         "\"";
-    */
+    /*
     std::string cmd =
         "cmd.exe /c \""
         "\"python\\venv\\Scripts\\python.exe\" "
         "tts.py"
         "\"";
-    
+    */
 
     // CreateProcessA 需要可写的命令行缓冲区
     std::vector<char> cmdBuffer(cmd.begin(), cmd.end());

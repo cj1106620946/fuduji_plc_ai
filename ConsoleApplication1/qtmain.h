@@ -55,7 +55,7 @@ public:
 
 signals:
     // UI 输入文本，交给外部（delegate / AI）
-    void uiTextSubmitted(const std::string& text);
+    void uiTextSubmitted(const std::string& text,int mode);
 signals:
     void personaMirrorEdited(
         const std::string& key,

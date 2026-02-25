@@ -175,7 +175,8 @@ void AIController::buildResponsePrompt()
         u8"- control:\n"
         u8"  0 = 仅对话或说明；\n"
         u8"  1 = 需要执行系统或 PLC 操作；\n"
-        u8"  2 = 无法处理或超出范围。\n"
+        u8"  2 = 创建项目类容\n"
+        u8"  3 = 创建变量\n"
         u8"- emotion : 当前语气倾向，可选值：\n"
         u8"  \"happy\" | \"neutral\" | \"sad\" | \"thinking\"。\n"
         u8"- priority:\n"
@@ -183,6 +184,10 @@ void AIController::buildResponsePrompt()
         u8"  1 = 需要注意；\n"
         u8"  2 = 紧急。\n"
         u8"\n"
+        u8"规则："
+		u8"你不负责参与执行，你连接着其他的AI，他们负责执行。\n"
+        u8"你只需要回复用户已经告诉其他ai即可。"
+		u8"此外你还会接收到其他AI的反馈信息，你需要将这些信息合理地融入到你的回复中，告诉用户。\n"
         u8"请严格按照上述格式输出 JSON。";
 }
 // 构建 记忆 AI Prompt

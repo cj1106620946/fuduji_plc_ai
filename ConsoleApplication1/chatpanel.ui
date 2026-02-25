@@ -28,20 +28,38 @@
         <x>0</x>
         <y>0</y>
         <width>750</width>
-        <height>545</height>
+        <height>543</height>
        </rect>
       </property>
      </widget>
     </widget>
    </item>
    <item>
-    <widget class="QLineEdit" name="lineEdit">
-     <property name="font">
-      <font>
-       <pointsize>18</pointsize>
-      </font>
-     </property>
-    </widget>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QComboBox" name="modeBox">
+       <item>
+        <property name="text">
+         <string>聊天</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>指令</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="lineEdit">
+       <property name="font">
+        <font>
+         <pointsize>18</pointsize>
+        </font>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>

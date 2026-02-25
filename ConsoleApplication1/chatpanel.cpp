@@ -15,7 +15,6 @@ chatpanel::chatpanel(QWidget* parent)
 {
     ui->setupUi(this);
     // ================= 输入框视觉优化 =================
-// 占位提示
     ui->lineEdit->setPlaceholderText(QString::fromUtf8("在这里输入内容..."));
     // 样式设置
     ui->lineEdit->setStyleSheet(
@@ -71,11 +70,13 @@ void chatpanel::onReturnPressed()
     const QString text = ui->lineEdit->text();
     if (text.isEmpty())
         return;
-
     ui->lineEdit->clear();
 
-    // 只发信号，不处理业务
-    emit inputSubmitted(text);
+    if (ui->modeBox)
+    {
+        mode = ui->modeBox->currentIndex(); // 0 聊天 1 指令
+    }
+    emit inputSubmitted(text, mode);
 }
 
 void chatpanel::appendOutput(const QString& text, int renderType)

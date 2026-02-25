@@ -161,9 +161,9 @@ qtmain::qtmain(UiState& stateRef, QWidget* parent)
         chat,
         &chatpanel::inputSubmitted,
         this,
-        [this](const QString& text)
+        [this](const QString& text, int mode)
     {
-        emit uiTextSubmitted(text.toStdString());
+        emit uiTextSubmitted(text.toStdString(), mode);
     });
     connect(
         persona,
@@ -191,14 +191,9 @@ qtmain::~qtmain()
         SetParent(liveHwnd, nullptr);
         liveHwnd = nullptr;
     }
-    // 若存在 Live2D 进程，终止并释放句柄
-    if (livePi.hProcess)
-    {
         TerminateProcess(livePi.hProcess, 0);
         CloseHandle(livePi.hProcess);
         livePi.hProcess = nullptr;
-    }
-
 }
 
 initpanel* qtmain::getInitPanel()
