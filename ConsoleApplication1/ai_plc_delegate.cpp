@@ -162,14 +162,20 @@ bool ai_plc_delegate::initQt()
         }
     });
     timer->start(10);
-    // 新增：project 镜像刷新定时器
+    // project 镜像刷新定时器
     QTimer* projectTimer = new QTimer(env.ui);
     QObject::connect(projectTimer, &QTimer::timeout, [this]()
     {
+        // 1. 必须 project 初始化完成
         if (!pclailife.projectinit)
             return;
 
+        // 2. 必须存在 project 管理器
         if (!managers.project)
+            return;
+
+        // 3. 必须允许上位机周期刷新
+        if (!pclailife.allowUpperRefresh)
             return;
 
         std::vector<std::string> rows = parseProjectMirror();
@@ -179,8 +185,8 @@ bool ai_plc_delegate::initQt()
             env.ui->updatePersonaMirror(rows, 2);
         }
     });
-    projectTimer->start(200); // 200ms 刷新一次
 
+    projectTimer->start(200);
     pclailife.qtinit = true;
     logError("initQt", "Qt 初始化完成");
     return true;
@@ -487,6 +493,7 @@ bool ai_plc_delegate::initproject()
     logError("initproject", "Project 初始化完成");
     return true;
 }
+
 void ai_plc_delegate::run()
 {
     if (!initQt())
@@ -592,7 +599,6 @@ void ai_plc_delegate::run()
 
         // 重置数据库状态
         pclailife.sqlinit = false;
-
         // 清空镜像（可选但推荐）
         mirror.memoryState = CurrentMemoryState();
         mirror.worksignals.clear();
@@ -629,11 +635,11 @@ void ai_plc_delegate::run()
 
     QObject::connect(
         env.ui->getInitProject(),
-        &initproject::con1Clicked,  // 改成信号，不是槽函数
+        &initproject::con1Clicked,
         [this]()
     {
-        env.ui->showMiniTip("con1按钮被点击");
-        // TODO: 添加con1的具体处理逻辑
+        pclailife.allowUpperRefresh = !pclailife.allowUpperRefresh;
+        env.ui->showMiniTip("取反");
     });
 
     QObject::connect(
@@ -641,6 +647,11 @@ void ai_plc_delegate::run()
         &initproject::con2Clicked,  // 改成信号
         [this]()
     {
+        std::vector<std::string> rows = parseProjectMirror();
+        if (env.ui)
+        {
+            env.ui->updatePersonaMirror(rows, 2);
+        }
         env.ui->showMiniTip("con2按钮被点击");
         // TODO: 添加con2的具体处理逻辑
     });
@@ -650,8 +661,14 @@ void ai_plc_delegate::run()
         &initproject::con3Clicked,  // 改成信号
         [this]()
     {
-        env.ui->showMiniTip("con3按钮被点击");
-        // TODO: 添加con3的具体处理逻辑
+        if (managers.project->connectplcinit())
+        {
+            env.ui->showMiniTip("连接成功");
+        }
+        else
+        {
+			env.ui->showMiniTip("连接失败");
+        }
     });
 
     QObject::connect(
@@ -664,6 +681,7 @@ void ai_plc_delegate::run()
     });
 
 }
+
 void ai_plc_delegate::processInputOnce()
 {
     if (inputQueue.empty())
@@ -737,7 +755,24 @@ void ai_plc_delegate::ioThreadProc()
     pclailife.ioThreadRunning = false;
     logError("ioThreadProc", "IO线程退出");
 }
-// 处理指令类消息
+// 解析指令类型（只看命令名：token 第一个空格前的内容）
+CommandType ai_plc_delegate::parseCommandType(const std::string& token)
+{
+    size_t pos = token.find(' ');
+    std::string cmd = (pos == std::string::npos) ? token : token.substr(0, pos);
+    if (cmd == "help") return CommandType::Help;
+    if (cmd == "live2d") return CommandType::Live2D;
+    if (cmd == "memory1") return CommandType::MemorySelf;
+    if (cmd == "memory2") return CommandType::MemoryUser;
+    if (cmd == "memoryoff") return CommandType::MemoryClear;
+
+    if (cmd == "plccreate") return CommandType::PlcCreate;
+    if (cmd == "signalcreate") return CommandType::SignalCreate;
+    if (cmd == "signaldelete") return CommandType::SignalDelete;
+
+    return CommandType::None;
+}
+// 处理指令消息
 void ai_plc_delegate::handleCommandMessage(const UiMessage& msg)
 {
     UiMessage outMsg;
@@ -745,8 +780,53 @@ void ai_plc_delegate::handleCommandMessage(const UiMessage& msg)
 
     const std::string& text = msg.text;
 
+    auto trim = [](std::string& s)
+    {
+        while (!s.empty() && (s.front() == ' ' || s.front() == '\t' || s.front() == '\r' || s.front() == '\n'))
+            s.erase(s.begin());
+        while (!s.empty() && (s.back() == ' ' || s.back() == '\t' || s.back() == '\r' || s.back() == '\n'))
+            s.pop_back();
+    };
+
+    auto normalizeToken = [&](std::string& token)
+    {
+        trim(token);
+
+        if (!token.empty() && token.front() == '/')
+            token.erase(token.begin());
+
+        trim(token);
+
+        if (!token.empty() && token.back() == '#')
+            token.pop_back();
+
+        trim(token);
+    };
+
+    auto splitBySpace = [&](const std::string& s, std::vector<std::string>& out)
+    {
+        out.clear();
+        std::string cur;
+        for (size_t i = 0; i < s.size(); ++i)
+        {
+            char c = s[i];
+            if (c == ' ' || c == '\t' || c == '\r' || c == '\n')
+            {
+                if (!cur.empty())
+                {
+                    out.push_back(cur);
+                    cur.clear();
+                }
+                continue;
+            }
+            cur.push_back(c);
+        }
+        if (!cur.empty())
+            out.push_back(cur);
+    };
+
     std::vector<std::string> tokens;
-    // 先尝试解析批量格式 /xxx#
+
     size_t start = 0;
     while (true)
     {
@@ -759,44 +839,70 @@ void ai_plc_delegate::handleCommandMessage(const UiMessage& msg)
             break;
 
         std::string token = text.substr(pos1 + 1, pos2 - pos1 - 1);
+        normalizeToken(token);
+
         if (!token.empty())
             tokens.push_back(token);
 
         start = pos2 + 1;
     }
-    // 如果没解析到批量 token 就当成单条指令
+
     if (tokens.empty())
     {
-        tokens.push_back(text);
+        std::string token = text;
+        normalizeToken(token);
+        if (!token.empty())
+            tokens.push_back(token);
     }
+
     std::string result;
+
     for (size_t i = 0; i < tokens.size(); ++i)
     {
         const std::string& token = tokens[i];
 
-        // 记录指令
         logError("command", token);
 
         CommandType type = parseCommandType(token);
 
         switch (type)
         {
-        case CommandType::Live2DOff:
-            pclailife.ui.live2dEnabled = 0;
-            result += "Live2D 已销毁\n";
-            break;
+        case CommandType::Live2D:
+        {
+            std::vector<std::string> parts;
+            splitBySpace(token, parts);
 
-        case CommandType::Live2DCreate:
-            pclailife.ui.live2dEnabled = 1;
-            result += "Live2D 已创建\n";
-            break;
+            if (parts.size() < 2)
+            {
+                result += "live2d 参数缺失\n";
+                break;
+            }
 
-        case CommandType::Live2DRender:
-            pclailife.ui.live2dEnabled = 2;
-            result += "Live2D 已渲染\n";
-            break;
+            const std::string& param = parts[1];
 
+            if (param == "0")
+            {
+                pclailife.ui.live2dEnabled = 0;
+                result += "Live2D 已关闭\n";
+            }
+            else if (param == "1")
+            {
+                pclailife.ui.live2dEnabled = 1;
+                result += "Live2D 已创建\n";
+            }
+            else if (param == "2")
+            {
+                pclailife.ui.live2dEnabled = 2;
+                result += "Live2D 已渲染\n";
+            }
+            else
+            {
+                result += "live2d 参数错误\n";
+            }
+            break;
+        }
         case CommandType::MemorySelf:
+        {
             if (!pclailife.personainit || !managers.persona)
             {
                 result += "人格未初始化\n";
@@ -816,8 +922,9 @@ void ai_plc_delegate::handleCommandMessage(const UiMessage& msg)
                 result += "人格1-3更新失败\n";
             }
             break;
-
+        }
         case CommandType::MemoryUser:
+        {
             if (!pclailife.personainit || !managers.persona)
             {
                 result += "人格未初始化\n";
@@ -837,8 +944,9 @@ void ai_plc_delegate::handleCommandMessage(const UiMessage& msg)
                 result += "用户4-9更新失败\n";
             }
             break;
-
+        }
         case CommandType::MemoryClear:
+        {
             if (!pclailife.personainit || !managers.persona)
             {
                 result += "人格未初始化\n";
@@ -850,22 +958,78 @@ void ai_plc_delegate::handleCommandMessage(const UiMessage& msg)
             }
             result += "短期记忆已清空\n";
             break;
-
-        case CommandType::ProjectCreatePlc:
+        }
+        case CommandType::PlcCreate:
         {
-            if (!pclailife.projectinit || !managers.project)
+            std::vector<std::string> parts;
+            splitBySpace(token, parts);
+
+            // 至少需要 name 和 ip
+            if (parts.size() < 3)
             {
-                result += "工程未初始化\n";
+                result += "plccreate 参数不足\n";
+                result += "格式: plccreate name ip [rack slot desc]\n";
                 break;
             }
 
-            std::vector<std::string> outMessages;
-            std::string testInput = "创建一个新的PLC，PLC名称叫测试控制器，IP地址192.168.1.100，机架0，槽号1，用于水泵测试";
+            std::string name = parts[1];
+            std::string ip = parts[2];
 
-            bool ok = managers.project->createPlcWorkspaceByAI(testInput, outMessages);
+            int rack = 0;   // 默认
+            int slot = 1;   // 默认
+            std::string desc;
+
+            // 如果只给了 rack 没给 slot，报错
+            if (parts.size() == 4)
+            {
+                result += "plccreate rack 和 slot 必须同时提供\n";
+                break;
+            }
+
+            // 如果提供了 rack slot
+            if (parts.size() >= 5)
+            {
+                try
+                {
+                    rack = std::stoi(parts[3]);
+                    slot = std::stoi(parts[4]);
+                }
+                catch (...)
+                {
+                    result += "plccreate rack slot 参数错误\n";
+                    break;
+                }
+
+                // 如果还有解释
+                if (parts.size() >= 6)
+                {
+                    desc = parts[5];
+                }
+            }
+
+            pclailife.allowUpperRefresh = 0;
+
+            std::vector<std::string> outMessages;
+            bool ok = managers.project->createPlcWorkspaceByCmd(
+                ip,
+                name,
+                rack,
+                slot,
+                desc,
+                outMessages
+            );
+
+            pclailife.allowUpperRefresh = 1;
 
             if (ok)
             {
+                // 重新从数据库加载镜像
+                if (!managers.project->loadProjectMirror())
+                {
+                    result += "镜像加载失败\n";
+                    break;
+                }
+
                 std::vector<std::string> rows = parseProjectMirror();
                 if (env.ui)
                 {
@@ -881,26 +1045,45 @@ void ai_plc_delegate::handleCommandMessage(const UiMessage& msg)
 
             if (outMessages.empty())
             {
-                result += ok ? "PLC工作区创建完成\n" : "PLC工作区创建失败\n";
+                result += ok ? "PLC 创建完成\n" : "PLC 创建失败\n";
             }
+
             break;
         }
-
-        case CommandType::ProjectCreateSignal:
+        case CommandType::SignalCreate:
         {
-            if (!pclailife.projectinit || !managers.project)
+
+            std::vector<std::string> parts;
+            splitBySpace(token, parts);
+
+            if (parts.size() < 4)
             {
-                result += "工程未初始化\n";
+                result += "signalcreate 参数不足\n";
+                result += "格式: signalcreate name addr desc [name addr desc ...]\n";
                 break;
             }
 
-            std::vector<std::string> outMessages;
-            std::string testInput = "创建三个变量，水泵1地址M0.0，水泵2地址M0.1，报警灯地址Q0.0，";
+            if (((int)parts.size() - 1) % 3 != 0)
+            {
+                result += "signalcreate 参数必须三元组 name addr desc\n";
+                break;
+            }
 
-            bool ok = managers.project->createSignalWorkspaceByAI(testInput, outMessages);
+            pclailife.allowUpperRefresh = 0;
+
+            std::vector<std::string> outMessages;
+            bool ok = managers.project->createSignalWorkspaceByCmd(parts, outMessages);
+
+            pclailife.allowUpperRefresh = 1;
 
             if (ok)
             {
+                if (!managers.project->loadProjectMirror())
+                {
+                    result += "镜像加载失败\n";
+                    break;
+                }
+
                 std::vector<std::string> rows = parseProjectMirror();
                 if (env.ui)
                 {
@@ -916,11 +1099,79 @@ void ai_plc_delegate::handleCommandMessage(const UiMessage& msg)
 
             if (outMessages.empty())
             {
-                result += ok ? "变量工作区创建完成\n" : "变量工作区创建失败\n";
+                result += ok ? "变量创建完成\n" : "变量创建失败\n";
             }
+
             break;
         }
 
+        case CommandType::SignalDelete:
+        {
+            if (!pclailife.projectinit || !managers.project)
+            {
+                result += "工程未初始化\n";
+                break;
+            }
+
+            std::vector<std::string> parts;
+            splitBySpace(token, parts);
+
+            if (parts.size() < 2)
+            {
+                result += "signaldelete 参数不足\n";
+                break;
+            }
+
+            int id = 0;
+            try
+            {
+                id = std::stoi(parts[1]);
+            }
+            catch (...)
+            {
+                result += "signaldelete 参数错误\n";
+                break;
+            }
+
+            pclailife.allowUpperRefresh = 0;
+
+            bool ok = managers.project->removeSignalById(id);
+
+            pclailife.allowUpperRefresh = 1;
+
+            if (ok)
+            {
+                if (!managers.project->loadProjectMirror())
+                {
+                    result += "镜像加载失败\n";
+                    break;
+                }
+
+                std::vector<std::string> rows = parseProjectMirror();
+                if (env.ui)
+                {
+                    env.ui->updateProjectMirror(rows);
+                }
+
+                result += "删除成功\n";
+            }
+            else
+            {
+                result += "删除失败\n";
+            }
+
+            break;
+        }
+        case CommandType::Help:
+        {
+            for (const auto& item : g_commandHelp)
+            {
+                result += "指令: " + item.command + "\n";
+                result += "用法: " + item.usage + "\n";
+                result += "说明: " + item.description + "\n\n";
+            }
+            break;
+        }
         case CommandType::None:
         default:
             result += "未知指令:";
@@ -933,21 +1184,6 @@ void ai_plc_delegate::handleCommandMessage(const UiMessage& msg)
     outMsg.text = result.empty() ? "指令无输出" : result;
     outputQueue.push(outMsg);
 }
-// 解析指令类型
-CommandType ai_plc_delegate::parseCommandType(const std::string& token)
-{
-    if (token == "live2d=0") return CommandType::Live2DOff;
-    if (token == "live2d=1") return CommandType::Live2DCreate;
-    if (token == "live2d=2") return CommandType::Live2DRender;
-    if (token == "memory1") return CommandType::MemorySelf;
-    if (token == "memory2") return CommandType::MemoryUser;
-    if (token == "memoryoff") return CommandType::MemoryClear;
-    if (token == "/p" || token == "p") return CommandType::ProjectCreatePlc;
-    if (token == "/s" || token == "s") return CommandType::ProjectCreateSignal;
-
-    return CommandType::None;
-}
-
 // 处理AI消息
 void ai_plc_delegate::handleTextMessage(const UiMessage& msg)
 {
@@ -961,6 +1197,7 @@ void ai_plc_delegate::handleTextMessage(const UiMessage& msg)
         return;
     }
 
+    // 1) 原文 -> 第一次 chat
     PersonaMessageIn inMsg;
     inMsg.type = 1;
     inMsg.text = msg.text;
@@ -974,138 +1211,150 @@ void ai_plc_delegate::handleTextMessage(const UiMessage& msg)
         return;
     }
 
+    // 第一次 chat 输出直接展示
     outMsg.text = personaOut.text;
     outputQueue.push(outMsg);
 
-    // 写入 Live2D 显示内容
+    // Live2D 显示第一次 chat
     if (!env.live2dWriter.write(personaOut.text, personaOut.emotion, personaOut.priority))
     {
         logError("handleTextMessage", "live2dWriter 写入失败");
     }
 
-    // 根据 control 做后续动作
-    switch (personaOut.control)
+    // control=0 直接结束
+    if (personaOut.control == 0)
     {
-    case 0:
-        // 纯聊天
-        break;
-
-    case 1:
-    {
-        // 执行AI：把用户原话传给 ProjectManager，结果原样回显
-        logError("handleTextMessage", "control=1 执行AI");
-
-        if (!pclailife.projectinit || !managers.project)
-        {
-            UiMessage sysMsg;
-            sysMsg.type = UiMessageType::Text;
-            sysMsg.text = "项目未初始化";
-            outputQueue.push(sysMsg);
-            break;
-        }
-
-        std::vector<std::string> results;
-        if (!managers.project->executeByAI(msg.text, results))
-        {
-            UiMessage sysMsg;
-            sysMsg.type = UiMessageType::Text;
-            sysMsg.text = managers.project->getLastError();
-            outputQueue.push(sysMsg);
-            break;
-        }
-
-        for (const auto& r : results)
-        {
-            UiMessage sysMsg;
-            sysMsg.type = UiMessageType::Text;
-            sysMsg.text = r;
-            outputQueue.push(sysMsg);
-        }
-
-        break;
+        return;
     }
 
-    case 2:
+    // 2) 组织执行输入：原文 + 第一次 chat 输出
+    std::string execInput;
+    execInput += "原文：";
+    execInput += msg.text;
+    execInput += "\n";
+    execInput += "Chat输出：";
+    execInput += personaOut.text;
+    execInput += "\n";
+
+    // 3) 执行模块：不直接显示 rawResults
+    bool actionOk = true;
+    std::string actionName;
+    std::vector<std::string> rawResults;
+
+    if (!pclailife.projectinit || !managers.project)
     {
-        // 创建项目PLC：把用户原话传给 ProjectManager，结果原样回显
-        logError("handleTextMessage", "control=2 创建PLC");
-
-        if (!pclailife.projectinit || !managers.project)
+        actionOk = false;
+        rawResults.push_back("项目未初始化");
+    }
+    else
+    {
+        switch (personaOut.control)
         {
-            UiMessage sysMsg;
-            sysMsg.type = UiMessageType::Text;
-            sysMsg.text = "项目未初始化";
-            outputQueue.push(sysMsg);
-            break;
-        }
-
-        std::vector<std::string> results;
-        if (!managers.project->createPlcWorkspaceByAI(msg.text, results))
-        {
-            for (const auto& r : results)
+        case 1:
+            actionName = "执行";
+            logError("handleTextMessage", "control=1 执行AI");
+            if (!managers.project->executeByAI(execInput, rawResults))
             {
-                UiMessage sysMsg;
-                sysMsg.type = UiMessageType::Text;
-                sysMsg.text = r;
-                outputQueue.push(sysMsg);
+                actionOk = false;
+                rawResults.clear();
+                rawResults.push_back(managers.project->getLastError());
             }
             break;
-        }
 
-        for (const auto& r : results)
-        {
-            UiMessage sysMsg;
-            sysMsg.type = UiMessageType::Text;
-            sysMsg.text = r;
-            outputQueue.push(sysMsg);
-        }
-
-        break;
-    }
-
-    case 3:
-    {
-        // 创建变量：把用户原话传给 ProjectManager，结果原样回显
-        logError("handleTextMessage", "control=3 创建变量");
-
-        if (!pclailife.projectinit || !managers.project)
-        {
-            UiMessage sysMsg;
-            sysMsg.type = UiMessageType::Text;
-            sysMsg.text = "项目未初始化";
-            outputQueue.push(sysMsg);
-            break;
-        }
-
-        std::vector<std::string> results;
-        if (!managers.project->createSignalWorkspaceByAI(msg.text, results))
-        {
-            for (const auto& r : results)
+        case 2:
+            actionName = "创建PLC";
+            logError("handleTextMessage", "control=2 创建PLC");
+            if (!managers.project->createPlcWorkspaceByAI(execInput, rawResults))
             {
-                UiMessage sysMsg;
-                sysMsg.type = UiMessageType::Text;
-                sysMsg.text = r;
-                outputQueue.push(sysMsg);
+                actionOk = false;
+            }
+            if (actionOk)
+            {
+                managers.project->loadProjectMirror();
             }
             break;
-        }
 
-        for (const auto& r : results)
-        {
-            UiMessage sysMsg;
-            sysMsg.type = UiMessageType::Text;
-            sysMsg.text = r;
-            outputQueue.push(sysMsg);
-        }
+        case 3:
+            actionName = "创建变量";
+            logError("handleTextMessage", "control=3 创建变量");
+            if (!managers.project->createSignalWorkspaceByAI(execInput, rawResults))
+            {
+                actionOk = false;
+            }
+            if (actionOk)
+            {
+                managers.project->loadProjectMirror();
+            }
+            break;
 
-        break;
+        default:
+            actionOk = false;
+            actionName = "未知操作";
+            logError("handleTextMessage", "control=未知值，忽略: " + std::to_string(personaOut.control));
+            rawResults.push_back("未知控制类型");
+            break;
+        }
     }
 
-    default:
-        logError("handleTextMessage", "control=未知值，忽略: " + std::to_string(personaOut.control));
-        break;
+    // 4) 第二次 chat：解释执行结果
+    std::string explainInput;
+    explainInput += "你现在负责把功能执行结果解释给用户。\n";
+    explainInput += "要求：不要复读原文，不要输出原始列表，不要输出指令格式。\n";
+    explainInput += "只给结论和下一步。\n\n";
+
+    explainInput += "功能：";
+    explainInput += actionName;
+    explainInput += "\n";
+
+    explainInput += "第一次Chat输出：\n";
+    explainInput += personaOut.text;
+    explainInput += "\n\n";
+
+    explainInput += "执行是否成功：";
+    explainInput += (actionOk ? "成功" : "失败");
+    explainInput += "\n";
+
+    explainInput += "执行返回：\n";
+    if (rawResults.empty())
+    {
+        explainInput += actionOk ? "无返回内容\n" : "无返回内容\n";
+    }
+    else
+    {
+        for (size_t i = 0; i < rawResults.size(); ++i)
+        {
+            explainInput += rawResults[i];
+            explainInput += "\n";
+        }
+    }
+
+    PersonaMessageIn explainMsg;
+    explainMsg.type = 1;
+    explainMsg.text = explainInput;
+    explainMsg.createdAt = static_cast<int>(time(nullptr));
+
+    PersonaMessageOut explainOut;
+    if (managers.persona->runOnce(explainMsg, explainOut))
+    {
+        UiMessage explainUi;
+        explainUi.type = UiMessageType::Text;
+        explainUi.text = explainOut.text;
+        outputQueue.push(explainUi);
+
+        if (!env.live2dWriter.write(explainOut.text, explainOut.emotion, explainOut.priority))
+        {
+            logError("handleTextMessage", "live2dWriter 写入失败(解释)");
+        }
+    }
+    else
+    {
+        UiMessage explainUi;
+        explainUi.type = UiMessageType::Text;
+        explainUi.text = "解释失败，但功能已执行完成";
+        outputQueue.push(explainUi);
     }
 }
+// 获取人格镜像
 std::vector<std::string> ai_plc_delegate::parsePersonaMirror()
 {
     std::vector<std::string> rows;
@@ -1152,6 +1401,7 @@ std::vector<std::string> ai_plc_delegate::parsePersonaMirror()
 
     return rows;
 }
+//获取镜像
 std::vector<std::string> ai_plc_delegate::parseProjectMirror()
 {
     std::vector<std::string> rows;

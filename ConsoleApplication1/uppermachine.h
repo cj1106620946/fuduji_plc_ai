@@ -65,6 +65,7 @@ public:
     bool run();
     bool stop();
     const std::string& getLastError() const;
+    bool removeSignalById(int signalId);
 private:
 
     void readThreadProc();

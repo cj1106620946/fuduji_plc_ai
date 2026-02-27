@@ -71,7 +71,7 @@ public:
     bool aiinit();
     void stop();
     bool isReady() const;
-
+    bool removeSignalById(int signalId);
     void createRunThread();
     void destroyRunThread();
     void createUpperThread();
@@ -113,7 +113,19 @@ public:
         const std::string& value,
         std::string& outResult
     );
+    bool createPlcWorkspaceByCmd(
+        const std::string& ip,
+        const std::string& name,
+        int rack,
+        int slot,
+        const std::string& desc,
+        std::vector<std::string>& outMessages
+    );
 
+    bool createSignalWorkspaceByCmd(
+        const std::vector<std::string>& parts,
+        std::vector<std::string>& outMessages
+    );
     bool executeByAI(
         const std::string& userInput,
         std::vector<std::string>& outMessages

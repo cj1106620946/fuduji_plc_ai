@@ -136,7 +136,7 @@ public:
         const std::string& plcAddress
     );
 
-
+    bool removeSignalInfoById(int signalId);
     bool initSelfMemoryKeys();
     bool initMemoryPointer();
 

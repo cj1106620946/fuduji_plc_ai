@@ -1455,7 +1455,35 @@ bool SqlStore::removeSignalInfo(const std::string& plcAddress)
 
     return true;
 }
+// 按 signalId 删除变量
+bool SqlStore::removeSignalInfoById(int signalId)
+{
+    if (!sql)
+    {
+        lastError = u8"数据库不可用";
+        return false;
+    }
 
+    if (signalId <= 0)
+    {
+        lastError = u8"signalId 非法";
+        return false;
+    }
+
+    std::string sqlText =
+        "DELETE FROM signal_def WHERE signal_id = " +
+        std::to_string(signalId) + " AND plc_id = ("
+        "SELECT plc_id FROM plc_pointer WHERE id = 1"
+        ");";
+
+    if (!sql->execute(sqlText.c_str()))
+    {
+        lastError = sql->getLastError();
+        return false;
+    }
+
+    return true;
+}
 /*
 bool SqlStore::getAllSignalAddresses(
     std::vector<std::string>& addrs

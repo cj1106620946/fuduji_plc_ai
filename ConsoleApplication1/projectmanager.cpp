@@ -238,6 +238,7 @@ void ProjectManager::stop()
     projectstate.stringThreadStopping = false;
     projectstate.stopping = false;
 }
+
 // 加载镜像：只从数据库读取配置到镜像，不改变运行状态
 bool ProjectManager::loadProjectMirror()
 {
@@ -285,7 +286,6 @@ bool ProjectManager::pushAIMessage(const std::string& text, int source, int type
     aiQueue.push_back(msg);
     return true;
 }
-
 // 推送项目消息：将消息追加到 projectMessageQueue（供 UI 或日志消费）
 void ProjectManager::pushProjectMessage(
     const std::string& text,
@@ -461,9 +461,24 @@ bool ProjectManager::executeByAI(
 {
     outMessages.clear();
 
-    // 1. 调用 ExecuteAI
-    std::vector<ExecuteItem> items =
-        executeAIRef.runOnce(userInput);
+    // 1) 打包当前镜像里的变量 name + address，交给 ExecuteAI
+    std::string packed;
+    packed.reserve(userInput.size() + worksignals.size() * 32 + 64);
+
+    packed += "vars:\n";
+    for (size_t i = 0; i < worksignals.size(); ++i)
+    {
+        const signalinfo& s = worksignals[i];
+        packed += s.name;
+        packed += " ";
+        packed += s.plcAddress;
+        packed += "\n";
+    }
+    packed += "user:\n";
+    packed += userInput;
+
+    // 2) 调用 ExecuteAI
+    std::vector<ExecuteItem> items = executeAIRef.runOnce(packed);
 
     if (items.empty())
     {
@@ -471,14 +486,12 @@ bool ProjectManager::executeByAI(
         return true;
     }
 
-    // 2. 逐条处理 ExecuteItem
+    // 3) 逐条处理 ExecuteItem
     for (const auto& it : items)
     {
-        // message 是 AI 对“整体意图”的说明，只压一次即可
         if (!it.message.empty())
             outMessages.push_back(it.message);
 
-        // 没有 op，说明只是解释性返回（type=error 或无动作）
         if (it.op.empty())
             continue;
 
@@ -651,11 +664,8 @@ void ProjectManager::upperThreadProc()
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             continue;
         }
-
-        // ===== 上位机 run 只允许触发一次 =====
-        if (upperRef)
+        if (!runState.upperRunning)
         {
-            // 调用上位机运行（启动其内部线程）
             upperRef->run();
         }
 
@@ -765,8 +775,6 @@ void ProjectManager::aiThreadProc()
     projectstate.stringThreadStopping = false;
     projectstate.aiBusy = false;
 }
-
-
 // 启动项目运行线程（如果尚未启动并且项目已初始化）
 void ProjectManager::createRunThread()
 {
@@ -848,6 +856,179 @@ void ProjectManager::createAIThread()
 
     logError("createAIThread", "aiThread 启动成功");
 }
+// 通过上位机接口删除指定 ID 的信号，要求上位机已初始化
+bool ProjectManager::removeSignalById(int signalId)
+{
+    if (!upperRef)
+    {
+        lastError = "upper 未初始化";
+        return false;
+    }
+
+    return upperRef->removeSignalById(signalId);
+}
+// 使用 WorkspaceAI 解析输入并通过 uppermachine 创建 PLC 工作区，返回过程信息
+bool ProjectManager::createPlcWorkspaceByCmd(
+    const std::string& ip,
+    const std::string& name,
+    int rack,
+    int slot,
+    const std::string& desc,
+    std::vector<std::string>& outMessages
+)
+{
+    outMessages.clear();
+
+    if (!projectstate.projectInited)
+    {
+        lastError = "project 未初始化";
+        outMessages.push_back(lastError);
+        logError("createPlcWorkspaceByCmd", lastError);
+        return false;
+    }
+
+    if (!upperRef)
+    {
+        lastError = "upperRef null";
+        outMessages.push_back(lastError);
+        logError("createPlcWorkspaceByCmd", lastError);
+        return false;
+    }
+
+    if (ip.empty())
+    {
+        lastError = "IP 不能为空";
+        outMessages.push_back(lastError);
+        logError("createPlcWorkspaceByCmd", lastError);
+        return false;
+    }
+
+    if (name.empty())
+    {
+        lastError = "PLC 名称不能为空";
+        outMessages.push_back(lastError);
+        logError("createPlcWorkspaceByCmd", lastError);
+        return false;
+    }
+
+    plcinfo info{};
+
+    // PLC 名称
+    info.taskDesc = name;
+
+    // 解释说明
+    info.taskDomain = desc;
+    // 原始输入来源
+    info.sourceText = "plccreate " + name + " " + ip;
+    // 连接参数
+    info.ipAddress = ip;
+    info.rack = rack;
+    info.slot = slot;
+
+    // 初始状态
+    info.isActive = 0;
+
+    // 时间
+    int now = static_cast<int>(time(nullptr));
+    info.createdAt = now;
+    info.updatedAt = now;
+
+    // 初始信号根
+    info.signalRootId = 0;
+
+    if (!upperRef->createPlcInfoRow(info))
+    {
+        lastError = upperRef->getLastError();
+        outMessages.push_back(lastError);
+        logError("createPlcWorkspaceByCmd", lastError);
+        return false;
+    }
+
+    outMessages.push_back("PLC 工作区创建完成");
+    lastError.clear();
+    return true;
+}
+
+bool ProjectManager::createSignalWorkspaceByCmd(
+    const std::vector<std::string>& parts,
+    std::vector<std::string>& outMessages
+)
+{
+    outMessages.clear();
+
+    if (!projectstate.projectInited)
+    {
+        lastError = "project 未初始化";
+        outMessages.push_back(lastError);
+        logError("createSignalWorkspaceByCmd", lastError);
+        return false;
+    }
+
+    if (!upperRef)
+    {
+        lastError = "upperRef null";
+        outMessages.push_back(lastError);
+        logError("createSignalWorkspaceByCmd", lastError);
+        return false;
+    }
+
+    // signalcreate 至少需要 1 组: name addr desc
+    if (parts.size() < 4)
+    {
+        lastError = "signalcreate 参数不足";
+        outMessages.push_back(lastError);
+        logError("createSignalWorkspaceByCmd", lastError);
+        return false;
+    }
+
+    // 三元组校验: 去掉命令名后，剩余必须是 3 的倍数
+    if (((int)parts.size() - 1) % 3 != 0)
+    {
+        lastError = "signalcreate 参数必须三元组 name addr desc";
+        outMessages.push_back(lastError);
+        logError("createSignalWorkspaceByCmd", lastError);
+        return false;
+    }
+
+    int createdCount = 0;
+
+    // 从 parts[1] 开始，每 3 个一组
+    for (size_t i = 1; i + 2 < parts.size(); i += 3)
+    {
+        const std::string& sigName = parts[i];
+        const std::string& sigAddr = parts[i + 1];
+        const std::string& sigDesc = parts[i + 2];
+
+        if (sigName.empty() || sigAddr.empty())
+        {
+            lastError = "变量名或地址为空";
+            outMessages.push_back(lastError);
+            logError("createSignalWorkspaceByCmd", lastError);
+            return false;
+        }
+
+        // 中文说明允许为空，如果你希望禁止为空，这里再加判断
+        if (!upperRef->createSignalRow(
+            sigName,
+            sigAddr,
+            currentPlc.signalRootId,
+            sigDesc
+        ))
+        {
+            lastError = upperRef->getLastError();
+            outMessages.push_back(lastError);
+            logError("createSignalWorkspaceByCmd", lastError);
+            return false;
+        }
+
+        createdCount += 1;
+    }
+
+    outMessages.push_back("变量工作区创建完成，数量: " + std::to_string(createdCount));
+    lastError.clear();
+    return true;
+}
+
 // 等待并销毁项目运行线程（阻塞直到线程结束）
 void ProjectManager::destroyRunThread()
 {

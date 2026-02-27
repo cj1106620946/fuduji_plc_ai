@@ -28,17 +28,54 @@ enum class UiMessageType
 enum class CommandType
 {
     None = 0,
-
-    Live2DOff,
-    Live2DCreate,
-    Live2DRender,
-
+    Help,
+    Live2D,
     MemorySelf,
     MemoryUser,
     MemoryClear,
 
-    ProjectCreatePlc,
-    ProjectCreateSignal
+    PlcCreate,
+    SignalCreate,
+    SignalDelete
+};
+struct CommandHelp
+{
+    std::string command;      // 指令名称
+    std::string usage;        // 使用格式
+    std::string description;  // 中文说明
+};
+static std::vector<CommandHelp> g_commandHelp =
+{
+    {
+        "plccreate",
+        "plccreate name ip [rack slot desc]",
+        "创建PLC工作区，name和ip为必填，rack和slot默认0和1，desc为解释说明"
+    },
+    {
+        "signalcreate",
+        "signalcreate name addr desc [name addr desc ...]",
+        "创建变量，三元组格式，每个变量必须包含名称 地址 中文说明"
+    },
+    {
+        "signaldelete",
+        "signaldelete id",
+        "删除指定ID的变量"
+    },
+    {
+        "live2d",
+        "live2d 0/1/2",
+        "控制Live2D状态"
+    },
+    {
+        "memory1",
+        "memory1",
+        "写入人格1-3长期记忆"
+    },
+    {
+        "memory2",
+        "memory2",
+        "写入用户4-9长期记忆"
+    }
 };
 // 输入消息结构
 struct UiMessage
@@ -54,11 +91,18 @@ struct plcai
     bool aiinit = false;
     bool projectinit = false;
     bool personainit = false;
-    bool ioThreadRunning = false;      // 输入输出线程是否运行
-    bool ioThreadStopping = false;     // 输入输出线程是否进入停止流程
+
+    bool ioThreadRunning = false;
+    bool ioThreadStopping = false;
+
+    // ===== 上位机周期刷新控制 =====
+    bool allowUpperRefresh = 0;   // 是否允许上位机周期刷新
+
     UiState ui;
+
     // ===== 人格生命周期=====
     PersonaState personaState;
+
     // ===== project生命周期 =====
     ProjectState projectState;
 };

@@ -373,7 +373,7 @@ bool uppermachine::run()
     // ===== 记录上位机运行事实 =====
     runState.upperRunning = true;
     logOp("run", "线程启动完成");
-    return true;
+    return 1;
 }
 void uppermachine::readThreadProc()
 {
@@ -512,4 +512,38 @@ void uppermachine::writeThreadProc()
 const std::string& uppermachine::getLastError() const
 {
     return lastError;
+}
+bool uppermachine::removeSignalById(int signalId)
+{
+    if (signalId <= 0)
+    {
+        lastError = "signalId 非法";
+        return false;
+    }
+
+    // 1. 先删数据库
+    if (!store.removeSignalInfoById(signalId))
+    {
+        lastError = store.getLastErrorText();
+        return false;
+    }
+
+    // 2. 再删运行态内存
+    for (size_t i = 0; i < worksignals.size(); ++i)
+    {
+        if (worksignals[i].signalId == signalId)
+        {
+            worksignals.erase(worksignals.begin() + i);
+            break;
+        }
+    }
+
+    // 3. 重建索引
+    signalIndexByAddr.clear();
+    for (size_t i = 0; i < worksignals.size(); ++i)
+    {
+        signalIndexByAddr[worksignals[i].plcAddress] = i;
+    }
+
+    return true;
 }
