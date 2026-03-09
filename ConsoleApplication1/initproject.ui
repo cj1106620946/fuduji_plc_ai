@@ -41,14 +41,14 @@
       <item>
        <widget class="QPushButton" name="con1">
         <property name="text">
-         <string>创建新的plc</string>
+         <string>取反上位机刷新</string>
         </property>
        </widget>
       </item>
       <item>
        <widget class="QPushButton" name="con2">
         <property name="text">
-         <string>创建新的变量</string>
+         <string>刷新一次</string>
         </property>
        </widget>
       </item>
@@ -70,7 +70,13 @@
     </widget>
    </item>
    <item>
-    <widget class="QTreeWidget" name="tree"/>
+    <widget class="QTreeWidget" name="tree">
+     <column>
+      <property name="text">
+       <string notr="true">1</string>
+      </property>
+     </column>
+    </widget>
    </item>
   </layout>
  </widget>

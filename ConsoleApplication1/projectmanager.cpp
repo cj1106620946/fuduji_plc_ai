@@ -775,6 +775,7 @@ void ProjectManager::aiThreadProc()
     projectstate.stringThreadStopping = false;
     projectstate.aiBusy = false;
 }
+
 // 启动项目运行线程（如果尚未启动并且项目已初始化）
 void ProjectManager::createRunThread()
 {
@@ -856,6 +857,34 @@ void ProjectManager::createAIThread()
 
     logError("createAIThread", "aiThread 启动成功");
 }
+// 等待并销毁项目运行线程（阻塞直到线程结束）
+void ProjectManager::destroyRunThread()
+{
+    if (!runThread.joinable())
+        return;
+
+    runThread.join();
+    projectstate.projectRunning = 0;
+}
+// 等待并销毁上位机线程（阻塞直到线程结束）
+void ProjectManager::destroyUpperThread()
+{
+    if (!upperThread.joinable())
+        return;
+
+    upperThread.join();
+    projectstate.upperRunning = 0;
+}
+// 等待并销毁 AI 线程（阻塞直到线程结束）
+void ProjectManager::destroyAIThread()
+{
+    if (!aiThread.joinable())
+        return;
+
+    aiThread.join();
+    projectstate.stringThreadRunning = 0;
+}
+
 // 通过上位机接口删除指定 ID 的信号，要求上位机已初始化
 bool ProjectManager::removeSignalById(int signalId)
 {
@@ -1029,30 +1058,3 @@ bool ProjectManager::createSignalWorkspaceByCmd(
     return true;
 }
 
-// 等待并销毁项目运行线程（阻塞直到线程结束）
-void ProjectManager::destroyRunThread()
-{
-    if (!runThread.joinable())
-        return;
-
-    runThread.join();
-    projectstate.projectRunning = 0;
-}
-// 等待并销毁上位机线程（阻塞直到线程结束）
-void ProjectManager::destroyUpperThread()
-{
-    if (!upperThread.joinable())
-        return;
-
-    upperThread.join();
-    projectstate.upperRunning = 0;
-}
-// 等待并销毁 AI 线程（阻塞直到线程结束）
-void ProjectManager::destroyAIThread()
-{
-    if (!aiThread.joinable())
-        return;
-
-    aiThread.join();
-    projectstate.stringThreadRunning = 0;
-}

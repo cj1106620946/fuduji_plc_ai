@@ -36,7 +36,11 @@ enum class CommandType
 
     PlcCreate,
     SignalCreate,
-    SignalDelete
+    SignalDelete,
+
+    Get,
+    Set,
+    GetAll
 };
 struct CommandHelp
 {
@@ -44,6 +48,7 @@ struct CommandHelp
     std::string usage;        // 使用格式
     std::string description;  // 中文说明
 };
+
 static std::vector<CommandHelp> g_commandHelp =
 {
     {
@@ -75,8 +80,24 @@ static std::vector<CommandHelp> g_commandHelp =
         "memory2",
         "memory2",
         "写入用户4-9长期记忆"
+    },
+    {
+        "get",
+        "get keyword",
+        "读取名称 地址 说明中包含keyword的变量信息"
+    },
+    {
+        "set",
+        "set keyword value",
+        "将匹配到的变量写入指定值"
+    },
+    {
+        "getall",
+        "getall",
+        "读取当前全部变量信息"
     }
 };
+
 // 输入消息结构
 struct UiMessage
 {
@@ -122,10 +143,19 @@ struct RuntimeEnvironment
     Sqllient* sqlClient = nullptr;
     SqlStore* sqlStore = nullptr;
     JsonStateWriter live2dWriter;
+    AICallDesc defaultCallDesc;
 
     RuntimeEnvironment()
         : live2dWriter("live2dstate.json")
     {
+        // 初始化默认AI调用参数
+        defaultCallDesc.useCloud = 1;
+        defaultCallDesc.provider = AIProvider::Ollama;
+        defaultCallDesc.apiKey = "0";
+        defaultCallDesc.modelName.clear();
+        defaultCallDesc.timeoutSec = 60;
+        defaultCallDesc.temperature = 0.7;
+        defaultCallDesc.maxTokens = 2048;
     }
 };
 

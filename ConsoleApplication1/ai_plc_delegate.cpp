@@ -268,36 +268,51 @@ bool ai_plc_delegate::initai()
         logError("initai", "AI 基础层已初始化，跳过");
         return true;
     }
-    static AICallDesc callDesc;
-    callDesc.useCloud = 1;
-    callDesc.provider = AIProvider::DeepSeek;
-    callDesc.apiKey="sk-bb3b9af89db147eda4eedf1c0412c5f2";
-    callDesc.modelName.clear();
-    callDesc.timeoutSec = 60;
-    callDesc.temperature = 0.7;
-    callDesc.maxTokens = 2048;
-    modules.aiClient = new AIClient(callDesc);
+
+    modules.aiClient = new AIClient(env.defaultCallDesc);
     if (!modules.aiClient)
     {
         logError("initai", "AIClient 创建失败");
-        env.ui->showError("ai初始化失败: " + lastError);
+        lastError = "AIClient 创建失败";
+        if (env.ui)
+        {
+            env.ui->showError("ai初始化失败: " + lastError);
+        }
         return false;
     }
+
     modules.aiController = new AIController(*modules.aiClient);
     if (!modules.aiController)
     {
         logError("initai", "AIController 创建失败");
-        env.ui->showError("ai初始化失败: " + lastError);
+        lastError = "AIController 创建失败";
+        if (env.ui)
+        {
+            env.ui->showError("ai初始化失败: " + lastError);
+        }
+        delete modules.aiClient;
+        modules.aiClient = nullptr;
         return false;
     }
+
     modules.aiTrace = new AITrace();
     if (!modules.aiTrace)
     {
         logError("initai", "AITrace 创建失败");
-        env.ui->showError("ai初始化失败: " + lastError);
+        lastError = "AITrace 创建失败";
+        if (env.ui)
+        {
+            env.ui->showError("ai初始化失败: " + lastError);
+        }
+        delete modules.aiController;
+        modules.aiController = nullptr;
+        delete modules.aiClient;
+        modules.aiClient = nullptr;
         return false;
     }
+
     modules.aiTrace->setRootDir("ai_trace");
+
     pclailife.aiinit = true;
     logError("initai", "AI 基础层初始化完成");
     return true;
@@ -770,6 +785,9 @@ CommandType ai_plc_delegate::parseCommandType(const std::string& token)
     if (cmd == "signalcreate") return CommandType::SignalCreate;
     if (cmd == "signaldelete") return CommandType::SignalDelete;
 
+    if (cmd == "get") return CommandType::Get;
+    if (cmd == "set") return CommandType::Set;
+    if (cmd == "getall") return CommandType::GetAll;
     return CommandType::None;
 }
 // 处理指令消息
@@ -817,7 +835,7 @@ void ai_plc_delegate::handleCommandMessage(const UiMessage& msg)
                     out.push_back(cur);
                     cur.clear();
                 }
-                continue;
+                continue; 
             }
             cur.push_back(c);
         }
@@ -975,8 +993,8 @@ void ai_plc_delegate::handleCommandMessage(const UiMessage& msg)
             std::string name = parts[1];
             std::string ip = parts[2];
 
-            int rack = 0;   // 默认
-            int slot = 1;   // 默认
+            int rack = 0;
+            int slot = 1;
             std::string desc;
 
             // 如果只给了 rack 没给 slot，报错
@@ -1052,7 +1070,6 @@ void ai_plc_delegate::handleCommandMessage(const UiMessage& msg)
         }
         case CommandType::SignalCreate:
         {
-
             std::vector<std::string> parts;
             splitBySpace(token, parts);
 
@@ -1104,7 +1121,6 @@ void ai_plc_delegate::handleCommandMessage(const UiMessage& msg)
 
             break;
         }
-
         case CommandType::SignalDelete:
         {
             if (!pclailife.projectinit || !managers.project)
@@ -1162,6 +1178,148 @@ void ai_plc_delegate::handleCommandMessage(const UiMessage& msg)
 
             break;
         }
+        case CommandType::Get:
+        {
+            std::vector<std::string> parts;
+            splitBySpace(token, parts);
+
+            if (parts.size() < 2)
+            {
+                result += "get 参数不足\n";
+                break;
+            }
+
+            const std::string& key = parts[1];
+
+            if (key == "key")
+            {
+                result += "apiKey: ";
+                result += env.defaultCallDesc.apiKey;
+                result += "\n";
+            }
+            else if (key == "aimod")
+            {
+                result += "aimod: ";
+
+                if (env.defaultCallDesc.provider == AIProvider::Ollama)
+                    result += "1 (ollama)\n";
+                else
+                    result += "0 (cloud)\n";
+            }
+            else if (key == "usecloud")
+            {
+                result += "usecloud: ";
+                result += std::to_string(env.defaultCallDesc.useCloud);
+                result += "\n";
+            }
+            else
+            {
+                result += "未知get字段\n";
+            }
+
+            break;
+        }
+        case CommandType::Set:
+        {
+            std::vector<std::string> parts;
+            splitBySpace(token, parts);
+
+            if (parts.size() < 3)
+            {
+                result += "set 参数不足\n";
+                break;
+            }
+
+            const std::string& key = parts[1];
+            const std::string& value = parts[2];
+
+            if (key == "key")
+            {
+                env.defaultCallDesc.apiKey = value;
+                result += "apiKey 已更新\n";
+            }
+            else if (key == "aimod")
+            {
+                if (value == "0")
+                {
+                    env.defaultCallDesc.provider = AIProvider::DeepSeek;
+                    result += "AI模式已切换: cloud\n";
+                }
+                else if (value == "1")
+                {
+                    env.defaultCallDesc.provider = AIProvider::Ollama;
+                    result += "AI模式已切换: ollama\n";
+                }
+                else
+                {
+                    result += "aimod 参数错误\n";
+                }
+            }
+            else if (key == "usecloud")
+            {
+                if (value == "0")
+                {
+                    env.defaultCallDesc.useCloud = 0;
+                    result += "usecloud 已关闭\n";
+                }
+                else if (value == "1")
+                {
+                    env.defaultCallDesc.useCloud = 1;
+                    result += "usecloud 已开启\n";
+                }
+                else
+                {
+                    result += "usecloud 参数错误\n";
+                }
+            }
+            else
+            {
+                result += "未知set字段\n";
+            }
+
+            break;
+        }
+        case CommandType::GetAll:
+        {
+            std::vector<std::string> parts;
+            splitBySpace(token, parts);
+
+            if (parts.size() > 1)
+            {
+                result += "getall 不需要参数\n";
+                break;
+            }
+
+            result += "AI当前配置:\n";
+
+            result += "apiKey: ";
+            result += env.defaultCallDesc.apiKey;
+            result += "\n";
+
+            result += "aimod: ";
+            if (env.defaultCallDesc.provider == AIProvider::Ollama)
+                result += "1 (ollama)\n";
+            else
+                result += "0 (cloud)\n";
+
+            result += "timeout: ";
+            result += std::to_string(env.defaultCallDesc.timeoutSec);
+            result += "\n";
+
+            result += "temperature: ";
+            result += std::to_string(env.defaultCallDesc.temperature);
+            result += "\n";
+
+            result += "maxTokens: ";
+            result += std::to_string(env.defaultCallDesc.maxTokens);
+            result += "\n";
+
+            result += "useCloud: ";
+            result += std::to_string(env.defaultCallDesc.useCloud);
+            result += "\n";
+
+            break;
+        }
         case CommandType::Help:
         {
             for (const auto& item : g_commandHelp)
@@ -1174,10 +1332,12 @@ void ai_plc_delegate::handleCommandMessage(const UiMessage& msg)
         }
         case CommandType::None:
         default:
+        {
             result += "未知指令:";
             result += token;
             result += "\n";
             break;
+        }
         }
     }
 
