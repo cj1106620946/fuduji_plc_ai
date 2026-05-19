@@ -23,7 +23,7 @@ std::string DecisionAI::runOnce(
     const std::string& user_input
 )
 {
-	std::string trace_in = snapshot+"|" + user_input;
+    std::string trace_in = snapshot + "|" + user_input;
     // 开始 trace 记录
     trace.begin(
         "decision",

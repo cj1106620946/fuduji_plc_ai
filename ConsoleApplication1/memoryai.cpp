@@ -50,7 +50,7 @@ std::string MemoryAI::runself(
         u8"memory_self",            // 记忆槽
         currentText,                // 当前需要整理的文本
         ai.memory13prompt_get(),    // self 1-3 prompt
-        personaText                 // ★ 上一次已确认的人格记忆
+        personaText                 //上一次已确认的人格记忆
     );
 
     // 解析 JSON

@@ -6,7 +6,7 @@ ai_plc_delegate::ai_plc_delegate()
 }
 ai_plc_delegate::~ai_plc_delegate()
 {
-    // ===== 管理层 =====
+    //  管理层 
     if (managers.project)
     {
         delete managers.project;
@@ -19,7 +19,7 @@ ai_plc_delegate::~ai_plc_delegate()
         managers.persona = nullptr;
     }
 
-    // ===== 模块层 =====
+    //  模块层 
     if (modules.chatAi)
     {
         delete modules.chatAi;
@@ -56,7 +56,7 @@ ai_plc_delegate::~ai_plc_delegate()
         modules.speech = nullptr;
     }
 
-    // ===== 数据库层 =====
+    //  数据库层 
     if (env.sqlStore)
     {
         env.sqlStore->close();
@@ -70,7 +70,7 @@ ai_plc_delegate::~ai_plc_delegate()
         env.sqlClient = nullptr;
     }
 
-    // ===== UI =====
+    //  UI 
     if (env.ui)
     {
         delete env.ui;
@@ -90,12 +90,10 @@ void ai_plc_delegate::logError(
 {
     // 确保 error 目录存在
     CreateDirectoryA("error", NULL);
-
     // 打开 delegate 层日志文件
     std::ofstream logFile("error//ai_plc_delegate.log", std::ios::app);
     if (!logFile.is_open())
         return;
-
     // 获取当前时间
     auto now = std::chrono::system_clock::now();
     auto time_t_now = std::chrono::system_clock::to_time_t(now);
@@ -185,7 +183,6 @@ bool ai_plc_delegate::initQt()
             env.ui->updatePersonaMirror(rows, 2);
         }
     });
-
     projectTimer->start(200);
     pclailife.qtinit = true;
     logError("initQt", "Qt 初始化完成");
@@ -495,18 +492,17 @@ bool ai_plc_delegate::initproject()
         qDebug() << "信号" << i << "当前值:" << QString::fromStdString(mirror.worksignals[i].currentValue);
     }
 
-    qDebug() << "==========================";
+    qDebug() << "=";
     if (env.ui)
     {
         std::vector<std::string> rows = parseProjectMirror();
         env.ui->updatePersonaMirror(rows, 2);
     }
 
-    if (!pclailife.sttThreadRunning)
-    {
+
         pclailife.sttThreadStopping = false;
-        ioThread = std::thread(&ai_plc_delegate::sstThreadProc, this);
-    }
+        sttThread = std::thread(&ai_plc_delegate::sstThreadProc, this);
+   
 
     pclailife.projectState.projectInited = true;
     pclailife.projectinit = true;
@@ -549,7 +545,7 @@ void ai_plc_delegate::run()
         default:
             if (!pclailife.personainit)
             {
-                env.ui->showMiniTip("人格AI未初始化");
+                env.ui->showMiniTip("未初始化，无法执行");
                 return;
             }
             msg.type = UiMessageType::Text;
@@ -659,12 +655,21 @@ void ai_plc_delegate::run()
         [this]()
     {
         pclailife.allowUpperRefresh = !pclailife.allowUpperRefresh;
-        env.ui->showMiniTip("取反");
+        if (pclailife.allowUpperRefresh)
+        {
+            env.ui->showMiniTip("当前为1");
+
+        }
+        else
+        {
+            env.ui->showMiniTip("当前为0");
+
+        }
     });
 
     QObject::connect(
         env.ui->getInitProject(),
-        &initproject::con2Clicked,  // 改成信号
+        &initproject::con2Clicked,  
         [this]()
     {
         std::vector<std::string> rows = parseProjectMirror();
@@ -672,13 +677,12 @@ void ai_plc_delegate::run()
         {
             env.ui->updatePersonaMirror(rows, 2);
         }
-        env.ui->showMiniTip("con2按钮被点击");
-        // TODO: 添加con2的具体处理逻辑
+        env.ui->showMiniTip("刷新完成");
     });
 
     QObject::connect(
         env.ui->getInitProject(),
-        &initproject::con3Clicked,  // 改成信号
+        &initproject::con3Clicked,  
         [this]()
     {
         if (managers.project->connectplcinit())
@@ -696,8 +700,15 @@ void ai_plc_delegate::run()
         &initproject::con4Clicked,  // 改成信号
         [this]()
     {
-        env.ui->showMiniTip("con4按钮被点击");
-        // TODO: 添加con4的具体处理逻辑
+        if (pclailife.sttThreadStopping)
+        {
+            env.ui->showMiniTip("关闭sst");
+            pclailife.sttThreadStopping = 0;
+        }
+        else {
+            env.ui->showMiniTip("开启sst");
+			pclailife.sttThreadStopping = 1;
+        }
     });
 
 }
@@ -744,7 +755,6 @@ void ai_plc_delegate::ioThreadProc()
     logError("ioThreadProc", "IO线程创建完成");
     pclailife.ioThreadRunning = true;
     pclailife.ioThreadStopping = false;
-
     while (!pclailife.ioThreadStopping)
     {
         if (inputQueue.empty())
@@ -774,6 +784,30 @@ void ai_plc_delegate::ioThreadProc()
 
     pclailife.ioThreadRunning = false;
     logError("ioThreadProc", "IO线程退出");
+}
+//stt线程函数，持续监听语音输入并转换为文本消息
+void ai_plc_delegate::sstThreadProc()
+{
+    logError("sttThreadProc", "stt线程创建完成");
+    pclailife.sttThreadRunning = true;
+    pclailife.sttThreadStopping = false;
+    modules.speech->start();
+    while (1)
+    {
+        if (pclailife.sttThreadStopping)
+        {
+            std::string text = modules.speech->getText();
+            if (text == "nosl")
+            {
+                continue;
+            }
+            logError("sttThreadProc", text);
+			qDebug() << "sttThreadProc 收到语音输入:" << QString::fromStdString(text);
+            onUiText(text);
+        }
+    }
+    pclailife.sttThreadRunning = false;
+    logError("sttThreadProc", "stt线程退出");
 }
 // 解析指令类型（只看命令名：token 第一个空格前的内容）
 CommandType ai_plc_delegate::parseCommandType(const std::string& token)
@@ -1224,6 +1258,7 @@ void ai_plc_delegate::handleCommandMessage(const UiMessage& msg)
 
             break;
         }
+
         case CommandType::Set:
         {
             std::vector<std::string> parts;
@@ -1349,7 +1384,7 @@ void ai_plc_delegate::handleCommandMessage(const UiMessage& msg)
     outMsg.text = result.empty() ? "指令无输出" : result;
     outputQueue.push(outMsg);
 }
-// 处理AI消息
+
 void ai_plc_delegate::handleTextMessage(const UiMessage& msg)
 {
     UiMessage outMsg;
@@ -1362,7 +1397,6 @@ void ai_plc_delegate::handleTextMessage(const UiMessage& msg)
         return;
     }
 
-    // 1) 原文 -> 第一次 chat
     PersonaMessageIn inMsg;
     inMsg.type = 1;
     inMsg.text = msg.text;
@@ -1375,24 +1409,18 @@ void ai_plc_delegate::handleTextMessage(const UiMessage& msg)
         outputQueue.push(outMsg);
         return;
     }
-
-    // 第一次 chat 输出直接展示
     outMsg.text = personaOut.text;
     outputQueue.push(outMsg);
 
-    // Live2D 显示第一次 chat
     if (!env.live2dWriter.write(personaOut.text, personaOut.emotion, personaOut.priority))
     {
         logError("handleTextMessage", "live2dWriter 写入失败");
     }
 
-    // control=0 直接结束
     if (personaOut.control == 0)
     {
         return;
     }
-
-    // 2) 组织执行输入：原文 + 第一次 chat 输出
     std::string execInput;
     execInput += "原文：";
     execInput += msg.text;
@@ -1401,18 +1429,9 @@ void ai_plc_delegate::handleTextMessage(const UiMessage& msg)
     execInput += personaOut.text;
     execInput += "\n";
 
-    // 3) 执行模块：不直接显示 rawResults
     bool actionOk = true;
     std::string actionName;
     std::vector<std::string> rawResults;
-
-    if (!pclailife.projectinit || !managers.project)
-    {
-        actionOk = false;
-        rawResults.push_back("项目未初始化");
-    }
-    else
-    {
         switch (personaOut.control)
         {
         case 1:
@@ -1451,7 +1470,6 @@ void ai_plc_delegate::handleTextMessage(const UiMessage& msg)
                 managers.project->loadProjectMirror();
             }
             break;
-
         default:
             actionOk = false;
             actionName = "未知操作";
@@ -1459,26 +1477,20 @@ void ai_plc_delegate::handleTextMessage(const UiMessage& msg)
             rawResults.push_back("未知控制类型");
             break;
         }
-    }
 
-    // 4) 第二次 chat：解释执行结果
     std::string explainInput;
     explainInput += "你现在负责把功能执行结果解释给用户。\n";
     explainInput += "要求：不要复读原文，不要输出原始列表，不要输出指令格式。\n";
     explainInput += "只给结论和下一步。\n\n";
-
     explainInput += "功能：";
     explainInput += actionName;
     explainInput += "\n";
-
     explainInput += "第一次Chat输出：\n";
     explainInput += personaOut.text;
     explainInput += "\n\n";
-
     explainInput += "执行是否成功：";
     explainInput += (actionOk ? "成功" : "失败");
     explainInput += "\n";
-
     explainInput += "执行返回：\n";
     if (rawResults.empty())
     {
@@ -1524,7 +1536,7 @@ std::vector<std::string> ai_plc_delegate::parsePersonaMirror()
 {
     std::vector<std::string> rows;
 
-    // ===== 解析 selfMemory（人格自身记忆）=====
+    //  解析 selfMemory（人格自身记忆）
     const char* selfTitles[3] = {
         u8"AI自我.自我认知",
         u8"AI自我.情感基调",
@@ -1543,7 +1555,7 @@ std::vector<std::string> ai_plc_delegate::parsePersonaMirror()
         rows.push_back(line);
     }
 
-    // ===== 解析 userMemory（用户相关记忆）=====
+    //  解析 userMemory（用户相关记忆）
     const char* userTitles[6] = {
         u8"面向用户.用户总结",
         u8"面向用户.用户偏好",
@@ -1571,7 +1583,7 @@ std::vector<std::string> ai_plc_delegate::parseProjectMirror()
 {
     std::vector<std::string> rows;
 
-    // ===== PLC 信息组（根节点）=====
+    //  PLC 信息组（根节点）
     rows.push_back("#A#PLC信息");
     plcinfo& plc = mirror.currentPlc;
     rows.push_back("任务描述|" + plc.taskDesc);
@@ -1584,9 +1596,9 @@ std::vector<std::string> ai_plc_delegate::parseProjectMirror()
     rows.push_back("槽号|" + std::to_string(plc.slot));
     rows.push_back("连接状态|" + std::string(plc.isActive ? "已连接" : "未连接"));
 
-    // ===== 变量列表（PLC信息下的子节点）=====
+    //  变量列表（PLC信息下的子节点）
     rows.push_back("#A#变量列表");
-    // ===== 遍历所有变量 =====
+    //  遍历所有变量 
     for (auto& s : mirror.worksignals)
     {
         // 每个变量作为变量列表下的子节点

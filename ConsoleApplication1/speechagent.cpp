@@ -14,22 +14,39 @@
 #include <iostream>
 #include <iomanip>
 
+#include <QDebug>
+#include <QString>
+// 调试开关
+static bool g_debug = true;
+void speechagent::setDebug(bool enable)
+{
+    g_debug = enable;
+}
+bool speechagent::getDebug()
+{
+    return g_debug;
+}
+
+static void speechDebug(const std::string& text)
+{
+    qDebug().noquote() << QString::fromUtf8(text.c_str());
+}
 // 控制台输出
 static void printGBK1(const std::string& text)
 {
-    DWORD w;
+  /*  DWORD w;
     WriteConsoleA(
         GetStdHandle(STD_OUTPUT_HANDLE),
         text.c_str(),
         (DWORD)text.size(),
         &w,
         NULL
-    );
+    );*/
+    speechDebug(text);
 }
-
 static void printUTF81(const std::string& text)
 {
-    int wlen = MultiByteToWideChar(
+ /*   int wlen = MultiByteToWideChar(
         CP_UTF8,
         0,
         text.c_str(),
@@ -56,19 +73,12 @@ static void printUTF81(const std::string& text)
         (DWORD)wbuf.size(),
         &w,
         NULL
-    );
+    );*/
+    speechDebug(text);
 }
+//调试函数
 
-// 调试开关
-static bool g_debug = true;
-void speechagent::setDebug(bool enable)
-{
-    g_debug = enable;
-}
-bool speechagent::getDebug()
-{
-    return g_debug;
-}
+
 
 // 全局状态
 static speechagent::SpeechParams speechparams;
@@ -247,7 +257,7 @@ bool speechagent::pushtext()
     {
         std::ostringstream oss;
         oss << u8"[" << now_sec() << u8"s][语音] pushtext 等待说话\n";
-        printUTF81(oss.str());
+        speechDebug(oss.str());
     }
 
     while (true)
@@ -263,7 +273,7 @@ bool speechagent::pushtext()
             {
                 std::ostringstream oss;
                 oss << u8"[" << now_sec() << u8"s][语音] pushtext 超时未检测到说话\n";
-                printUTF81(oss.str());
+                speechDebug(oss.str());
             }
             return false;
         }
@@ -294,7 +304,7 @@ bool speechagent::pushtext()
                 << u8" threshold=" << speechparams.vad_threshold
                 << u8" start_min=" << speechparams.start_rms_min
                 << u8"\n";
-            printUTF81(oss.str());
+            speechDebug(oss.str());
             last_rms_print = now;
         }
 
@@ -313,7 +323,7 @@ bool speechagent::pushtext()
                         << u8"/"
                         << speechparams.start_hit
                         << u8"\n";
-                    printUTF81(oss.str());
+                    speechDebug(oss.str());
                 }
 
                 if (speechStartConfirmCount >= speechparams.start_hit)
@@ -340,7 +350,7 @@ bool speechagent::pushtext()
                         std::ostringstream oss;
                         oss << u8"[" << now_sec()
                             << u8"s][语音] pushtext 判定开始说话（已回退起点）\n";
-                        printUTF81(oss.str());
+                        speechDebug(oss.str());
                     }
                 }
 
@@ -363,7 +373,7 @@ bool speechagent::pushtext()
                 oss << u8"[" << now_sec() << u8"s][语音] 静音累计 "
                     << silenceDurationMs
                     << u8" ms\n";
-                printUTF81(oss.str());
+                speechDebug(oss.str());
             }
 
             if (silenceDurationMs >= speechparams.end_silence_ms)
@@ -372,7 +382,7 @@ bool speechagent::pushtext()
                 {
                     std::ostringstream oss;
                     oss << u8"[" << now_sec() << u8"s][语音] pushtext 判定语音结束，入队\n";
-                    printUTF81(oss.str());
+                    speechDebug(oss.str());
                 }
 
                 std::vector<float> pcm48k;
@@ -512,7 +522,7 @@ std::string speechagent::getText()
         oss << "[" << std::fixed << std::setprecision(3)
             << now_sec()
             << "s][" << u8"语音" << "] " << u8"等待用户说话\n";
-        printUTF81(oss.str());
+        speechDebug(oss.str());
     }
 
     while (true)
@@ -529,7 +539,7 @@ std::string speechagent::getText()
                 std::ostringstream oss;
                 oss << "[" << now_sec()
                     << "s][" << u8"语音" << "] " << u8"超时且未检测到说话，直接返回\n";
-                printUTF81(oss.str());
+                speechDebug(oss.str());
             }
 
             return "nosl";
@@ -561,7 +571,7 @@ std::string speechagent::getText()
                 << " threshold=" << speechparams.vad_threshold
                 << " start_min=" << speechparams.start_rms_min
                 << "\n";
-            printUTF81(oss.str());
+            speechDebug(oss.str());
             last_rms_print = now;
         }
 
@@ -581,7 +591,7 @@ std::string speechagent::getText()
                         << speechparams.start_hit
                         << " RMS=" << rmsValue
                         << "\n";
-                    printUTF81(oss.str());
+                    speechDebug(oss.str());
                 }
 
                 if (speechStartConfirmCount >= speechparams.start_hit)
@@ -604,7 +614,7 @@ std::string speechagent::getText()
                         oss << "start_min=" << speechparams.start_rms_min << " ";
                         oss << "hit=" << speechparams.start_hit;
                         oss << "\n";
-                        printUTF81(oss.str());
+                        speechDebug(oss.str());
                     }
                 }
             }
@@ -617,7 +627,7 @@ std::string speechagent::getText()
                         << "s][" << u8"语音" << "] " << u8"开始命中清零 ";
                     oss << "RMS=" << rmsValue;
                     oss << "\n";
-                    printUTF81(oss.str());
+                    speechDebug(oss.str());
                 }
                 speechStartConfirmCount = 0;
             }
@@ -637,7 +647,7 @@ std::string speechagent::getText()
                         << u8" ms"
                         << " RMS=" << rmsValue
                         << "\n";
-                    printUTF81(oss.str());
+                    speechDebug(oss.str());
                 }
             }
             else
@@ -652,7 +662,7 @@ std::string speechagent::getText()
                     std::ostringstream oss;
                     oss << "[" << now_sec()
                         << "s][" << u8"语音" << "] " << u8"判定说话结束，开始识别\n";
-                    printUTF81(oss.str());
+                    speechDebug(oss.str());
                 }
 
                 std::vector<float> pcm48k;
@@ -673,7 +683,7 @@ std::string speechagent::getText()
                     std::ostringstream oss;
                     oss << "[" << now_sec()
                         << "s][" << u8"语音" << "] " << u8"Whisper 开始处理\n";
-                    printUTF81(oss.str());
+                    speechDebug(oss.str());
                 }
 
                 DWORD t0 = GetTickCount();
@@ -707,7 +717,7 @@ std::string speechagent::getText()
                     oss << "[" << now_sec()
                         << "s][" << u8"语音" << "] " << u8"Whisper 结束，耗时 "
                         << cost << u8" 秒\n";
-                    printUTF81(oss.str());
+                    speechDebug(oss.str());
                 }
 
                 return result;

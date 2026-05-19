@@ -10,9 +10,9 @@ qtmain::qtmain(UiState& stateRef, QWidget* parent)
     liveHwnd(nullptr),
     persona(nullptr)
 {
-    // ================= 基础UI初始化 =================
+    //  基础UI初始化 
     ui.setupUi(this);
-    // ================= 初始化 splitter 比例 =================
+    //  初始化 splitter 比例 
 
     QList<int> sizes1;
     sizes1 << 10 << 70 << 20; 
@@ -26,7 +26,7 @@ qtmain::qtmain(UiState& stateRef, QWidget* parent)
     sizes3 << 10 << 85<<5;
     ui.splitter_3->setSizes(sizes3);
 
-    // ================= 顶部状态面板初始化 =================
+    //  顶部状态面板初始化 
     // 在 qtmain.cpp 的构造函数或初始化函数中添加
     if (!ui.statuspanel->layout()) {
         QHBoxLayout* statusLayout = new QHBoxLayout(ui.statuspanel);
@@ -51,7 +51,7 @@ qtmain::qtmain(UiState& stateRef, QWidget* parent)
     statusLayout->addWidget(liveStatusLabel);
     statusLayout->addStretch();
 
-    // ================= 左侧导航区域 =================
+    //  左侧导航区域 
     navTree = new QTreeWidget(ui.navpanel);
     navTree->setHeaderHidden(true);
 
@@ -70,7 +70,7 @@ qtmain::qtmain(UiState& stateRef, QWidget* parent)
     }
 
 
-    // ================= 构建导航树结构 =================
+    //  构建导航树结构 
     QTreeWidgetItem* root = new QTreeWidgetItem(navTree);
     root->setText(0, u8"功能");
 
@@ -86,7 +86,7 @@ qtmain::qtmain(UiState& stateRef, QWidget* parent)
 
     navTree->expandAll();
     navTree->setCurrentItem(itemInit);
-    // ================= 中间页面初始化（上半部分：业务页面） =================
+    //  中间页面初始化（上半部分：业务页面） 
     // init 页面
     init = new initpanel(ui.pageInit);
     if (!ui.pageInit->layout())
@@ -120,7 +120,7 @@ qtmain::qtmain(UiState& stateRef, QWidget* parent)
     ui.pageProject->layout()->addWidget(project);
     // 默认显示聊天页
     ui.mainpanel->setCurrentWidget(ui.pageInit);
-// ================= 下半部分：常驻输入输出界面 =================
+//  下半部分：常驻输入输出界面 
     if (!ui.iointerface->layout())
     {
         QVBoxLayout* layout = new QVBoxLayout(ui.iointerface);
@@ -131,7 +131,7 @@ qtmain::qtmain(UiState& stateRef, QWidget* parent)
     chat = new chatpanel(ui.iointerface);
     ui.iointerface->layout()->addWidget(chat);
 
-    // ================= 导航点击事件处理 =================
+    //  导航点击事件处理 
     connect(
         navTree,
         &QTreeWidget::itemClicked,
@@ -156,7 +156,7 @@ qtmain::qtmain(UiState& stateRef, QWidget* parent)
          }
     });
 
-    // ================= 聊天输入信号转发 =================
+    //  聊天输入信号转发 
     connect(
         chat,
         &chatpanel::inputSubmitted,
@@ -174,7 +174,7 @@ qtmain::qtmain(UiState& stateRef, QWidget* parent)
         emit personaMirrorEdited(key, content);
     });
 
-    // ================= Live2D 承载窗口初始化 =================
+    //  Live2D 承载窗口初始化 
     ui.rightpanel->setAttribute(Qt::WA_NativeWindow);
     ui.rightpanel->setAttribute(Qt::WA_DontCreateNativeAncestors);
     this->show();
@@ -221,7 +221,7 @@ void qtmain::showError(const std::string& text)
 {
     QMessageBox::critical(
         this,
-        QString::fromUtf8("错误"),
+        QString::fromUtf8("ERO"),
         QString::fromStdString(text),
         QMessageBox::Ok
     );

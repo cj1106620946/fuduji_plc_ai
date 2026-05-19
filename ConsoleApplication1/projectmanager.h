@@ -107,7 +107,7 @@ public:
         std::string& outResult
     );
 
-    // 向系统镜像写入变量（写意图）
+    // 向系统镜像写入变量
     bool writeSignal(
         const std::string& plcAddress,
         const std::string& value,
@@ -140,22 +140,22 @@ private:
     DecisionAI& decisionAIRef;
 
 
-    // ===== 上位机运行状态镜像 =====
+    // 上位机运行状态镜像
     RunState runState;
 
-    // ===== 当前 PLC 工程镜像 =====
+    // 当前 PLC 工程镜像
     plcinfo& currentPlc;
 
-    // ===== 信号变量镜像 =====
+    // 信号变量镜像
     std::vector<signalinfo>& worksignals;
 
-    // ===== 项目状态结构 =====
+    // 项目状态结构
     ProjectState& projectstate;
 
-    // ===== AI 消息队列（由 ProjectManager 自身管理）=====
+    // AI 消息队列（由 ProjectManager 自身管理）
     std::vector<AIMessage> aiQueue;
 
-    // ===== 项目消息队列（由 ProjectManager 自身管理）=====
+    // 项目消息队列（由 ProjectManager 自身管理）
     std::vector<ProjectMessage> projectMessageQueue;
 
     // 管理层错误

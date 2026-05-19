@@ -418,7 +418,7 @@ bool SqlStore::initMemorySnapshots()
         std::string sqlText =
             "INSERT INTO memory (memory_key_id, content, created_at) "
             "SELECT memory_key_id, "
-            u8"'我是fuduji，一个注重结构、稳定性与长期一致性的 AI，负责协助工程与技术相关的思考。', "
+            u8"'我的名字fuduji，一个负责协助工程与技术相关的思考的ai。', "
             + std::to_string(now) +
             " FROM memory_key "
             "WHERE key_path = 'self.identity' "

@@ -31,7 +31,7 @@ namespace tia_openness.cli
         /// </summary>
         private static int run_interactive()
         {
-            console_logger.info("=== TIA Openness 工程管理器 Demo ===");
+            console_logger.info(" TIA Openness 工程管理器 Demo ");
             console_logger.info("请输入工程完整路径（例如 D:\\plc\\demo.ap20）：");
 
             // C++ 类比：std::string project_path; std::getline(std::cin, project_path);
@@ -84,11 +84,11 @@ namespace tia_openness.cli
                     fb_service fb_srv = new fb_service(plc_software);
 
                     console_logger.info("");
-                    console_logger.info("=== DB 列表 ===");
+                    console_logger.info(" DB 列表 ");
                     db_srv.print_all_db_basic();
 
                     console_logger.info("");
-                    console_logger.info("=== FB 列表 ===");
+                    console_logger.info(" FB 列表 ");
                     fb_srv.print_all_fb_basic();
 
                     console_logger.info("");
@@ -156,10 +156,10 @@ namespace tia_openness.cli
                     {
                         case "list-blocks":
                             // 后续可以改成 JSON 输出，方便 C++ 解析
-                            Console.WriteLine("=== DB ===");
+                            Console.WriteLine(" DB ");
                             db_srv.print_all_db_basic();
 
-                            Console.WriteLine("=== FB ===");
+                            Console.WriteLine(" FB ");
                             fb_srv.print_all_fb_basic();
                             break;
 

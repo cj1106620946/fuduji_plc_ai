@@ -21,6 +21,7 @@ void AIController::buildWorkspacePrompt()
         u8"你是工业控制系统的【上位机工作区生成 AI】。\n"
         u8"根据用户的自然语言，生成用于创建 PLC 上位机的配置 JSON。\n"
         u8"用户可能一次只提供部分信息，你需要根据已有信息生成完整配置。\n"
+        u8"只有名词和ip地址是必须的，如果没有rack和slot可以默认0和1，如果没有description可以根据上下文合理补全。\n"
         u8"如果信息不足，请在 error 字段说明缺少哪些信息，success 设为 false。\n"
         u8"\n"
         u8"重要：只输出纯 JSON 格式，不要包含 ```json 标记、注释或任何其他文本。\n"
@@ -160,10 +161,14 @@ void AIController::buildJudgmentPrompt()
         u8"如果不能百分之百确定是 1，必须输出 0。\n"
         u8"禁止输出除数字外的任何内容。\n";
 }
+/*
 // 构建 聊天 Prompt
 void AIController::buildResponsePrompt()
 {
     response_prompt =
+        u8"规则："
+
+        u8"请严格按照上述格式输出 JSON。"
         u8"你的回复必须以 JSON 形式输出，不得包含任何 JSON 以外的文本。\n"
         u8"\n"
         u8"JSON 格式固定如下，字段名与类型不可更改：\n"
@@ -172,28 +177,46 @@ void AIController::buildResponsePrompt()
         u8"字段说明：\n"
         u8"- ainame : 名字，如果没有设计则回复复读机。\n"
         u8"- text   : 实际回复给用户的内容。\n"
+        u8"- control:输出0\n"
+        u8"- emotion : 当前语气倾向，可选值：\n"
+        u8"  \"happy\" | \"neutral\" | \"sad\" | \"thinking\"。\n"
+        u8"- priority:输出0\n"
+        u8"\n";
+}*/
+// 构建 聊天 Prompt
+void AIController::buildResponsePrompt()
+{
+    response_prompt =
+        u8"你的回复必须以 JSON 形式输出，不得包含任何 JSON 以外的文本。\n"
+        u8"规则："
+        u8"你不负责参与执行，你连接着其他的AI，他们负责执行。\n"
+        u8"你只需要回复用户已经告诉其他ai即可。"
+        u8"此外你还会接收到其他AI的反馈信息，你需要将这些信息合理地融入到你的回复中，告诉用户。\n"
+        u8"你可以与用户进行正常的对话，但任务内容需要传输给其他AI完成，主要是执行plc操作与查询，配置创建，分析判断等等。\n"
+        u8"你必须严格输出一下JSON 格式，固定如下，字段名与类型不可更改\n"
+        u8"{\"ainame\":\"名字\",\"text\":\"回复内容\",\"control\":数字,\"emotion\":\"情感\",\"priority\":数字}\n"
+        u8"字段说明：\n"
+        u8"- ainame : 名字，如果没有设计则回复fuduji。\n"
+        u8"- text   : 实际回复给用户的内容。\n"
         u8"- control:\n"
         u8"  0 = 仅对话或说明；\n"
         u8"  1 = 需要执行系统或 PLC 操作；\n"
         u8"  2 = 创建项目类容\n"
         u8"  3 = 创建变量\n"
+        //u8"4=分析判断项目或者需要了解项目内容\n"
         u8"- emotion : 当前语气倾向，可选值：\n"
         u8"  \"happy\" | \"neutral\" | \"sad\" | \"thinking\"。\n"
         u8"- priority:\n"
         u8"  0 = 普通信息；\n"
         u8"  1 = 需要注意；\n"
         u8"  2 = 紧急。\n"
-        u8"\n"
-        u8"规则："
-		u8"你不负责参与执行，你连接着其他的AI，他们负责执行。\n"
-        u8"你只需要回复用户已经告诉其他ai即可。"
-		u8"此外你还会接收到其他AI的反馈信息，你需要将这些信息合理地融入到你的回复中，告诉用户。\n"
-        u8"请严格按照上述格式输出 JSON。";
+        u8"\n";
 }
+
 // 构建 记忆 AI Prompt
 void AIController::buildMemoryaiPrompt()
 {
-    // ===== 记忆读取判断 AI（只判断是否命中记忆）=====
+    //  记忆读取判断 AI（只判断是否命中记忆）
     memoryjudge_prompt =
         u8"你是系统中的【记忆读取判断 AI】。\n"
         u8"你的任务只有一个：\n"
@@ -208,10 +231,11 @@ void AIController::buildMemoryaiPrompt()
         u8"\n"
         u8"禁止输出除 HIT 或 MISS 以外的任何内容。\n";
 
-    // ===== 记忆写入 AI（生成可存储的记忆文本）=====
+    //  记忆写入 AI（生成可存储的记忆文本）
     memorywrite49_prompt =
         u8"你是系统中的【长期记忆整理 AI】。\n"
         u8"你的任务是将多个零散的短期记忆整理为稳定的长期认知。\n"
+        u8"你只允许输出下述的JSON格式不允许输出其他文本。\n"
         u8" user.summary	用户近期主要对话内容与活动方向的长期总结\n"
         u8" user.preference	用户在交流方式、语言习惯与协作规则上的长期偏好\n"
         u8" user.addressing	用户与 AI 之间的称呼方式与关系称谓约定\n"
@@ -230,6 +254,7 @@ void AIController::buildMemoryaiPrompt()
     memorywrite13_prompt =
         u8"你是系统中的【长期记忆整理 AI】。\n"
         u8"你的任务是将多个零散的短期记忆整理为稳定的长期认知。\n"
+        u8"你只允许输出下述的JSON格式不允许输出其他文本。\n"
         u8" self.identity	AI 对自身本质、世界观与存在方式的长期认知\n"
         u8" self.emotion	AI 的情感基调、情绪表达与共情倾向\n"
         u8" self.attitude	AI 面对问题、不确定性、规则与边界的处事方式\n"
@@ -264,7 +289,7 @@ std::string AIController::decisionprompt_get()
 }
 std::string AIController::judgmentprompt_get()
 {
-	return Judgment_prompt;
+    return Judgment_prompt;
 }
 std::string AIController::chatexecuteprompt_get()
 {
@@ -363,24 +388,16 @@ std::string AIController::callAI(
     const std::string& prompt
 )
 {
-        return ai.askChat(
-            readHistory,
-            pd,
-            memkey,
-            user_text,
-            prompt
-        );
+    return ai.askChat(
+        readHistory,
+        pd,
+        memkey,
+        user_text,
+        prompt
+    );
 
 }
 AIClient& AIController::getClient()
 {
     return ai;
 }
-
-
-
-
-
-
-
-

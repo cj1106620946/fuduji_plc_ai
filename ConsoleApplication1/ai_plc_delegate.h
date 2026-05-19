@@ -19,6 +19,7 @@
 #include "aiclient.h"
 #include "aicontroller.h"
 #include "aitrace.h" 
+#include"speechagent.h"
 enum class UiMessageType
 {
     Text = 0,      // 文本输
@@ -106,7 +107,7 @@ struct UiMessage
 };
 struct plcai
 {
-    // ===== 初始化状态 =====
+    //  初始化状态 
     bool qtinit = false;
     bool sqlinit = false;
     bool aiinit = false;
@@ -115,26 +116,27 @@ struct plcai
 
     bool ioThreadRunning = false;
     bool ioThreadStopping = false;
-
-    // ===== 上位机周期刷新控制 =====
+    bool sttThreadRunning = true;
+    bool sttThreadStopping = false;
+    //  上位机周期刷新控制 
     bool allowUpperRefresh = 0;   // 是否允许上位机周期刷新
 
     UiState ui;
 
-    // ===== 人格生命周期=====
+    //  人格生命周期
     PersonaState personaState;
 
-    // ===== project生命周期 =====
+    //  project生命周期 
     ProjectState projectState;
 };
 struct PlcAiMirror
 {
 
-    // ===== PLC 当前镜像 =====
+    //  PLC 当前镜像 
     plcinfo currentPlc;
-    // ===== 信号镜像 =====
+    //  信号镜像 
     std::vector<signalinfo> worksignals;
-    // ===== 人格长期记忆镜像 =====
+    //  人格长期记忆镜像 
     CurrentMemoryState memoryState;
 };
 struct RuntimeEnvironment
@@ -145,24 +147,23 @@ struct RuntimeEnvironment
     JsonStateWriter live2dWriter;
     AICallDesc defaultCallDesc;
 
-    RuntimeEnvironment()
-        : live2dWriter("live2dstate.json")
+    RuntimeEnvironment(): live2dWriter("live2dstate.json")
     {
         // 初始化默认AI调用参数
-        defaultCallDesc.useCloud = 1;
-        defaultCallDesc.provider = AIProvider::Ollama;
-        defaultCallDesc.apiKey = "0";
-        defaultCallDesc.modelName.clear();
-        defaultCallDesc.timeoutSec = 60;
-        defaultCallDesc.temperature = 0.7;
-        defaultCallDesc.maxTokens = 2048;
+        defaultCallDesc.useCloud = 1;//是否开启云端
+        defaultCallDesc.provider = AIProvider::DeepSeek;//调用模型类型
+        defaultCallDesc.apiKey = "sk-0bb82704d18f4f32a0ea37ce7664b9f4";//key
+        defaultCallDesc.modelName.clear();//本地模型名字，默认qwen2.5:7b-instruct-q4_K_M
+        defaultCallDesc.timeoutSec = 60;//反应时间
+        defaultCallDesc.temperature = 0.7;//温度
+        defaultCallDesc.maxTokens = 2048;//token长度
     }
 };
 
 
 struct RuntimeModules
 {
-    // ===== AI 底层 =====
+    //  AI 底层 
     AIClient* aiClient = nullptr;          // AI 调用客户端
     AIController* aiController = nullptr;  // AI 调度控制器
     AITrace* aiTrace = nullptr;            // AI 调用追踪工具
@@ -224,10 +225,12 @@ private:
         const std::string& fromFunc,
         const std::string& reason
     );
-    // ===== 线程 =====
+    //  线程 
+    std::thread sttThread;
     std::thread upperThread;          // 上位机线程
     std::thread ioThread;             // 输入输出处理线程
     // 线程函数
     void ioThreadProc();
+    void sstThreadProc();
 
 };

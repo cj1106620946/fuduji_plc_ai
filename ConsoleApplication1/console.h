@@ -3,7 +3,7 @@
 #include <string>
 #include <windows.h>
 
-// ===== 已包含的具体头文件 =====
+//  已包含的具体头文件 
 #include "plcclient.h"
 #include "aiclient.h"
 #include "aitrace.h"

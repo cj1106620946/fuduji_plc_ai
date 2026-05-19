@@ -204,7 +204,6 @@ bool ProjectManager::aiinit()
     lastError.clear();
     return true;
 }
-
 // 停止项目：协调停止各线程与上位机，并清理运行标志
 void ProjectManager::stop()
 {
@@ -238,7 +237,6 @@ void ProjectManager::stop()
     projectstate.stringThreadStopping = false;
     projectstate.stopping = false;
 }
-
 // 加载镜像：只从数据库读取配置到镜像，不改变运行状态
 bool ProjectManager::loadProjectMirror()
 {
@@ -272,7 +270,6 @@ bool ProjectManager::isReady() const
 {
     return true;
 }
-
 // 推送 AI 消息：将用户输入封装为 AIMessage 并追加到队列（要求 AI 通道已初始化）
 bool ProjectManager::pushAIMessage(const std::string& text, int source, int type)
 {
@@ -299,7 +296,6 @@ void ProjectManager::pushProjectMessage(
 
     projectMessageQueue.push_back(msg);
 }
-
 // 弹出项目消息：从队列取出最先入队的一条消息并返回
 bool ProjectManager::popProjectMessage(ProjectMessage& outMsg)
 {
@@ -775,7 +771,6 @@ void ProjectManager::aiThreadProc()
     projectstate.stringThreadStopping = false;
     projectstate.aiBusy = false;
 }
-
 // 启动项目运行线程（如果尚未启动并且项目已初始化）
 void ProjectManager::createRunThread()
 {
@@ -884,7 +879,6 @@ void ProjectManager::destroyAIThread()
     aiThread.join();
     projectstate.stringThreadRunning = 0;
 }
-
 // 通过上位机接口删除指定 ID 的信号，要求上位机已初始化
 bool ProjectManager::removeSignalById(int signalId)
 {

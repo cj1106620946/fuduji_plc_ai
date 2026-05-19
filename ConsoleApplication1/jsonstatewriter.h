@@ -11,7 +11,6 @@ public:
 
     // 初始化：若文件不存在则创建默认 json
     void init();
-
     // 写入状态：直接覆盖文件
     bool write(const std::string& text,
         const std::string& emotion,

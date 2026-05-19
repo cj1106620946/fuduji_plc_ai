@@ -72,9 +72,6 @@
     <ClCompile Include="aiclient.cpp">
       <Filter>ai类</Filter>
     </ClCompile>
-    <ClCompile Include="aicontroller.cpp">
-      <Filter>ai类</Filter>
-    </ClCompile>
     <ClCompile Include="aimanager.cpp">
       <Filter>ai类</Filter>
     </ClCompile>
@@ -128,6 +125,9 @@
     </ClCompile>
     <ClCompile Include="projectpanel.cpp">
       <Filter>QTUI</Filter>
+    </ClCompile>
+    <ClCompile Include="aicontroller.cpp">
+      <Filter>ai类</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
