@@ -389,7 +389,6 @@ bool ai_plc_delegate::initpersona()
     }
 
     logError("initpersona", "人格AI初始化完成");
-    // ===== 初始化完成后刷新人格镜像到UI =====
     if (env.ui)
     {
         std::vector<std::string> rows = parsePersonaMirror();
@@ -477,13 +476,12 @@ bool ai_plc_delegate::initproject()
         return false;
     }
 
-    // ===== 启动三个核心线程 =====
     managers.project->createRunThread();
     managers.project->createUpperThread();
     managers.project->createAIThread();
 
-    // ===== 调试输出 =====
-    qDebug() << "===== 初始化后镜像内容 =====";
+
+    qDebug() << " 初始化后镜像内容 ";
     qDebug() << "currentPlc.taskDesc:" << QString::fromStdString(mirror.currentPlc.taskDesc);
     qDebug() << "currentPlc.ipAddress:" << QString::fromStdString(mirror.currentPlc.ipAddress);
     qDebug() << "currentPlc.rack:" << mirror.currentPlc.rack;
@@ -503,6 +501,13 @@ bool ai_plc_delegate::initproject()
         std::vector<std::string> rows = parseProjectMirror();
         env.ui->updatePersonaMirror(rows, 2);
     }
+
+    if (!pclailife.sttThreadRunning)
+    {
+        pclailife.sttThreadStopping = false;
+        ioThread = std::thread(&ai_plc_delegate::sstThreadProc, this);
+    }
+
     pclailife.projectState.projectInited = true;
     pclailife.projectinit = true;
     logError("initproject", "Project 初始化完成");
