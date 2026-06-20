@@ -1,13 +1,13 @@
 #include "jsonstatewriter.h"
 #include <fstream>
 
-// ¹¹Ôìº¯Êı
+// æ„é€ å‡½æ•°
 JsonStateWriter::JsonStateWriter(const std::string& path)
     : filepath(path)
 {
 }
 
-// ³õÊ¼»¯£ºÈ·±£ json ÎÄ¼ş´æÔÚ
+// åˆå§‹åŒ–ï¼šç¡®ä¿ json æ–‡ä»¶å­˜åœ¨
 void JsonStateWriter::init()
 {
     std::ifstream in(filepath.c_str(), std::ios::binary);
@@ -25,6 +25,8 @@ void JsonStateWriter::init()
 
     out << "{\n";
     out << "  \"dirty\": false,\n";
+    out << "  \"renderRunning\": true,\n";
+    out << "  \"destroy\": false,\n";
     out << "  \"text\": \"\",\n";
     out << "  \"emotion\": \"neutral\",\n";
     out << "  \"priority\": 0\n";
@@ -46,6 +48,8 @@ bool JsonStateWriter::write(
 
     out << "{\n";
     out << "  \"dirty\": true,\n";
+    out << "  \"renderRunning\": true,\n";
+    out << "  \"destroy\": false,\n";
     out << "  \"text\": \"" << text << "\",\n";
     out << "  \"emotion\": \"" << emotion << "\",\n";
     out << "  \"priority\": " << priority << "\n";

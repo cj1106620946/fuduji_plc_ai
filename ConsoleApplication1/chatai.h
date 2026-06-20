@@ -1,42 +1,44 @@
 #pragma once
 
 #include <string>
-
 class AIController;
 class AITrace;
+
 class ChatAI
 {
 private:
     struct ChatResult
     {
-        std::string ainame;
-        std::string text;
-        int control = 0;
-        std::string emotion;
-        int priority = 0;
+        std::string ainame;   // AI åç§°
+        std::string text;     // å›å¤æ–‡æœ¬
+        int control = 0;      // æ§åˆ¶æ ‡å¿—
+        std::string emotion;  // æƒ…ç»ªçŠ¶æ€
+        int priority = 0;     // ä¼˜å…ˆçº§
     };
 
 public:
-    ChatAI(int aicode,AIController& aiRef, AITrace& traceRef);
-    // ¶Ô»°Î¨Ò»Èë¿Ú
-    std::string runOnce(const std::string& user_input);
+    // æ„é€ 
+    ChatAI(int aicode, AIController& aiRef, AITrace& traceRef);
 
+    std::string runOnce(const std::string& user_input);
+    std::string runOnce(
+        const std::string& user_input,
+        const std::string& personaText
+    );
+    std::string getShortHistory();
+    void clearShortHistory();
 
     std::string getAiName();
     std::string getText();
     int getControl();
     int getPriority();
     std::string getEmotion();
-    std::string runExecuteRead(const std::string& user_input);
-    std::string runExecuteOnce(const std::string& user_input);
+private:
+    // JSON è§£æ
     bool parseChatJson(const std::string& jsonText);
-private:
 
-    // µ÷ÓÃ¶Ô»° AI£¨Ö»×ß chatTalk prompt£©
-    std::string callChatAI(const std::string& user_input);
-    std::string callChatExecuteAI(const std::string& user_input);
 private:
-    struct ChatResult r;
+    ChatResult r;
     int aicode;
     AIController& ai;
     AITrace& trace;

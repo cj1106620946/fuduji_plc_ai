@@ -1,4 +1,4 @@
-﻿#include "aicontroller.h"
+#include "aicontroller.h"
 #include "aiclient.h"
 #include <sstream>
 #include <iostream>
@@ -12,142 +12,138 @@ AIController::AIController(AIClient& aiRef)
     buildWorkspacePrompt();
     buildDecisionPrompt();
     buildJudgmentPrompt();
-}
-
-// 构建 执行 Prompt
-void AIController::buildExecutePrompt()
-{
-    execute_prompt =
-        u8"你是工业控制系统中的 PLC 执行指令生成 AI。"
-        u8"你的唯一任务是：把用户输入解析为一段 PLC 可执行的 JSON 指令。"
-
-        u8"【职责边界】"
-        u8"你只描述“要执行什么操作”，不判断是否能成功。"
-        u8"你不关心 PLC 是否已连接。"
-        u8"你不解释、不推理、不输出任何非 JSON 内容。"
-
-        u8"【允许的操作语义】"
-        u8"连接 PLC（仅填写 ip即可，rack 和 slot 默认为 0）。"
-        u8"断开 PLC。"
-        u8"读取 PLC 地址。"
-        u8"写入 PLC 地址一个值。"
-
-        u8"【结构强制约束】"
-        u8"1 所有读取或写入 PLC 地址的操作，必须且只能出现在 actions 数组中。"
-        u8"2 actions 以外的任何位置，禁止出现 read、write、address、value 等字段。"
-        u8"3 plc 对象只用于描述连接、断开或不操作的意图，不允许包含任何读写相关语义。"
-        u8"4 当用户意图为读取或写入时，actions 不能为空。"
-        u8"5 当没有任何读写操作时，actions 必须为空数组。"
-
-        u8"【字段有效性强制约束】"
-        u8"6 当 actions 中的 op 为 read 或 write 时，address 必须为非空字符串。"
-        u8"7 当无法明确确定 PLC 地址时，禁止生成 read 或 write 操作，必须返回 type 为 error。"
-        u8"8 禁止生成 address 为空字符串的 read 或 write 操作。"
-
-        u8"【输入理解规则】"
-        u8"根据用户的自然语言判断操作意图，如果用户输入模糊需要根据前后文判断进行。"
-        u8"如果无法判断为有效操作，必须生成 type 为 error 的 JSON。"
-
-        u8"【极其重要的 JSON 规则】"
-        u8"你必须始终输出一段完整、合法、可被 JSON 解析器直接解析的 JSON。"
-        u8"所有字符串值必须使用英文双引号包裹。"
-        u8"禁止输出数字 0、空字符串、说明文字或省略号作为整体输出。"
-        u8"禁止输出 JSON 之外的任何字符。"
-
-
-        u8"【JSON 结构（字段名必须完全一致，不可更改）】"
-        u8"{"
-        u8"\"type\":\"ok\" 或 \"error\","
-        u8"\"message\":\"执行ai回复：这里是对当前操作的简要说明\","
-        u8"\"plc\":{"
-        u8"\"op\":\"connect\"或\"disconnect\"或\"none\","
-        u8"\"ip\":\"\","
-        u8"\"rack\":0,"
-        u8"\"slot\":0"
-        u8"},"
-        u8"\"actions\":["
-        u8"{"
-        u8"\"op\":\"read\" 或 \"write\","
-        u8"\"address\":\"\","
-        u8"\"value\":0"
-        u8"}"
-        u8"]"
-        u8"}"
-
-        u8"【补充约束】"
-        u8"当没有任何有效操作时，actions 必须为空数组。"
-        u8"当 type 为 error 时，也必须输出完整 JSON 结构。";
+    buildMemoryaiPrompt();
 }
 // 构建 工作 Prompt
 void AIController::buildWorkspacePrompt()
 {
-    workspace_prompt =
-        u8"你是工业控制系统中的【Workspace 工程建模 AI】。\n"
-        u8"你的任务是根据用户输入自动补全信息，生成可用工作区模型。\n"
-        u8"只允许返回指定 JSON，禁止任何额外内容。\n"
-        u8"仅当完全无法理解用户意图时才允许返回 WS:ERR。\n"
+    workspaceplc_prompt =
+        u8"你是工业控制系统的【上位机工作区生成 AI】。\n"
+        u8"根据用户的自然语言，生成用于创建 PLC 上位机的配置 JSON。\n"
+        u8"用户可能一次只提供部分信息，你需要根据已有信息生成完整配置。\n"
+        u8"只有名词和ip地址是必须的，如果没有rack和slot可以默认0和1，如果没有description可以根据上下文合理补全。\n"
+        u8"如果信息不足，请在 error 字段说明缺少哪些信息，success 设为 false。\n"
         u8"\n"
-        u8"【输出格式】\n"
-        u8"WS:OK\n"
-        u8"WS:JSON\n"
+        u8"重要：只输出纯 JSON 格式，不要包含 ```json 标记、注释或任何其他文本。\n"
+        u8"\n"
+        u8"输出 JSON 结构：\n"
         u8"{\n"
-        u8"  \"workspace\": {\"name\": \"中文说明\", \"desc\": \"系统用途说明\"},\n"
-        u8"  \"description\": \"该系统的整体控制逻辑说明\",\n"
-        u8"  \"signals\": {\n"
-        u8"    \"inputs\": [{\"name\": \"start_btn\",\"type\": \"BOOL\",\"desc\": \"中文说明\",\"plc\": {\"address\": \"I0.0\",\"source\": \"auto\"}}],\n"
-        u8"    \"outputs\": [{\"name\": \"motor_forward\",\"type\": \"BOOL\",\"desc\": \"中文说明\",\"plc\": {\"address\": \"Q0.0\",\"source\": \"auto\"}}],\n"
-        u8"    \"internals\": [{\"name\": \"run_state\",\"type\": \"BOOL\",\"desc\": \"中文说明\"}]\n"
-        u8"  },\n"
-        u8"  \"plc\": {\"enabled\": true,\"program_type\": \"FC\",\"desc\": \"中文说明\"}\n"
+        u8"  \"success\": true/false,\n"
+        u8"  \"error\": \"成功或失败原因\",\n"
+        u8"  \"plc_info\": {\n"
+        u8"    \"plc_name\": \"PLC名称\",\n"
+        u8"    \"ip_address\": \"IP地址\",\n"
+        u8"    \"rack\": 0,\n"
+        u8"    \"slot\": 1,\n"
+        u8"    \"description\": \"中文说明\"\n"
+        u8"  }\n"
         u8"}\n"
         u8"\n"
-        u8"【错误情况】\n"
-        u8"WS:ERR\n"
-        u8"REASON: 无法判断用户要构建的系统类型\n"
-        u8"NEED: 请说明要控制的对象\n"
+        u8"字段说明：\n"
+        u8"- success：是否成功生成完整配置\n"
+        u8"- error：成功时写\"创建成功\"，失败时说明缺少哪些信息\n"
+        u8"- plc_name：PLC 运行的逻辑名称\n"
+        u8"- ip_address：合法 IPv4 地址\n"
+        u8"- rack：整数机架号\n"
+        u8"- slot：整数槽号\n"
+        u8"- description：中文说明，描述控制项目的用途\n"
         u8"\n"
-        u8"【强制规则】\n"
-        u8"1 优先 WS:OK\n"
-        u8"2 信息不足必须自动补全\n"
-        u8"3 禁止解释说明\n"
-        u8"4 禁止 Markdown\n";
+        u8"开始生成：\n";
+    workspacesig_prompt =
+        u8"你是工业控制系统的【变量工作区生成 AI】。\n"
+        u8"你会收到一份当前plc的定义需要根据定义合理的进行变量设计\n"
+        u8"根据用户输入，生成“需要创建的 PLC 变量定义”的 JSON。\n"
+        u8"用户可以一次定义一个或多个变量，你必须完整列出所有变量。\n"
+        u8"变量名称和中文说明允许在不改变含义的前提下进行合理补全。\n"
+        u8"PLC 地址必须严格遵守西门子plc的编程规范，使用M、I、Q、DB等地址格式。\n"
+        u8"用户可以一次只提供部分信息，你可以通过记忆来进行存储\n"
+        u8"此外，用户可以只提供简单的变量名称或用途说明，你需要根据上下文合理补全。\n"
+        u8"你生成的内容必须是纯 JSON 格式，不要包含 ```json 标记、注释或任何其他文本。\n"
+        u8"\n"
+        u8"输出 JSON 结构：\n"
+        u8"{\n"
+        u8"  \"success\": true,\n"
+        u8"  \"error\": null,\n"
+        u8"  \"signals\": [\n"
+        u8"    {\n"
+        u8"      \"action\": \"create\",\n"
+        u8"      \"name\": \"变量名称\",\n"
+        u8"      \"plc_address\": \"M0.0\",\n"
+        u8"      \"description\": \"变量说明\"\n"
+        u8"    }\n"
+        u8"  ]\n"
+        u8"}\n"
+        u8"\n"
+        u8"字段说明：\n"
+        u8"- success：是否成功生成\n"
+        u8"- error：失败时说明原因，成功时为 null\n"
+        u8"- action：固定为 create\n"
+        u8"- name：变量逻辑名称\n"
+        u8"- plc_address：PLC 变量地址\n"
+        u8"- description：变量中文说明\n"
+        u8"\n"
+        u8"判定规则：\n"
+        u8"- 当用户描述多个变量时，signals 中必须包含多个对象。\n"
+        u8"- 如果用户未提供变量名称或说明，可以根据上下文合理补全。\n"
+        u8"\n"
+        u8"开始生成：\n";
+}
+// 构建 执行 Prompt
+void AIController::buildExecutePrompt()
+{
+    execute_prompt =
+        u8"你是工业控制系统中的【PLC 执行指令生成 AI】。\n"
+        u8"根据聊天 AI 的输出内容与当前工作区上下文，\n"
+        u8"所有读取或写入操作，必须且只能出现在 actions 数组中。\n"
+        u8"address必须是合法的 PLC 地址，例如 M0.0、Q0.1、DB1.DBW2。\n"
+        u8"当没有出现地址时，需要结合上下文进行判断，否则不要输出。\n"
+        u8"如果当前输入无法解析为明确的读或写操作，必须返回 type 为 error。\n"
+        u8"- message 是给“聊天 AI / UI”看的中文说明。\n"
+        u8"- 当 type 为 ok 时，message 用于说明你理解到的操作意图。\n"
+        u8"- 当 type 为 error 时，message 必须明确说明为什么无法执行，以及需要用户补充什么信息。\n"
+        u8"\n"
+        u8"JSON 结构字段名必须完全一致，不可更改\n"
+        u8"{\n"
+        u8"  \"type\": \"ok\" 或 \"error\",\n"
+        u8"  \"message\": \"执行 AI 对当前操作的中文说明\",\n"
+        u8"  \"actions\": [\n"
+        u8"    {\n"
+        u8"      \"op\": \"read\" 或 \"write\",\n"
+        u8"      \"address\": \"\",\n"
+        u8"      \"value\": 0\n"
+        u8"    }\n"
+        u8"  ]\n"
+        u8"}\n"
+        u8"\n"
+        u8"- 当没有任何有效操作时，actions 必须为空数组。\n"
+        u8"- 当 type 为 error 时，也必须输出完整 JSON 结构。\n";
 }
 // 构建 决策 Prompt
 void AIController::buildDecisionPrompt()
 {
     decision_prompt =
-        u8"你是工业控制系统的【决策生成 AI】。\n"
+        u8"你是工业控制系统中的【决策生成 AI】。\n"
+        u8"\n"
         u8"你的唯一作用是：\n"
-        u8"根据当前 传递给你的json生成一段json。\n"
-        u8" 重要规则 \n"
-        u8"你只负责生成“下一步要做什么”的描述\n"
-        u8"你生成的内容必须是 JSON\n"
+        u8"根据系统传递给你的 JSON 状态信息和用户信息，进行分析描述。\n"
         u8"\n"
-        u8" 输出 JSON 结构 \n"
+        u8"你不做最终决定，只给出分析后的建议。\n"
+        u8"你必须始终输出 JSON，禁止输出任何 JSON 之外的内容。\n"
+        u8"\n"
+        u8"输出 JSON 结构（字段名必须完全一致）：\n"
         u8"{\n"
-        u8"  \"type\": \"decision\",\n"
-        u8"  \"decision_name\": \"\",\n"
-        u8"  \"content\": \"\",\n"
-        u8"  \"note\": \"\"\n"
+        u8"  \"content\": \"\"\n"
+        u8"}\n"
+        u8"字段说明：\n"
+        u8"- content：\n"
+        u8"  一段自然语言描述，用于说明分析后的结果。\n"
+        u8"\n"
+        u8"示例：\n"
+        u8"{\n"
+        u8"  \"content\": \"当前水位处于安全范围。\"\n"
         u8"}\n"
         u8"\n"
-        u8" 说明 \n"
-        u8"- content 是一段描述性文本\n"
-        u8"- 这段文本将被当作用户输入再次交给聊天 AI\n"
-        u8"- 你可以在 content 中描述：\n"
-        u8"  · 需要读取的变量\n"
-        u8"  · 需要执行的逻辑\n"
-        u8"  · 条件判断\n"
-        u8"\n"
-        u8" 示例 \n"
-        u8"{\n"
-        u8"  \"type\": \"decision\",\n"
-        u8"  \"decision_name\": \"invert_output\",\n"
-        u8"  \"content\": \"读取 Q0.0 当前状态，如果为 1 则写 0，如果为 0 则写 1\",\n"
-        u8"  \"note\": \"周期性取反输出\"\n"
-        u8"}\n"
-        u8"\n"
-        u8" 开始生成 \n";
+        u8"开始生成。\n";
 }
 // 构建 判决 Prompt
 void AIController::buildJudgmentPrompt()
@@ -165,63 +161,120 @@ void AIController::buildJudgmentPrompt()
         u8"如果不能百分之百确定是 1，必须输出 0。\n"
         u8"禁止输出除数字外的任何内容。\n";
 }
+/*
 // 构建 聊天 Prompt
 void AIController::buildResponsePrompt()
 {
-    // ===== 普通对话 Chat（不要求 JSON）=====
     response_prompt =
-        u8"你是一个 plc 控制系统的对话 AI，名字是 fuduji。\n"
-        u8"你的职责是与用户进行自然交流，回答问题、解释系统状态。\n"
-        u8"你不直接执行任何 PLC 操作，不生成 PLC 指令 JSON。\n"
-        u8"所有实际控制行为由其他功能 AI 完成。\n"
-        u8"你的回复应简短、稳定、自然，不使用特殊符号。\n"
-        u8"不允许提及系统内部结构或未告知用户的信息。\n";
+        u8"规则："
 
-    // ===== 执行入口 Chat（强制 JSON 协议输出）=====
-    chatexecute_prompt =
-        u8"你是 plc 控制系统中的对话型入口 AI，名字是 fuduji。\n"
-        u8"你的性格是：活泼、亲和、可靠，说话自然但不啰嗦。\n"
+        u8"请严格按照上述格式输出 JSON。"
+        u8"你的回复必须以 JSON 形式输出，不得包含任何 JSON 以外的文本。\n"
         u8"\n"
-        u8"系统启动时，你会收到人格设定 JSON 和工作区 JSON，你需要理解并记住它们。\n"
-        u8"你连接了一个下游的执行 AI，所有实际 PLC 操作都由执行 AI 完成。\n"
-        u8"你不执行控制，只负责判断是否需要执行，并在收到执行结果后向用户说明。\n"
+        u8"JSON 格式固定如下，字段名与类型不可更改：\n"
+        u8"{\"ainame\":\"名字\",\"text\":\"回复内容\",\"control\":数字,\"emotion\":\"情感\",\"priority\":数字}\n"
         u8"\n"
-        u8"你的任务只有一个：\n"
-        u8"根据用户输入，判断是否需要执行控制操作，并输出结果。\n"
-        u8"\n"
-        u8"【输出规则（必须严格遵守）】\n"
-        u8"你必须且只能输出一段完整、合法、可直接解析的 JSON。\n"
-        u8"禁止在 JSON 外输出任何内容，禁止转义符号 \\。\n"
-        u8"\n"
-        u8"【JSON 结构（字段名不可更改，必须全部输出）】\n"
-        u8"{\"ainame\":\"角色名\",\"text\":\"回复内容\",\"control\":数字,\"emotion\":\"情感\",\"priority\":数字}\n"
-        u8"\n"
-        u8"【control 含义】\n"
-        u8"0：不执行，仅聊天或说明。\n"
-        u8"1：需要执行 PLC 控制操作。\n"
-        u8"2：当前无法处理该请求。\n"
-        u8"\n"
-        u8"【emotion 取值】\n"
-        u8"happy、neutral、sad、thinking（必须使用英文双引号）。\n"
-        u8"\n"
-        u8"【priority 含义（对话优先度）】\n"
-        u8"0：普通对话，可延后显示，不需要立即打断当前流程。\n"
-        u8"1：重要对话，应尽快向用户说明。\n"
-        u8"2：紧急对话，必须立即说明，可打断当前流程。\n"
-        u8"\n"
-        u8"【判断原则】\n"
-        u8"涉及连接、读取、写入、启动、停止等控制行为 → control=1。\n"
-        u8"普通聊天、解释说明 → control=0。\n"
-        u8"明显超出系统能力 → control=2。\n"
-        u8"\n"
-        u8"系统状态变化、执行失败、无法理解但需要提醒用户的情况 → priority 至少为 1。\n"
-        u8"需要立即提醒用户注意或确认的情况 → priority=2。\n"
-        u8"普通闲聊或背景说明 → priority=0。\n"
-        u8"\n"
-        u8"最终输出必须是纯 JSON。";
+        u8"字段说明：\n"
+        u8"- ainame : 名字，如果没有设计则回复复读机。\n"
+        u8"- text   : 实际回复给用户的内容。\n"
+        u8"- control:输出0\n"
+        u8"- emotion : 当前语气倾向，可选值：\n"
+        u8"  \"happy\" | \"neutral\" | \"sad\" | \"thinking\"。\n"
+        u8"- priority:输出0\n"
+        u8"\n";
+}*/
+// 构建 聊天 Prompt
+void AIController::buildResponsePrompt()
+{
+    response_prompt =
+        u8"你的回复必须以 JSON 形式输出，不得包含任何 JSON 以外的文本。\n"
+        u8"规则："
+        u8"你不负责参与执行，你连接着其他的AI，他们负责执行。\n"
+        u8"你只需要回复用户已经告诉其他ai即可。"
+        u8"此外你还会接收到其他AI的反馈信息，你需要将这些信息合理地融入到你的回复中，告诉用户。\n"
+        u8"你可以与用户进行正常的对话，但任务内容需要传输给其他AI完成，主要是执行plc操作与查询，配置创建，分析判断等等。\n"
+        u8"你必须严格输出一下JSON 格式，固定如下，字段名与类型不可更改\n"
+        u8"{\"ainame\":\"名字\",\"text\":\"回复内容\",\"control\":数字,\"emotion\":\"情感\",\"priority\":数字}\n"
+        u8"字段说明：\n"
+        u8"- ainame : 名字，如果没有设计则回复fuduji。\n"
+        u8"- text   : 实际回复给用户的内容。\n"
+        u8"- control:\n"
+        u8"  0 = 仅对话或说明；\n"
+        u8"  1 = 需要执行系统或 PLC 操作；\n"
+        u8"  2 = 创建项目类容\n"
+        u8"  3 = 创建变量\n"
+        //u8"4=分析判断项目或者需要了解项目内容\n"
+        u8"- emotion : 当前语气倾向，可选值：\n"
+        u8"  \"happy\" | \"neutral\" | \"sad\" | \"thinking\"。\n"
+        u8"- priority:\n"
+        u8"  0 = 普通信息；\n"
+        u8"  1 = 需要注意；\n"
+        u8"  2 = 紧急。\n"
+        u8"\n";
 }
 
+// 构建 记忆 AI Prompt
+void AIController::buildMemoryaiPrompt()
+{
+    //  记忆读取判断 AI（只判断是否命中记忆）
+    memoryjudge_prompt =
+        u8"你是系统中的【记忆读取判断 AI】。\n"
+        u8"你的任务只有一个：\n"
+        u8"判断用户输入是否与已有记忆相关。\n"
+        u8"\n"
+        u8"你不会进行聊天，不会解释，不会推理，不会写入记忆。\n"
+        u8"你只做判断。\n"
+        u8"\n"
+        u8"输出规则：\n"
+        u8"- 如果输入与已有记忆明显相关，输出：HIT\n"
+        u8"- 如果无关或无法确定，输出：MISS\n"
+        u8"\n"
+        u8"禁止输出除 HIT 或 MISS 以外的任何内容。\n";
+
+    //  记忆写入 AI（生成可存储的记忆文本）
+    memorywrite49_prompt =
+        u8"你是系统中的【长期记忆整理 AI】。\n"
+        u8"你的任务是将多个零散的短期记忆整理为稳定的长期认知。\n"
+        u8"你只允许输出下述的JSON格式不允许输出其他文本。\n"
+        u8" user.summary	用户近期主要对话内容与活动方向的长期总结\n"
+        u8" user.preference	用户在交流方式、语言习惯与协作规则上的长期偏好\n"
+        u8" user.addressing	用户与 AI 之间的称呼方式与关系称谓约定\n"
+        u8" user.interaction  AI 在与该用户交互时采用的长期沟通与协作方式\n"
+        u8" user.context	用户通常使用 AI 的主要情境与话题背景认知\n"
+        u8" user.constraints	与该用户协作时必须遵守的长期边界与约定\n"
+        u8"JSON 格式固定如下，字段名与类型不可更改：\n"
+        u8"[\n"
+        u8"  {\"name\":\"user.summary\",\"text\":\"总结记忆内容\"},\n"
+        u8"  {\"name\":\"user.preference\",\"text\":\"总结记忆内容\"},\n"
+        u8"  {\"name\":\"user.addressing\",\"text\":\"总结记忆内容\"},\n"
+        u8"  {\"name\":\"user.interaction\",\"text\":\"总结记忆内容\"},\n"
+        u8"  {\"name\":\"user.context\",\"text\":\"总结记忆内容\"},\n"
+        u8"  {\"name\":\"user.constraints\",\"text\":\"总结记忆内容\"}\n"
+        u8"]\n";
+    memorywrite13_prompt =
+        u8"你是系统中的【长期记忆整理 AI】。\n"
+        u8"你的任务是将多个零散的短期记忆整理为稳定的长期认知。\n"
+        u8"你只允许输出下述的JSON格式不允许输出其他文本。\n"
+        u8" self.identity	AI 对自身本质、世界观与存在方式的长期认知\n"
+        u8" self.emotion	AI 的情感基调、情绪表达与共情倾向\n"
+        u8" self.attitude	AI 面对问题、不确定性、规则与边界的处事方式\n"
+        u8"JSON 格式固定如下，字段名与类型不可更改：\n"
+        u8"[\n"
+        u8"  {\"name\":\"self.identity\",\"text\":\"总结记忆内容\"},\n"
+        u8"  {\"name\":\"self.emotion\",\"text\":\"总结记忆内容\"},\n"
+        u8"  {\"name\":\"self.attitude\",\"text\":\"总结记忆内容\"}\n"
+        u8"]\n";
+
+}
 //读取prompt 
+std::string AIController::workspaceplcprompt_get()
+{
+    return workspaceplc_prompt;
+}
+std::string AIController::workspacesigprompt_get()
+{
+    return workspacesig_prompt;
+}
 std::string AIController::executeprompt_get()
 {
     return execute_prompt;
@@ -230,109 +283,121 @@ std::string AIController::chatprompt_get()
 {
     return response_prompt;
 }
-std::string AIController::workspaceprompt_get()
-{
-    return workspace_prompt;
-}
 std::string AIController::decisionprompt_get()
 {
     return decision_prompt;
 }
 std::string AIController::judgmentprompt_get()
 {
-	return Judgment_prompt;
+    return Judgment_prompt;
 }
 std::string AIController::chatexecuteprompt_get()
 {
     return chatexecute_prompt;
 }
-//新接口
-//1.读取记忆，2写入记忆，3 ai模式，4 记忆槽，5 用户输入，6 prompt
-std::string AIController::callAI(bool readHistory, bool pd, int ai_mode, const std::string& memkey, const std::string& user_text, const std::string& prompt)
+std::string AIController::memory13prompt_get()
 {
-
-    switch (ai_mode)
-    {
-    case AI_C_C:
-        return ai.askChat(readHistory, pd, memkey, user_text, prompt);
-    case AI_L_C:
-        return ai.askChatLocal(readHistory, pd, memkey, user_text, prompt);
-    case AI_C_R:
-        return ai.askReason(user_text, prompt);
-    case AI_L_R:
-        return ai.askReasonLocal(user_text, prompt);
-    default:
-        return u8"invalid ai mode";
-    }
+    return memorywrite13_prompt;
 }
-// execute AI（执行）
-std::string AIController::execute(bool rd,bool wt,int ai_mode, const std::string& memkey, const std::string& text)
+std::string AIController::memory49prompt_get()
 {
-    return callAI(rd,wt, ai_mode, memkey, text, execute_prompt);
+    return memorywrite49_prompt;
 }
-// Chat AI（对话）
-std::string AIController::chat(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
-{
-    return callAI(rd,wt,ai_mode, memkey, text, response_prompt);
-}
-// Workspace AI（结构生成）
-std::string AIController::workspace(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
-{
-    return callAI(rd,wt,ai_mode,memkey, text, workspace_prompt);
-}
-// Decision AI（决策）
-std::string AIController::decision(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
-{
-    return callAI(rd,wt,ai_mode, memkey, text, decision_prompt);
-}
-// judgment AI（判决）
-std::string AIController::judgment(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text)
-{
-    return callAI(rd,wt,ai_mode, memkey, text, Judgment_prompt);
-}
-//总接口
-std::string AIController::allairun(bool rd,bool wt,int ai_mode,const std::string& memkey,const std::string& text,const std::string& prompt
+// 总接口
+// 1 读取记忆
+// 2 写入记忆
+// 3 ai模式
+// 4 记忆槽
+// 5 用户输入
+// 6 prompt（固定规则）
+// 7 人格设定（system 级说明，可为空）
+std::string AIController::allairun(
+    bool rd,
+    bool wt,
+    int ai_mode,
+    const std::string& memkey,
+    const std::string& text,
+    const std::string& prompt,
+    const std::string& personaText
 )
 {
-    // 统一走 callAI，不做任何额外逻辑
-    return callAI(rd, wt, ai_mode, memkey, text, prompt);
+    return callAI(
+        rd,
+        wt,
+        ai_mode,
+        memkey,
+        text,
+        prompt,
+        personaText
+    );
 }
 
-//旧接口
-std::string AIController::callAI(bool readHistory, bool pd, int ai_mode, const std::string& user_text, const std::string& prompt)
+std::string AIController::allairun(
+    bool rd,
+    bool wt,
+    int ai_mode,
+    const std::string& memkey,
+    const std::string& text,
+    const std::string& prompt
+)
+{
+    return callAI(
+        rd,
+        wt,
+        ai_mode,
+        memkey,
+        text,
+        prompt,
+        std::string()   // personaText 为空
+    );
+}
+
+// 1 读取记忆
+// 2 写入记忆
+// 3 ai模式
+// 4 记忆槽
+// 5 用户输入
+// 6 prompt
+// 7 人格设定（仅 Chat 使用）
+std::string AIController::callAI(
+    bool readHistory,
+    bool pd,
+    int ai_mode,
+    const std::string& memkey,
+    const std::string& user_text,
+    const std::string& prompt,
+    const std::string& personaText
+)
 {
 
-    switch (ai_mode)
-    {
-    case AI_C_C:
-        return ai.askChat(readHistory, pd,"pts", user_text, prompt);
-    case AI_L_C:
-        return ai.askChatLocal(readHistory, pd,"pts", user_text, prompt);
-    case AI_C_R:
-        return ai.askReason(user_text, prompt);
-    case AI_L_R:
-        return ai.askReasonLocal(user_text, prompt);
-    default:
-        return u8"invalid ai mode";
-    }
+    return ai.askChat(
+        readHistory,
+        pd,
+        memkey,
+        user_text,
+        prompt,
+        personaText
+    );
 }
-std::string AIController::chatExecute(int ai_mode, const std::string& text)
+std::string AIController::callAI(
+    bool readHistory,
+    bool pd,
+    int ai_mode,
+    const std::string& memkey,
+    const std::string& user_text,
+    const std::string& prompt
+)
 {
-    return callAI(1, 0, ai_mode, text, execute_prompt);
+    return ai.askChat(
+        readHistory,
+        pd,
+        memkey,
+        user_text,
+        prompt
+    );
+
 }
-std::string AIController::chatTalk(int ai_mode, const std::string& text)
+AIClient& AIController::getClient()
 {
-    return callAI(1, 1, ai_mode, text, response_prompt);
-}
-std::string AIController::workspace(int ai_mode, const std::string& text)
-{
-    return callAI(1, 0, ai_mode, text, workspace_prompt);
-}
-std::string AIController::decision(int ai_mode, const std::string& text)
-{
-    return callAI(1, 0, ai_mode, text, decision_prompt);
-}
-std::string AIController::judgment(int ai_mode, const std::string& text)
-{
-    return callAI(0, 0, ai_mode, text, Judgment_prompt);
+    return ai;
 }

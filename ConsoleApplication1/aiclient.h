@@ -1,24 +1,58 @@
 ﻿#ifndef AICLIENT_H
 #define AICLIENT_H
+
 #include <string>
 #include <vector>
+#include <map>
 #include <windows.h>
 #include <json/json.h>
 struct Message
 {
-    std::string role;     // 消息角色："system"、"user"、"assistant"
+    std::string role;     // "system" / "user" / "assistant"
     std::string content;  // 消息内容
 };
-// AI 调用统一类
+enum class AIProvider
+{
+    // 云端
+    OpenAI,        // ChatGPT / OpenAI 官方
+    DeepSeek,      // DeepSeek 官方
+    Anthropic,     // Claude（预留）
+    Google,        // Gemini（预留）
+    // 本地
+    Ollama         // 本地 Ollama（唯一正式支持）
+};
+struct AICallDesc
+{
+    // 是否使用云端
+    bool useCloud = 0;
+    // AI 服务提供方
+    AIProvider provider = AIProvider::DeepSeek;
+    //Key
+    std::string apiKey;
+    // 模型
+    std::string modelName;
+    // 请求超时时间（秒）
+    int timeoutSec = 60;
+    // 生成温度（仅 Chat 使用）
+    double temperature = 0.7;
+    // 最大生成 token 数（仅 Chat 使用）
+    int maxTokens = 2048;
+};
 class AIClient
 {
 public:
-    AIClient();
+    AIClient(AICallDesc& desc);
     ~AIClient();
-    // 设置云端 API Key
-    // 仅用于云 API 调用
-    void setAPIKey(const std::string& key);
-    // 聊天接口（Chat 专用）
+
+    // 聊天接口
+    std::string askChat(
+        bool readHistory,
+        bool pd,
+        const std::string& memkey,
+        const std::string& userMessage,
+        const std::string& systemPrompt,
+        const std::string& extraSystemText
+    );
     std::string askChat(
         bool readHistory,
         bool pd,
@@ -26,71 +60,46 @@ public:
         const std::string& userMessage,
         const std::string& systemPrompt
     );
-    //本地聊天接口
-    std::string askChatLocal(
-        bool readHistory,
-        bool pd,
-        const std::string& memkey,
-        const std::string& userMessage,
-        const std::string& systemPrompt
-    );
-    // 推理 / 判断接口（R 接口）
-    std::string askReason(
-        const std::string& taskPrompt,
-        const std::string& systemPrompt
-    );
-    // 本地推理接口
-    std::string askReasonLocal(
-        const std::string& taskPrompt,
-        const std::string& systemPrompt
-    );
-    // 打印当前聊天历史
+    // 打印
     void showHistory(const std::string& memkey);
-    // 清空聊天历史
+    // 清空
     void clearHistory(const std::string& memkey);
-
+    // 获取历史文本
+    std::string getHistory(const std::string& memkey);
 private:
-    // 云 API Key
-    std::string apiKey;
-   // 新增 多记忆容器
+    AICallDesc& callDesc;
+    // 短期记忆
     std::map<std::string, std::vector<Message>> memories;
-    // 添加一条消息到历史记录
+    std::string resolveCallDesc(
+        AICallDesc& desc,
+        std::string& errorText
+    );
     void addMessage(
         const std::string& memkey,
         const std::string& role,
         const std::string& content
     );
-    // 聊天接口的底层实现
     std::string callChatAPI(
         bool readHistory,
         bool messagepd,
         const std::string& memkey,
         const std::string& userMessage,
-        const std::string& systemPrompt
+        const std::string& systemPrompt,
+        const std::string& extraSystemText
     );
     std::string callChatLocalAPI(
         bool readHistory,
         bool messagepd,
         const std::string& memkey,
         const std::string& userMessage,
-        const std::string& systemPrompt
+        const std::string& systemPrompt,
+        const std::string& extraSystemText
     );
-    // 推理接口的底层实现
-    std::string callReasonAPI(
-        const std::string& taskPrompt,
-        const std::string& systemPrompt
-    );
-    // 本地推理接口底层实现
-    std::string callReasonLocalAPI(
-        const std::string& taskPrompt,
-        const std::string& systemPrompt
-    );
-    // 解析 AI 返回的 JSON 数据
-    // 提取最终文本内容
     std::string parseResponse(
         bool judgmentai,
         const std::string& memkey,
         const std::string& jsonResponse
     );
 };
+
 #endif // AICLIENT_H

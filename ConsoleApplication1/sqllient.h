@@ -1,0 +1,36 @@
+#pragma once
+
+#include <string>      
+#include "sqlite3.h"
+
+class Sqllient
+{
+public:
+    explicit Sqllient(const std::string& databasePath);
+    ~Sqllient();
+
+    bool open();
+    void close();
+    bool isAvailable() const;
+
+    const char* getLastError() const;
+
+    bool execute(const char* sql);
+    bool prepare(const char* sql, sqlite3_stmt** stmt);
+    bool step(sqlite3_stmt* stmt);
+    void finalize(sqlite3_stmt* stmt);
+
+    const char* columnText(sqlite3_stmt* stmt, int index);
+    int columnInt(sqlite3_stmt* stmt, int index);
+
+    bool beginTransaction();
+    bool commitTransaction();
+    bool rollbackTransaction();
+
+private:
+    std::string dbPath;
+
+    sqlite3* dbHandle;
+    bool available;
+    std::string lastError;   
+};

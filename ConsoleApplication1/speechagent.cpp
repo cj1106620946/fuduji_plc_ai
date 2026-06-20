@@ -14,22 +14,39 @@
 #include <iostream>
 #include <iomanip>
 
-// ¿ØÖÆÌ¨Êä³ö
+#include <QDebug>
+#include <QString>
+// è°ƒè¯•å¼€å…³
+static bool g_debug = true;
+void speechagent::setDebug(bool enable)
+{
+    g_debug = enable;
+}
+bool speechagent::getDebug()
+{
+    return g_debug;
+}
+
+static void speechDebug(const std::string& text)
+{
+    qDebug().noquote() << QString::fromUtf8(text.c_str());
+}
+// æ§åˆ¶å°è¾“å‡º
 static void printGBK1(const std::string& text)
 {
-    DWORD w;
+  /*  DWORD w;
     WriteConsoleA(
         GetStdHandle(STD_OUTPUT_HANDLE),
         text.c_str(),
         (DWORD)text.size(),
         &w,
         NULL
-    );
+    );*/
+    speechDebug(text);
 }
-
 static void printUTF81(const std::string& text)
 {
-    int wlen = MultiByteToWideChar(
+ /*   int wlen = MultiByteToWideChar(
         CP_UTF8,
         0,
         text.c_str(),
@@ -56,22 +73,15 @@ static void printUTF81(const std::string& text)
         (DWORD)wbuf.size(),
         &w,
         NULL
-    );
+    );*/
+    speechDebug(text);
 }
+//è°ƒè¯•å‡½æ•°
 
-// µ÷ÊÔ¿ª¹Ø
-static bool g_debug = true;
-void speechagent::setDebug(bool enable)
-{
-    g_debug = enable;
-}
-bool speechagent::getDebug()
-{
-    return g_debug;
-}
 
-// È«¾Ö×´Ì¬
-static speechagent::SpeechParams speechParams;
+
+// å…¨å±€çŠ¶æ€
+static speechagent::SpeechParams speechparams;
 static std::vector<float> audioBuffer48k;
 static std::mutex audioBufferMutex;
 static std::deque<std::vector<float>> audioQueue;
@@ -80,7 +90,7 @@ static std::mutex audioQueueMutex;
 static whisper_context* whisperContext = nullptr;
 static PaStream* audioInputStream = nullptr;
 
-// ini ÅäÖÃ¶ÁÈ¡
+// ini é…ç½®è¯»å–
 static void load_config(const char* path)
 {
     std::ifstream in(path);
@@ -110,21 +120,21 @@ static void load_config(const char* path)
         trim(key);
         trim(val);
 
-        if (key == "device_index") speechParams.device_index = std::stoi(val);
-        else if (key == "channels") speechParams.channels = std::stoi(val);
-        else if (key == "sample_rate") speechParams.sample_rate = std::stoi(val);
-        else if (key == "vad_threshold") speechParams.vad_threshold = std::stof(val);
-        else if (key == "start_hit") speechParams.start_hit = std::stoi(val);
-        else if (key == "start_rms_min") speechParams.start_rms_min = std::stof(val);
-        else if (key == "end_silence_ms") speechParams.end_silence_ms = std::stoi(val);
-        else if (key == "check_ms") speechParams.check_ms = std::stoi(val);
-        else if (key == "max_record_ms") speechParams.max_record_ms = std::stoi(val);
-        else if (key == "debug_rms_print_ms") speechParams.debug_rms_print_ms = std::stoi(val);
+        if (key == "device_index") speechparams.device_index = std::stoi(val);
+        else if (key == "channels") speechparams.channels = std::stoi(val);
+        else if (key == "sample_rate") speechparams.sample_rate = std::stoi(val);
+        else if (key == "vad_threshold") speechparams.vad_threshold = std::stof(val);
+        else if (key == "start_hit") speechparams.start_hit = std::stoi(val);
+        else if (key == "start_rms_min") speechparams.start_rms_min = std::stof(val);
+        else if (key == "end_silence_ms") speechparams.end_silence_ms = std::stoi(val);
+        else if (key == "check_ms") speechparams.check_ms = std::stoi(val);
+        else if (key == "max_record_ms") speechparams.max_record_ms = std::stoi(val);
+        else if (key == "debug_rms_print_ms") speechparams.debug_rms_print_ms = std::stoi(val);
         else if (key == "debug") g_debug = (std::stoi(val) != 0);
     }
 }
 
-// PortAudio »Øµ÷
+// PortAudio å›è°ƒ
 static int audioCallback(
     const void* input,
     void*,
@@ -138,7 +148,7 @@ static int audioCallback(
     const float* in = (const float*)input;
     std::lock_guard<std::mutex> lock(audioBufferMutex);
 
-    if (speechParams.channels == 1)
+    if (speechparams.channels == 1)
     {
         for (unsigned long i = 0; i < frameCount; ++i)
             audioBuffer48k.push_back(in[i]);
@@ -154,7 +164,7 @@ static int audioCallback(
     return paContinue;
 }
 
-// ¹¤¾ßº¯Êı
+// å·¥å…·å‡½æ•°
 static float calc_rms(const std::vector<float>& v)
 {
     if (v.empty()) return 0.0f;
@@ -173,7 +183,7 @@ static void downsample_48k_to_16k(
         out.push_back((in[i] + in[i + 1] + in[i + 2]) / 3.0f);
 }
 
-// Æô¶¯
+// å¯åŠ¨
 bool speechagent::start()
 {
     load_config("speechagent.cfg");
@@ -183,7 +193,7 @@ bool speechagent::start()
 
     whisperContext =
         whisper_init_from_file_with_params(
-            "ggml-small.bin",
+            speechparams.modlname,
             cparams
         );
 
@@ -194,8 +204,8 @@ bool speechagent::start()
         return false;
 
     PaStreamParameters in{};
-    in.device = speechParams.device_index;
-    in.channelCount = speechParams.channels;
+    in.device = speechparams.device_index;
+    in.channelCount = speechparams.channels;
     in.sampleFormat = paFloat32;
 
     const PaDeviceInfo* devInfo = Pa_GetDeviceInfo(in.device);
@@ -208,7 +218,7 @@ bool speechagent::start()
         &audioInputStream,
         &in,
         nullptr,
-        speechParams.sample_rate,
+        speechparams.sample_rate,
         480,
         paClipOff,
         audioCallback,
@@ -218,11 +228,11 @@ bool speechagent::start()
     Pa_StartStream(audioInputStream);
 
     if (g_debug)
-        printUTF81(u8"[ÓïÒô] speechagent ÒÑÆô¶¯\n");
+        printUTF81(u8"[è¯­éŸ³] speechagent å·²å¯åŠ¨\n");
 
     return true;
 }
-// Â¼È¡ÒôÆµ½øÈë¶ÓÁĞ£¨´ø debug£©
+// å½•å–éŸ³é¢‘è¿›å…¥é˜Ÿåˆ—ï¼ˆå¸¦ debugï¼‰
 bool speechagent::pushtext()
 {
     {
@@ -246,24 +256,24 @@ bool speechagent::pushtext()
     if (g_debug)
     {
         std::ostringstream oss;
-        oss << u8"[" << now_sec() << u8"s][ÓïÒô] pushtext µÈ´ıËµ»°\n";
-        printUTF81(oss.str());
+        oss << u8"[" << now_sec() << u8"s][è¯­éŸ³] pushtext ç­‰å¾…è¯´è¯\n";
+        speechDebug(oss.str());
     }
 
     while (true)
     {
-        Sleep(speechParams.check_ms);
+        Sleep(speechparams.check_ms);
 
         DWORD now = GetTickCount();
 
         if (!isRecordingSpeech &&
-            now - t_base > (DWORD)speechParams.max_record_ms)
+            now - t_base > (DWORD)speechparams.max_record_ms)
         {
             if (g_debug)
             {
                 std::ostringstream oss;
-                oss << u8"[" << now_sec() << u8"s][ÓïÒô] pushtext ³¬Ê±Î´¼ì²âµ½Ëµ»°\n";
-                printUTF81(oss.str());
+                oss << u8"[" << now_sec() << u8"s][è¯­éŸ³] pushtext è¶…æ—¶æœªæ£€æµ‹åˆ°è¯´è¯\n";
+                speechDebug(oss.str());
             }
             return false;
         }
@@ -272,8 +282,8 @@ bool speechagent::pushtext()
         {
             std::lock_guard<std::mutex> lock(audioBufferMutex);
             size_t need =
-                (size_t)speechParams.sample_rate *
-                (size_t)speechParams.check_ms / 1000;
+                (size_t)speechparams.sample_rate *
+                (size_t)speechparams.check_ms / 1000;
 
             if (audioBuffer48k.size() < need)
                 continue;
@@ -286,37 +296,37 @@ bool speechagent::pushtext()
 
         float rmsValue = calc_rms(chunk);
 
-        if (g_debug && now - last_rms_print >= (DWORD)speechParams.debug_rms_print_ms)
+        if (g_debug && now - last_rms_print >= (DWORD)speechparams.debug_rms_print_ms)
         {
             std::ostringstream oss;
-            oss << u8"[" << now_sec() << u8"s][ÓïÒô] RMS="
+            oss << u8"[" << now_sec() << u8"s][è¯­éŸ³] RMS="
                 << rmsValue
-                << u8" threshold=" << speechParams.vad_threshold
-                << u8" start_min=" << speechParams.start_rms_min
+                << u8" threshold=" << speechparams.vad_threshold
+                << u8" start_min=" << speechparams.start_rms_min
                 << u8"\n";
-            printUTF81(oss.str());
+            speechDebug(oss.str());
             last_rms_print = now;
         }
 
         if (!isRecordingSpeech)
         {
-            if (rmsValue > speechParams.vad_threshold &&
-                rmsValue >= speechParams.start_rms_min)
+            if (rmsValue > speechparams.vad_threshold &&
+                rmsValue >= speechparams.start_rms_min)
             {
                 speechStartConfirmCount++;
 
                 if (g_debug)
                 {
                     std::ostringstream oss;
-                    oss << u8"[" << now_sec() << u8"s][ÓïÒô] ¿ªÊ¼ÃüÖĞ "
+                    oss << u8"[" << now_sec() << u8"s][è¯­éŸ³] å¼€å§‹å‘½ä¸­ "
                         << speechStartConfirmCount
                         << u8"/"
-                        << speechParams.start_hit
+                        << speechparams.start_hit
                         << u8"\n";
-                    printUTF81(oss.str());
+                    speechDebug(oss.str());
                 }
 
-                if (speechStartConfirmCount >= speechParams.start_hit)
+                if (speechStartConfirmCount >= speechparams.start_hit)
                 {
                     isRecordingSpeech = true;
                     silenceDurationMs = 0;
@@ -324,10 +334,10 @@ bool speechagent::pushtext()
                     {
                         std::lock_guard<std::mutex> lock(audioBufferMutex);
 
-                        // ÏòÇ°»ØÍË 200ms£¬±£ÁôÓïÒôÇ°µ¼
-                        const int preroll_ms = 200;
+                        // å‘å‰å›é€€ 200msï¼Œä¿ç•™è¯­éŸ³å‰å¯¼
+                        const int preroll_ms = speechparams.prerpll;
                         size_t prerollSamples =
-                            (size_t)speechParams.sample_rate * preroll_ms / 1000;
+                            (size_t)speechparams.sample_rate * preroll_ms / 1000;
 
                         if (audioBuffer48k.size() > prerollSamples)
                             speechStartSampleIndex = audioBuffer48k.size() - prerollSamples;
@@ -339,8 +349,8 @@ bool speechagent::pushtext()
                     {
                         std::ostringstream oss;
                         oss << u8"[" << now_sec()
-                            << u8"s][ÓïÒô] pushtext ÅĞ¶¨¿ªÊ¼Ëµ»°£¨ÒÑ»ØÍËÆğµã£©\n";
-                        printUTF81(oss.str());
+                            << u8"s][è¯­éŸ³] pushtext åˆ¤å®šå¼€å§‹è¯´è¯ï¼ˆå·²å›é€€èµ·ç‚¹ï¼‰\n";
+                        speechDebug(oss.str());
                     }
                 }
 
@@ -352,27 +362,27 @@ bool speechagent::pushtext()
         }
         else
         {
-            if (rmsValue < speechParams.vad_threshold)
-                silenceDurationMs += speechParams.check_ms;
+            if (rmsValue < speechparams.vad_threshold)
+                silenceDurationMs += speechparams.check_ms;
             else
                 silenceDurationMs = 0;
 
             if (g_debug)
             {
                 std::ostringstream oss;
-                oss << u8"[" << now_sec() << u8"s][ÓïÒô] ¾²ÒôÀÛ¼Æ "
+                oss << u8"[" << now_sec() << u8"s][è¯­éŸ³] é™éŸ³ç´¯è®¡ "
                     << silenceDurationMs
                     << u8" ms\n";
-                printUTF81(oss.str());
+                speechDebug(oss.str());
             }
 
-            if (silenceDurationMs >= speechParams.end_silence_ms)
+            if (silenceDurationMs >= speechparams.end_silence_ms)
             {
                 if (g_debug)
                 {
                     std::ostringstream oss;
-                    oss << u8"[" << now_sec() << u8"s][ÓïÒô] pushtext ÅĞ¶¨ÓïÒô½áÊø£¬Èë¶Ó\n";
-                    printUTF81(oss.str());
+                    oss << u8"[" << now_sec() << u8"s][è¯­éŸ³] pushtext åˆ¤å®šè¯­éŸ³ç»“æŸï¼Œå…¥é˜Ÿ\n";
+                    speechDebug(oss.str());
                 }
 
                 std::vector<float> pcm48k;
@@ -403,12 +413,12 @@ bool speechagent::pushtext()
 }
 
 
-// µ¯³ö²¢´¦ÀíÒ»ÌõÒôÆµ£¬·µ»ØÎÄ±¾
+// å¼¹å‡ºå¹¶å¤„ç†ä¸€æ¡éŸ³é¢‘ï¼Œè¿”å›æ–‡æœ¬
 std::string speechagent::poptext()
 {
     std::vector<float> pcm16k;
 
-    // ´ÓÒôÆµ¶ÓÁĞÖĞÈ¡³öÒ»ÌõÒôÆµ
+    // ä»éŸ³é¢‘é˜Ÿåˆ—ä¸­å–å‡ºä¸€æ¡éŸ³é¢‘
     {
         std::lock_guard<std::mutex> lock(audioQueueMutex);
         if (audioQueue.empty())
@@ -421,23 +431,35 @@ std::string speechagent::poptext()
     if (pcm16k.empty())
         return std::string();
 
-    // whisper ²ÎÊı
+    // whisper å‚æ•°
     whisper_full_params wparams =
         whisper_full_default_params(WHISPER_SAMPLING_GREEDY);
 
-    wparams.language = "auto";
-    wparams.temperature = 0.0f;
-    wparams.suppress_blank = true;
+    // è¯­è¨€
+    wparams.language = speechparams.language;
 
-    unsigned int hc = std::thread::hardware_concurrency();
-    if (hc == 0) hc = 4;
-    wparams.n_threads = (int)((std::max)(2u, hc / 2));
+    // éšæœºæ€§
+    wparams.temperature = speechparams.temperature;
 
-    wparams.print_progress = false;
-    wparams.print_special = false;
-    wparams.print_timestamps = false;
+    // æ˜¯å¦æŠ‘åˆ¶ç©ºç™½
+    wparams.suppress_blank = speechparams.suppress_blank;
 
-    // Ö´ĞĞÊ¶±ğ
+    // çº¿ç¨‹æ•°
+    if (speechparams.n_threads > 0)
+    {
+        wparams.n_threads = speechparams.n_threads;
+    }
+    else
+    {
+        unsigned int hc = std::thread::hardware_concurrency();
+        if (hc == 0) hc = 4;
+        wparams.n_threads = (int)((std::max)(2u, hc / 2));
+    }
+    // Whisper è°ƒè¯•è¾“å‡º
+    wparams.print_progress = speechparams.print_progress;
+    wparams.print_special = speechparams.print_special;
+    wparams.print_timestamps = speechparams.print_timestamps;
+    // æ‰§è¡Œè¯†åˆ«
     whisper_full(
         whisperContext,
         wparams,
@@ -445,7 +467,7 @@ std::string speechagent::poptext()
         (int)pcm16k.size()
     );
 
-    // Ö»È¡µÚÒ»¸ö segment
+    // åªå–ç¬¬ä¸€ä¸ª segment
     int n = whisper_full_n_segments(whisperContext);
     if (n <= 0)
         return std::string();
@@ -457,7 +479,7 @@ std::string speechagent::poptext()
     return std::string(t);
 }
 
-// ×èÈû»ñÈ¡ÎÄ±¾
+// é˜»å¡è·å–æ–‡æœ¬
 std::string speechagent::getText()
 {
     {
@@ -499,25 +521,25 @@ std::string speechagent::getText()
         std::ostringstream oss;
         oss << "[" << std::fixed << std::setprecision(3)
             << now_sec()
-            << "s][" << u8"ÓïÒô" << "] " << u8"µÈ´ıÓÃ»§Ëµ»°\n";
-        printUTF81(oss.str());
+            << "s][" << u8"è¯­éŸ³" << "] " << u8"ç­‰å¾…ç”¨æˆ·è¯´è¯\n";
+        speechDebug(oss.str());
     }
 
     while (true)
     {
-        Sleep(speechParams.check_ms);
+        Sleep(speechparams.check_ms);
 
         DWORD now = GetTickCount();
 
         if (!isRecordingSpeech &&
-            now - t_base > (DWORD)speechParams.max_record_ms)
+            now - t_base > (DWORD)speechparams.max_record_ms)
         {
             if (g_debug)
             {
                 std::ostringstream oss;
                 oss << "[" << now_sec()
-                    << "s][" << u8"ÓïÒô" << "] " << u8"³¬Ê±ÇÒÎ´¼ì²âµ½Ëµ»°£¬Ö±½Ó·µ»Ø\n";
-                printUTF81(oss.str());
+                    << "s][" << u8"è¯­éŸ³" << "] " << u8"è¶…æ—¶ä¸”æœªæ£€æµ‹åˆ°è¯´è¯ï¼Œç›´æ¥è¿”å›\n";
+                speechDebug(oss.str());
             }
 
             return "nosl";
@@ -527,8 +549,8 @@ std::string speechagent::getText()
         {
             std::lock_guard<std::mutex> lock(audioBufferMutex);
             size_t need =
-                (size_t)speechParams.sample_rate *
-                (size_t)speechParams.check_ms / 1000;
+                (size_t)speechparams.sample_rate *
+                (size_t)speechparams.check_ms / 1000;
 
             if (audioBuffer48k.size() < need)
                 continue;
@@ -541,22 +563,22 @@ std::string speechagent::getText()
 
         float rmsValue = calc_rms(chunk);
 
-        if (g_debug && (now - last_rms_print >= (DWORD)speechParams.debug_rms_print_ms))
+        if (g_debug && (now - last_rms_print >= (DWORD)speechparams.debug_rms_print_ms))
         {
             std::ostringstream oss;
             oss << "[" << now_sec()
-                << "s][" << u8"ÓïÒô" << "] " << u8"µ±Ç°RMS=" << rmsValue
-                << " threshold=" << speechParams.vad_threshold
-                << " start_min=" << speechParams.start_rms_min
+                << "s][" << u8"è¯­éŸ³" << "] " << u8"å½“å‰RMS=" << rmsValue
+                << " threshold=" << speechparams.vad_threshold
+                << " start_min=" << speechparams.start_rms_min
                 << "\n";
-            printUTF81(oss.str());
+            speechDebug(oss.str());
             last_rms_print = now;
         }
 
         if (!isRecordingSpeech)
         {
-            if (rmsValue > speechParams.vad_threshold &&
-                rmsValue >= speechParams.start_rms_min)
+            if (rmsValue > speechparams.vad_threshold &&
+                rmsValue >= speechparams.start_rms_min)
             {
                 speechStartConfirmCount++;
 
@@ -564,15 +586,15 @@ std::string speechagent::getText()
                 {
                     std::ostringstream oss;
                     oss << "[" << now_sec()
-                        << "s][" << u8"ÓïÒô" << "] " << u8"¿ªÊ¼ÃüÖĞ "
+                        << "s][" << u8"è¯­éŸ³" << "] " << u8"å¼€å§‹å‘½ä¸­ "
                         << speechStartConfirmCount << "/"
-                        << speechParams.start_hit
+                        << speechparams.start_hit
                         << " RMS=" << rmsValue
                         << "\n";
-                    printUTF81(oss.str());
+                    speechDebug(oss.str());
                 }
 
-                if (speechStartConfirmCount >= speechParams.start_hit)
+                if (speechStartConfirmCount >= speechparams.start_hit)
                 {
                     isRecordingSpeech = true;
                     hasDetectedSpeech = true;
@@ -586,13 +608,13 @@ std::string speechagent::getText()
                     if (g_debug)
                     {
                         std::ostringstream oss;
-                        oss << "[" << now_sec() << "s][" << u8"ÓïÒô" << "] " << u8"¼ì²âµ½¿ªÊ¼Ëµ»° ";
+                        oss << "[" << now_sec() << "s][" << u8"è¯­éŸ³" << "] " << u8"æ£€æµ‹åˆ°å¼€å§‹è¯´è¯ ";
                         oss << "RMS=" << rmsValue << " ";
-                        oss << "threshold=" << speechParams.vad_threshold << " ";
-                        oss << "start_min=" << speechParams.start_rms_min << " ";
-                        oss << "hit=" << speechParams.start_hit;
+                        oss << "threshold=" << speechparams.vad_threshold << " ";
+                        oss << "start_min=" << speechparams.start_rms_min << " ";
+                        oss << "hit=" << speechparams.start_hit;
                         oss << "\n";
-                        printUTF81(oss.str());
+                        speechDebug(oss.str());
                     }
                 }
             }
@@ -602,30 +624,30 @@ std::string speechagent::getText()
                 {
                     std::ostringstream oss;
                     oss << "[" << now_sec()
-                        << "s][" << u8"ÓïÒô" << "] " << u8"¿ªÊ¼ÃüÖĞÇåÁã ";
+                        << "s][" << u8"è¯­éŸ³" << "] " << u8"å¼€å§‹å‘½ä¸­æ¸…é›¶ ";
                     oss << "RMS=" << rmsValue;
                     oss << "\n";
-                    printUTF81(oss.str());
+                    speechDebug(oss.str());
                 }
                 speechStartConfirmCount = 0;
             }
         }
         else
         {
-            if (rmsValue < speechParams.vad_threshold)
+            if (rmsValue < speechparams.vad_threshold)
             {
-                silenceDurationMs += speechParams.check_ms;
+                silenceDurationMs += speechparams.check_ms;
 
                 if (g_debug)
                 {
                     std::ostringstream oss;
                     oss << "[" << now_sec()
-                        << "s][" << u8"ÓïÒô" << "] " << u8"¾²ÒôÀÛ¼Æ "
+                        << "s][" << u8"è¯­éŸ³" << "] " << u8"é™éŸ³ç´¯è®¡ "
                         << silenceDurationMs
                         << u8" ms"
                         << " RMS=" << rmsValue
                         << "\n";
-                    printUTF81(oss.str());
+                    speechDebug(oss.str());
                 }
             }
             else
@@ -633,14 +655,14 @@ std::string speechagent::getText()
                 silenceDurationMs = 0;
             }
 
-            if (silenceDurationMs >= speechParams.end_silence_ms)
+            if (silenceDurationMs >= speechparams.end_silence_ms)
             {
                 if (g_debug)
                 {
                     std::ostringstream oss;
                     oss << "[" << now_sec()
-                        << "s][" << u8"ÓïÒô" << "] " << u8"ÅĞ¶¨Ëµ»°½áÊø£¬¿ªÊ¼Ê¶±ğ\n";
-                    printUTF81(oss.str());
+                        << "s][" << u8"è¯­éŸ³" << "] " << u8"åˆ¤å®šè¯´è¯ç»“æŸï¼Œå¼€å§‹è¯†åˆ«\n";
+                    speechDebug(oss.str());
                 }
 
                 std::vector<float> pcm48k;
@@ -660,8 +682,8 @@ std::string speechagent::getText()
                 {
                     std::ostringstream oss;
                     oss << "[" << now_sec()
-                        << "s][" << u8"ÓïÒô" << "] " << u8"Whisper ¿ªÊ¼´¦Àí\n";
-                    printUTF81(oss.str());
+                        << "s][" << u8"è¯­éŸ³" << "] " << u8"Whisper å¼€å§‹å¤„ç†\n";
+                    speechDebug(oss.str());
                 }
 
                 DWORD t0 = GetTickCount();
@@ -693,9 +715,9 @@ std::string speechagent::getText()
 
                     std::ostringstream oss;
                     oss << "[" << now_sec()
-                        << "s][" << u8"ÓïÒô" << "] " << u8"Whisper ½áÊø£¬ºÄÊ± "
-                        << cost << u8" Ãë\n";
-                    printUTF81(oss.str());
+                        << "s][" << u8"è¯­éŸ³" << "] " << u8"Whisper ç»“æŸï¼Œè€—æ—¶ "
+                        << cost << u8" ç§’\n";
+                    speechDebug(oss.str());
                 }
 
                 return result;
@@ -704,7 +726,7 @@ std::string speechagent::getText()
     }
 }
 
-// Í£Ö¹
+// åœæ­¢
 void speechagent::stop()
 {
     if (audioInputStream)
@@ -722,5 +744,5 @@ void speechagent::stop()
         whisperContext = nullptr;
     }
     if (g_debug)
-        printUTF81(u8"[ÓïÒô] speechagent ÒÑÍ£Ö¹\n");
+        printUTF81(u8"[è¯­éŸ³] speechagent å·²åœæ­¢\n");
 }

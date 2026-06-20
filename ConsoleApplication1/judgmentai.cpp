@@ -3,26 +3,26 @@
 #include "aicontroller.h"
 #include "aitrace.h"
 #include <string>
-// ¹¹Ôì
+// æ„é€ 
 Judgmentai::Judgmentai(int AICODE, AIController& aiRef, AITrace& traceRef)
     :ai(aiRef), trace(traceRef), aicode(AICODE)
 {
 }
 
-// ¶Ô»°Î¨Ò»Èë¿Ú
+// å¯¹è¯å”¯ä¸€å…¥å£
 std::string Judgmentai::runOnce(const std::string& user_input)
 {
     trace.begin("judgment", aicode, user_input, ai.judgmentprompt_get());
     std::string output;
-    // µ÷ÓÃ¶Ô»° AI
+    // è°ƒç”¨å¯¹è¯ AI
     output = callJudgmentai(user_input);
-    // µ÷ÓÃ½áÊø¼ÇÂ¼
+    // è°ƒç”¨ç»“æŸè®°å½•
     trace.end(1, output);
     return output;
 }
 
-// ÄÚ²¿£ºµ÷ÓÃ¶Ô»° AI
+// å†…éƒ¨ï¼šè°ƒç”¨å¯¹è¯ AI
 std::string Judgmentai::callJudgmentai(const std::string& user_input)
 {
-    return ai.judgment(aicode, user_input);
+    return "0";
 }

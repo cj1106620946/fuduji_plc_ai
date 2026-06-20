@@ -2,22 +2,22 @@
 
 #include <windows.h>
 
-// UI ¹ÜÀíÀà
+// UI ç®¡ç†ç±»
 class AiManagerUI
 {
 public:
     AiManagerUI();
     ~AiManagerUI();
 
-    // ´´½¨´°¿Ú
+    // åˆ›å»ºçª—å£
     bool create(HINSTANCE instance);
-    // ÏÔÊ¾´°¿Ú
+    // æ˜¾ç¤ºçª—å£
     void show();
-    // ÏûÏ¢Ñ­»·
+    // æ¶ˆæ¯å¾ªç¯
     void loop();
 
 private:
-    // ´°¿Ú¹ı³Ì
+    // çª—å£è¿‡ç¨‹
     static LRESULT CALLBACK wndproc(
         HWND hwnd,
         UINT msg,

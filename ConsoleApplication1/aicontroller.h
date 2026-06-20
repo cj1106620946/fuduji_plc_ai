@@ -1,63 +1,64 @@
 #pragma once
+
 #include <string>
 #include <vector>
 #include <cstdint>
+#include "aiclient.h"
+
 class AIClient;
-// AIController
-// Ö°Ôğ£º
-// 1. ¶¨Òå AI ½ÇÉ«£¨Chat / Workspace / Decision£©
-// 2. ¹ÜÀí Prompt
-// 3. Ñ¡Ôñ²¢µ÷ÓÃ AIClient µÄ¾ßÌåÍ¨µÀ
+
 class AIController
 {
 public:
     explicit AIController(AIClient& aiRef);
-    // AI µ÷ÓÃÍ¨µÀÔ¼¶¨
-    // 1 : ÔÆ¶Ë Chat
-    // 2 : ±¾µØ Chat
-    // 3 : ÔÆ¶Ë Reason
-    // 4 : ±¾µØ Reaso
-    enum
-    {
-        AI_C_C = 1,
-        AI_L_C = 2,
-        AI_C_R = 3,
-        AI_L_R = 4
-    };
-	// Chatexcute AI£¨Ö´ĞĞ£©
-    std::string chatExecute(int ai_mode, const std::string& text);
-	// ChatTalk AI£¨¶Ô»°£©
-    std::string chatTalk(int ai_mode, const std::string& text);
-    // Workspace AI£¨½á¹¹Éú³É£©
-    std::string workspace(int ai_mode,const std::string& requirement_text);
-    // Decision AI£¨¾ö²ß£©
-    std::string decision(int ai_mode,const std::string& decision_input);
-	//judgment AI£¨ÅĞ¾ö£©
-    std::string judgment(int ai_mode,const std::string& decision_input);
-
-    // Chatexcute AI£¨Ö´ĞĞ£©
-    std::string execute(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
-    // ChatTalk AI£¨¶Ô»°£©
-    std::string chat(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
-    // Workspace AI£¨½á¹¹Éú³É£©
-    std::string workspace(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
-    // Decision AI£¨¾ö²ß£©
-    std::string decision(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
-    //judgment AI£¨ÅĞ¾ö£©
-    std::string judgment(bool rd, bool wt, int ai_mode, const std::string& memkey, const std::string& text);
-    std::string allairun(bool rd,bool wt,int ai_mode,const std::string& memkey,const std::string& text,const std::string& prompt
+    // æ€»å…¥å£
+    // 1 rd            : æ˜¯å¦è¯»å–çŸ­æœŸè®°å¿†
+    // 2 wt            : æ˜¯å¦å†™å…¥çŸ­æœŸè®°å¿†
+    // 3 ai_mode       : AI æ¨¡å¼
+    // 4 memkey        : è®°å¿†æ§½
+    // 5 text          : ç”¨æˆ·è¾“å…¥
+    // 6 prompt        : å›ºå®š Promptï¼ˆè§„åˆ™ï¼‰
+    // 7 personaText   : äººæ ¼ / é˜¶æ®µè®¾å®šï¼ˆsystem çº§ï¼Œå¯ä¸ºç©ºï¼‰
+    std::string allairun(
+        bool rd,
+        bool wt,
+        int ai_mode,
+        const std::string& memkey,
+        const std::string& text,
+        const std::string& prompt,
+        const std::string& personaText
     );
-    //¶ÁÈ¡prompt 
+    std::string allairun(
+        bool rd,
+        bool wt,
+        int ai_mode,
+        const std::string& memkey,
+        const std::string& text,
+        const std::string& prompt
+    );
+    AIClient& getClient();
+
+    // è¯»å– Prompt æ¥å£
     std::string executeprompt_get();
     std::string chatprompt_get();
-    std::string workspaceprompt_get();
+    std::string workspaceplcprompt_get();
+    std::string workspacesigprompt_get();
     std::string decisionprompt_get();
     std::string judgmentprompt_get();
     std::string chatexecuteprompt_get();
+    std::string memory13prompt_get();
+    std::string memory49prompt_get();
 
 private:
-    // Í³Ò» AI µ÷ÓÃÈë¿Ú
-    // Ö»¸ºÔğÂ·ÓÉ£¬²»×öÈÎºÎÒµÎñ´¦Àí
+    std::string callAI(
+        bool readHistory,
+        bool pd,
+        int ai_mode,
+        const std::string& memkey,
+        const std::string& user_text,
+        const std::string& prompt,
+        const std::string& personaText
+    );
     std::string callAI(
         bool readHistory,
         bool pd,
@@ -66,27 +67,28 @@ private:
         const std::string& user_text,
         const std::string& prompt
     );
-    std::string callAI(
-        bool readHistory,
-        bool pd,
-        int ai_mode,
-        const std::string& user_text,
-        const std::string& prompt
-    );
 private:
-    // Prompt ¹¹½¨
+    // Prompt æ„å»º
     void buildResponsePrompt();
     void buildExecutePrompt();
     void buildWorkspacePrompt();
     void buildDecisionPrompt();
-	void buildJudgmentPrompt();
+    void buildJudgmentPrompt();
+    void buildMemoryaiPrompt();
+
 private:
     AIClient& ai;
-    // Prompt Ä£°å£¨Ö»´æ×Ö·û´®£©
+
+    // Prompt æ¨¡æ¿ï¼ˆåªå­˜å­—ç¬¦ä¸²ï¼‰
     std::string response_prompt;
     std::string execute_prompt;
-    std::string workspace_prompt;
+    std::string workspacesig_prompt;
+    std::string workspaceplc_prompt;
     std::string decision_prompt;
     std::string Judgment_prompt;
     std::string chatexecute_prompt;
+    std::string memoryjudge_prompt;
+    std::string memorywrite13_prompt;
+    std::string memorywrite49_prompt;
+
 };

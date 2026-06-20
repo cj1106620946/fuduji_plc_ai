@@ -2,20 +2,16 @@
 
 #include <string>
 
-// plcai ²à Live2D ×´Ì¬Ğ´ÈëÆ÷
-// Ö°Ôğ£º
-// 1 ³õÊ¼»¯Ê±´´½¨ json ÎÄ¼ş
-// 2 Ğ´Èë dirty + value
+
 class JsonStateWriter
 {
 public:
-    // path ÀıÈç "live2dstate.json"
+    // path ä¾‹å¦‚ "live2dstate.json"
     explicit JsonStateWriter(const std::string& path);
 
-    // ³õÊ¼»¯£ºÈôÎÄ¼ş²»´æÔÚÔò´´½¨Ä¬ÈÏ json
+    // åˆå§‹åŒ–ï¼šè‹¥æ–‡ä»¶ä¸å­˜åœ¨åˆ™åˆ›å»ºé»˜è®¤ json
     void init();
-
-    // Ğ´Èë×´Ì¬£ºÖ±½Ó¸²¸ÇÎÄ¼ş
+    // å†™å…¥çŠ¶æ€ï¼šç›´æ¥è¦†ç›–æ–‡ä»¶
     bool write(const std::string& text,
         const std::string& emotion,
         int priority);

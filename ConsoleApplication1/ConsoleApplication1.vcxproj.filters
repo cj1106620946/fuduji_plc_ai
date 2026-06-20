@@ -1,10 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="源文件">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
     <Filter Include="头文件">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
@@ -13,37 +9,44 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="QTUI">
+      <UniqueIdentifier>{0a1904fa-dd74-47ae-929f-6f5a8d7ea695}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="外部文件">
+      <UniqueIdentifier>{a1d0f0f8-b8e3-4c53-8942-e11ff3c551cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="manager">
+      <UniqueIdentifier>{48107628-257c-45ec-9395-3a6f1d3c3a9c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ai类">
+      <UniqueIdentifier>{0016aa05-800b-4ecb-8b31-14d7775adb1d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\c-cpp\src\snap7.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="jsoncpp.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="plcclient.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="aiclient.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="console.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="aicontroller.cpp">
+    <ClCompile Include="jsonstatewriter.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="workspaceai.cpp">
-      <Filter>源文件</Filter>
+      <Filter>ai类</Filter>
     </ClCompile>
-    <ClCompile Include="executeai.cpp">
-      <Filter>源文件</Filter>
+    <ClCompile Include="chatai.cpp">
+      <Filter>ai类</Filter>
     </ClCompile>
     <ClCompile Include="decisionai.cpp">
-      <Filter>源文件</Filter>
+      <Filter>ai类</Filter>
+    </ClCompile>
+    <ClCompile Include="executeai.cpp">
+      <Filter>ai类</Filter>
+    </ClCompile>
+    <ClCompile Include="judgmentai.cpp">
+      <Filter>ai类</Filter>
     </ClCompile>
     <ClCompile Include="speechagent.cpp">
       <Filter>源文件</Filter>
@@ -51,48 +54,84 @@
     <ClCompile Include="piperengine.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="aitrace.cpp">
+    <ClCompile Include="sqlstore.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="chatai.cpp">
+    <ClCompile Include="plcclient.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="sqllient.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="memoryai.cpp">
+      <Filter>ai类</Filter>
+    </ClCompile>
+    <ClCompile Include="aitrace.cpp">
+      <Filter>ai类</Filter>
+    </ClCompile>
+    <ClCompile Include="aiclient.cpp">
+      <Filter>ai类</Filter>
     </ClCompile>
     <ClCompile Include="aimanager.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="judgmentai.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="jsonstatewriter.cpp">
-      <Filter>源文件</Filter>
+      <Filter>ai类</Filter>
     </ClCompile>
     <ClCompile Include="aimanagerui.cpp">
+      <Filter>ai类</Filter>
+    </ClCompile>
+    <ClCompile Include="jsoncpp.cpp">
+      <Filter>外部文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\c-cpp\src\snap7.cpp">
+      <Filter>外部文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\c-cpp\src\sqlite3.c">
+      <Filter>外部文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ai_plc_delegate.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="chatpanel.cpp">
+      <Filter>QTUI</Filter>
+    </ClCompile>
+    <ClCompile Include="qtmain.cpp">
+      <Filter>QTUI</Filter>
+    </ClCompile>
+    <ClCompile Include="personamanager.cpp">
+      <Filter>manager</Filter>
+    </ClCompile>
+    <ClCompile Include="projectmanager.cpp">
+      <Filter>manager</Filter>
+    </ClCompile>
+    <ClCompile Include="uppermachine.cpp">
+      <Filter>manager</Filter>
+    </ClCompile>
+    <ClCompile Include="memorybridge.cpp">
+      <Filter>manager</Filter>
+    </ClCompile>
+    <ClCompile Include="initpanel.cpp">
+      <Filter>QTUI</Filter>
+    </ClCompile>
+    <ClCompile Include="createprojectdialog.cpp">
+      <Filter>QTUI</Filter>
+    </ClCompile>
+    <ClCompile Include="initproject.cpp">
+      <Filter>QTUI</Filter>
+    </ClCompile>
+    <ClCompile Include="initpersona.cpp">
+      <Filter>QTUI</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>资源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="projectpanel.cpp">
+      <Filter>QTUI</Filter>
+    </ClCompile>
+    <ClCompile Include="aicontroller.cpp">
+      <Filter>ai类</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\c-cpp\include\snap7.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="plcclient.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="aiclient.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="console.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="aicontroller.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="workspaceai.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="executeai.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="decisionai.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="speechagent.h">
@@ -101,23 +140,116 @@
     <ClInclude Include="piperengine.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="aitrace.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="chatai.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="aimanager.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="judgmentai.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="jsonstatewriter.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="aimanagerui.h">
+    <ClInclude Include="sqlstore.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="sqllient.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="plcclient.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\c-cpp\include\snap7.h">
+      <Filter>外部文件</Filter>
+    </ClInclude>
+    <ClInclude Include="ai_plc_delegate.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="personamanager.h">
+      <Filter>manager</Filter>
+    </ClInclude>
+    <ClInclude Include="projectmanager.h">
+      <Filter>manager</Filter>
+    </ClInclude>
+    <ClInclude Include="uppermachine.h">
+      <Filter>manager</Filter>
+    </ClInclude>
+    <ClInclude Include="memorybridge.h">
+      <Filter>manager</Filter>
+    </ClInclude>
+    <ClInclude Include="aiclient.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="aicontroller.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="aimanager.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="aimanagerui.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="aitrace.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="chatai.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="decisionai.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="executeai.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="judgmentai.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="memoryai.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+    <ClInclude Include="workspaceai.h">
+      <Filter>ai类</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <QtMoc Include="chatpanel.h">
+      <Filter>QTUI</Filter>
+    </QtMoc>
+    <QtMoc Include="qtmain.h">
+      <Filter>QTUI</Filter>
+    </QtMoc>
+    <QtMoc Include="initpanel.h">
+      <Filter>QTUI</Filter>
+    </QtMoc>
+    <QtMoc Include="createprojectdialog.h">
+      <Filter>QTUI</Filter>
+    </QtMoc>
+    <QtMoc Include="initpersona.h">
+      <Filter>QTUI</Filter>
+    </QtMoc>
+    <QtMoc Include="initproject.h">
+      <Filter>QTUI</Filter>
+    </QtMoc>
+    <QtMoc Include="projectpanel.h">
+      <Filter>QTUI</Filter>
+    </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
+    <QtUic Include="qtmain.ui">
+      <Filter>QTUI</Filter>
+    </QtUic>
+    <QtUic Include="chatpanel.ui">
+      <Filter>QTUI</Filter>
+    </QtUic>
+    <QtUic Include="initpanel.ui">
+      <Filter>QTUI</Filter>
+    </QtUic>
+    <QtUic Include="initproject.ui">
+      <Filter>QTUI</Filter>
+    </QtUic>
+    <QtUic Include="initpersona.ui">
+      <Filter>QTUI</Filter>
+    </QtUic>
+    <QtUic Include="projectpanel.ui">
+      <Filter>QTUI</Filter>
+    </QtUic>
+  </ItemGroup>
+  <ItemGroup>
+    <QtRcc Include="resourcesqrc.qrc">
+      <Filter>资源文件</Filter>
+    </QtRcc>
   </ItemGroup>
 </Project>

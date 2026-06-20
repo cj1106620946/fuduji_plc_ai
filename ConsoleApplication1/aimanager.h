@@ -7,12 +7,9 @@
 #include <atomic>
 #include <thread>
 
-// Ç°ÏòÉùÃ÷£¨±ØĞë£©
+// å‰å‘å£°æ˜ï¼ˆå¿…é¡»ï¼‰
 class AiManager;
 class AiManagerUI;
-
-// UI Ïß³ÌÈë¿Ú£¨ÀàÍâ£©
-void aiuiThreadEntry(AiManager* mgr);
 
 #include "plcclient.h"
 #include "aiclient.h"
@@ -30,34 +27,35 @@ void aiuiThreadEntry(AiManager* mgr);
 class AiManager
 {
 public:
-    AiManager();
     ~AiManager();
 
-    // Æô¶¯¹ÜÀíÆ÷
+    // å¯åŠ¨ç®¡ç†å™¨
     void run();
 
-    // ÍÆËÍÓÃ»§ÊäÈë
+    // æ¨é€ç”¨æˆ·è¾“å…¥
     void pushUserInput(const std::string& text);
 
-    // UI£¨¸½Êô£©
+    // UIï¼ˆé™„å±ï¼‰
     AiManagerUI* ui = nullptr;
 
 private:
-    // ³õÊ¼»¯
-    void ini();
+    // åˆå§‹åŒ–
+    void iniaiwrite();
+    void inimodwrite();
 
-    // Ö÷Âß¼­Ïß³Ì
+    void iniread();
+    // ä¸»é€»è¾‘çº¿ç¨‹
     void processLoop();
     void processWorkLoop();
 
-    // ÊäÈëÏà¹Ø
+    // è¾“å…¥ç›¸å…³
     void inputLoop();
     void textInputLoop();
     void voiceInputLoop();
     void voicepushloop();
     void voicepoploop();
 
-    // ´¦ÀíÂß¼­
+    // å¤„ç†é€»è¾‘
     void handleUserInput(const std::string& text);
     void handleResultInput(const std::string& text);
 
@@ -69,7 +67,7 @@ private:
     };
 
 private:
-    // ºËĞÄÄ£¿é
+    // æ ¸å¿ƒæ¨¡å—
     PLCClient plc;
     AIClient ai;
     AIController aiController;
@@ -81,17 +79,17 @@ private:
     WorkspaceAI* workspace = nullptr;
 
 private:
-    // ×´Ì¬Êä³ö
+    // çŠ¶æ€è¾“å‡º
     JsonStateWriter live2dWriter;
 
 private:
-    // ¶ÓÁĞ
+    // é˜Ÿåˆ—
     std::queue<std::string> userQueue;
     std::queue<WorkItem> workQueue;
     std::queue<std::string> resultQueue;
 
 private:
-    // Ïß³Ì
+    // çº¿ç¨‹
     std::thread uiThread;
     std::thread inputThread;
     std::thread textThread;
@@ -102,16 +100,20 @@ private:
     std::thread workThread;
 
 private:
-    // Í¬²½
+    // åŒæ­¥
     std::mutex userMutex;
     std::mutex workMutex;
     std::mutex resultMutex;
     std::condition_variable cv;
     std::condition_variable workcv;
-
 private:
-    // ÆäËû
+   //
+    bool uvq = true;//é€‰æ‹©è¯­è¨€æ¨¡å¼ï¼Œé»˜è®¤é˜Ÿåˆ—
+	bool vie = true;//å¯ç”¨è¯­éŸ³è¾“å…¥
+	int ai_mode = 2;//aiæ¨¡å¼ï¼Œé»˜è®¤æœ¬åœ°èŠå¤©
+	bool envoice = true;//å¯ç”¨è¯­éŸ³
+private:
+    // å…¶ä»–
     speechagent speech;
-    bool useVoiceQueue = true;
     std::atomic<bool> running{ true };
 };

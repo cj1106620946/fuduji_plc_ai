@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -25,6 +25,8 @@
     <RootNamespace>ConsoleApplication1</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>fuduij_ai_plc</ProjectName>
+    <Keyword>QtVS_v304</Keyword>
+    <QtMsBuild Condition="'$(QtMsBuild)'=='' OR !Exists('$(QtMsBuild)\qt.targets')">$(MSBuildProjectDirectory)\QtMsBuild</QtMsBuild>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -54,21 +56,42 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <Import Project="$(QtMsBuild)\qt_defaults.props" Condition="Exists('$(QtMsBuild)\qt_defaults.props')" />
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <QtModules>core;gui;widgets</QtModules>
+  </PropertyGroup>
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <QtModules>core;gui;widgets</QtModules>
+  </PropertyGroup>
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <QtModules>core;gui;widgets</QtModules>
+  </PropertyGroup>
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <QtModules>core;gui;widgets</QtModules>
+    <QtInstall>6.10.2</QtInstall>
+  </PropertyGroup>
+  <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') OR !Exists('$(QtMsBuild)\Qt.props')">
+    <Message Importance="High" Text="QtMsBuild: could not locate qt.targets, qt.props; project may not build correctly." />
+  </Target>
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(QtMsBuild)\Qt.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
@@ -78,6 +101,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -92,6 +116,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -104,8 +129,9 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\project\c-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>GeneratedFiles\$(ConfigurationName);GeneratedFiles;D:\project\c-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -122,13 +148,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\project\c-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>GeneratedFiles\$(ConfigurationName);GeneratedFiles;D:\project\c-cpp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\project\c-cpp\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\Qt\6.10.2\msvc2022_64\lib;D:\project\c-cpp\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>snap7.lib;libcurl_a_debug.lib;libcurl_a.lib;ws2_32.lib;winmm.lib;wldap32.lib;Crypt32.lib;Normaliz.lib;whisper.lib;portaudio.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
@@ -137,22 +164,47 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\c-cpp\src\snap7.cpp" />
+    <ClCompile Include="..\..\c-cpp\src\sqlite3.c" />
     <ClCompile Include="aicontroller.cpp" />
     <ClCompile Include="aimanager.cpp" />
     <ClCompile Include="aimanagerui.cpp" />
     <ClCompile Include="aitrace.cpp" />
+    <ClCompile Include="ai_plc_delegate.cpp" />
     <ClCompile Include="chatai.cpp" />
+    <ClCompile Include="chatpanel.cpp" />
+    <ClCompile Include="createprojectdialog.cpp" />
     <ClCompile Include="executeai.cpp" />
     <ClCompile Include="console.cpp" />
     <ClCompile Include="decisionai.cpp" />
     <ClCompile Include="aiclient.cpp" />
+    <ClCompile Include="initpanel.cpp" />
+    <ClCompile Include="initpersona.cpp" />
+    <ClCompile Include="initproject.cpp" />
     <ClCompile Include="jsonstatewriter.cpp" />
     <ClCompile Include="judgmentai.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="jsoncpp.cpp" />
+    <ClCompile Include="memoryai.cpp" />
+    <ClCompile Include="memorybridge.cpp" />
+    <ClCompile Include="personamanager.cpp" />
     <ClCompile Include="piperengine.cpp" />
     <ClCompile Include="plcclient.cpp" />
+    <ClCompile Include="projectmanager.cpp" />
+    <ClCompile Include="projectpanel.cpp" />
+    <ClCompile Include="qtmain.cpp">
+      <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">input</DynamicSource>
+      <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(Filename).moc</QtMocFileName>
+      <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">input</DynamicSource>
+      <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(Filename).moc</QtMocFileName>
+      <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">input</DynamicSource>
+      <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(Filename).moc</QtMocFileName>
+      <DynamicSource Condition="'$(Configuration)|$(Platform)'=='Release|x64'">input</DynamicSource>
+      <QtMocFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(Filename).moc</QtMocFileName>
+    </ClCompile>
     <ClCompile Include="speechagent.cpp" />
+    <ClCompile Include="sqlstore.cpp" />
+    <ClCompile Include="sqllient.cpp" />
+    <ClCompile Include="uppermachine.cpp" />
     <ClCompile Include="workspaceai.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -161,19 +213,46 @@
     <ClInclude Include="aimanager.h" />
     <ClInclude Include="aimanagerui.h" />
     <ClInclude Include="aitrace.h" />
+    <ClInclude Include="ai_plc_delegate.h" />
     <ClInclude Include="chatai.h" />
+    <QtMoc Include="chatpanel.h" />
+    <QtMoc Include="createprojectdialog.h" />
     <ClInclude Include="executeai.h" />
     <ClInclude Include="console.h" />
     <ClInclude Include="decisionai.h" />
     <ClInclude Include="aiclient.h" />
+    <QtMoc Include="initpanel.h" />
+    <QtMoc Include="initproject.h" />
+    <QtMoc Include="initpersona.h" />
     <ClInclude Include="jsonstatewriter.h" />
     <ClInclude Include="judgmentai.h" />
+    <ClInclude Include="memoryai.h" />
+    <ClInclude Include="memorybridge.h" />
+    <ClInclude Include="personamanager.h" />
     <ClInclude Include="piperengine.h" />
     <ClInclude Include="plcclient.h" />
+    <QtMoc Include="qtmain.h" />
+    <ClInclude Include="projectmanager.h" />
+    <QtMoc Include="projectpanel.h" />
     <ClInclude Include="speechagent.h" />
+    <ClInclude Include="sqlstore.h" />
+    <ClInclude Include="sqllient.h" />
+    <ClInclude Include="uppermachine.h" />
     <ClInclude Include="workspaceai.h" />
   </ItemGroup>
+  <ItemGroup>
+    <QtUic Include="chatpanel.ui" />
+    <QtUic Include="initpanel.ui" />
+    <QtUic Include="initpersona.ui" />
+    <QtUic Include="initproject.ui" />
+    <QtUic Include="projectpanel.ui" />
+    <QtUic Include="qtmain.ui" />
+  </ItemGroup>
+  <ItemGroup>
+    <QtRcc Include="resourcesqrc.qrc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Project="$(QtMsBuild)\qt.targets" Condition="Exists('$(QtMsBuild)\qt.targets')" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>

@@ -4,34 +4,34 @@
 
 static const wchar_t* UI_CLASS_NAME = L"AiManagerUIClass";
 
-// ¶¥²¿×´Ì¬À¸¸ß¶È
+// é¡¶éƒ¨çŠ¶æ€æ é«˜åº¦
 static const int STATUS_BAR_HEIGHT = 48;
 
-// µ×²¿¿ØÖÆÀ¸¸ß¶È
+// åº•éƒ¨æ§åˆ¶æ é«˜åº¦
 static const int CONTROL_BAR_HEIGHT = 56;
 
-// ÖĞ¼äÊäÈëÇø¹Ì¶¨¸ß¶È
+// ä¸­é—´è¾“å…¥åŒºå›ºå®šé«˜åº¦
 static const int MAIN_INPUT_HEIGHT = 80;
 
-// ¶¥²¿×´Ì¬À¸ÇøÓò
+// é¡¶éƒ¨çŠ¶æ€æ åŒºåŸŸ
 static RECT rcStatus{};
 
-// ÖĞ¼äÖ÷ÇøÓò
+// ä¸­é—´ä¸»åŒºåŸŸ
 static RECT rcMain{};
 
-// ÖĞ¼äÉÏ²¿Êä³öÇøÓò
+// ä¸­é—´ä¸Šéƒ¨è¾“å‡ºåŒºåŸŸ
 static RECT rcMainOutput{};
 
-// ÖĞ¼äÏÂ²¿ÊäÈëÇøÓò
+// ä¸­é—´ä¸‹éƒ¨è¾“å…¥åŒºåŸŸ
 static RECT rcMainInput{};
 
-// µ×²¿¿ØÖÆÇøÓò
+// åº•éƒ¨æ§åˆ¶åŒºåŸŸ
 static RECT rcControl{};
 
-// ÊäÈë¿ò¿Ø¼ş
+// è¾“å…¥æ¡†æ§ä»¶
 static HWND hInputEdit = nullptr;
 
-// Êä³öÏûÏ¢ÁĞ±í£¨µÈ¼ÛÓÚÒÔÇ°µÄ¿ØÖÆÌ¨Êä³öÁ÷£©
+// è¾“å‡ºæ¶ˆæ¯åˆ—è¡¨ï¼ˆç­‰ä»·äºä»¥å‰çš„æ§åˆ¶å°è¾“å‡ºæµï¼‰
 static std::vector<std::wstring> gOutputLines;
 
 AiManagerUI::AiManagerUI()
@@ -75,7 +75,7 @@ bool AiManagerUI::create(HINSTANCE instance)
     if (!hwnd)
         return false;
 
-    // ´´½¨ÊäÈë¿ò¿Ø¼ş
+    // åˆ›å»ºè¾“å…¥æ¡†æ§ä»¶
     hInputEdit = CreateWindowExW(
         WS_EX_CLIENTEDGE,
         L"EDIT",
@@ -88,7 +88,7 @@ bool AiManagerUI::create(HINSTANCE instance)
         nullptr
     );
 
-    // ³õÊ¼»¯Ò»´Î²¼¾Ö
+    // åˆå§‹åŒ–ä¸€æ¬¡å¸ƒå±€
     RECT rc{};
     GetClientRect(hwnd, &rc);
     SendMessageW(hwnd, WM_SIZE, 0, MAKELPARAM(rc.right, rc.bottom));
@@ -165,7 +165,7 @@ LRESULT CALLBACK AiManagerUI::wndproc(
 
     case WM_KEYDOWN:
     {
-        // µ±ÊäÈë¿òÓĞ½¹µã²¢ÇÒ°´ÏÂ»Ø³µ
+        // å½“è¾“å…¥æ¡†æœ‰ç„¦ç‚¹å¹¶ä¸”æŒ‰ä¸‹å›è½¦
         if (wparam == VK_RETURN && GetFocus() == hInputEdit)
         {
             wchar_t buffer[512]{};
@@ -173,7 +173,7 @@ LRESULT CALLBACK AiManagerUI::wndproc(
 
             if (buffer[0] != L'\0')
             {
-                // µÈ¼ÛÓÚÒÔÇ°µÄ pushUserInput
+                // ç­‰ä»·äºä»¥å‰çš„ pushUserInput
                 gOutputLines.push_back(buffer);
                 SetWindowTextW(hInputEdit, L"");
                 InvalidateRect(hwnd, nullptr, TRUE);
@@ -188,16 +188,16 @@ LRESULT CALLBACK AiManagerUI::wndproc(
         PAINTSTRUCT ps{};
         HDC hdc = BeginPaint(hwnd, &ps);
 
-        // ¶¥²¿×´Ì¬À¸
+        // é¡¶éƒ¨çŠ¶æ€æ 
         FillRect(hdc, &rcStatus, CreateSolidBrush(RGB(90, 130, 180)));
 
-        // Êä³öÇø
+        // è¾“å‡ºåŒº
         FillRect(hdc, &rcMainOutput, CreateSolidBrush(RGB(245, 247, 250)));
 
-        // ÊäÈëÇø
+        // è¾“å…¥åŒº
         FillRect(hdc, &rcMainInput, CreateSolidBrush(RGB(225, 230, 235)));
 
-        // »­Êä³öÎÄ±¾
+        // ç”»è¾“å‡ºæ–‡æœ¬
         int y = rcMainOutput.top + 10;
         for (const auto& line : gOutputLines)
         {

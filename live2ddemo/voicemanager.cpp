@@ -26,8 +26,9 @@ void VoiceManager::start()
     running = true;
     // 创建 piper
     piper = new PiperDemo();
-    piper->init("piper"); // 这里用你现有的工作目录
-    // 启动线程
+    piper->init("piper"); 
+    //piper->init("qwen3tts"); 
+
     worker = std::thread(&VoiceManager::threadLoop, this);
 }
 
@@ -115,22 +116,21 @@ void VoiceManager::threadLoop()
         currentText = item.text;
         playing = true;
 
-        // ① 先生成 wav（等它真正生成完）
         if (piper && piper->generate(item.text))
         {
-            // ② wav 已经完整存在，此时再启动口型
-            if (model)
-            {
-                model->StartLipSync(piper->getOutputWav());
-            }
-
-            // ③ 再播放声音
             PlaySoundA(
                 piper->getOutputWav().c_str(),
                 NULL,
                 SND_FILENAME | SND_ASYNC
             );
+
+            if (model)
+            {
+                Sleep(200);
+                model->StartLipSync(piper->getOutputWav());
+            }
         }
+
 
 
         // 播放结束

@@ -2,94 +2,89 @@
 using namespace std;
 PLCClient::PLCClient()
 {
-    client = new TS7Client();  // ´´½¨ Snap7 ¿Í»§¶Ë
-    connected = false;         // Ä¬ÈÏÎ´Á¬½Ó
+    client = new TS7Client();  // åˆ›å»º Snap7 å®¢æˆ·ç«¯
+
+    lastError = 0;
 }
 PLCClient::~PLCClient()
 {
-    disconnectPLC();           // Èç¹û»¹ÔÚÁ¬½Ó£¬ÏÈ¶Ï¿ª
-    delete client;             // ÊÍ·Å Snap7 ¿Í»§¶Ë¶ÔÏó
+    disconnectPLC();           // å¦‚æœè¿˜åœ¨è¿æ¥ï¼Œå…ˆæ–­å¼€
+    delete client;             // é‡Šæ”¾ Snap7 å®¢æˆ·ç«¯å¯¹è±¡
 }
-//Á¬½Óplc
-bool PLCClient::connectPLC(const  string& plc_ip, int rack, int slot)
+//è¿æ¥plc
+bool PLCClient::connectPLC(const std::string& plc_ip, int rack, int slot)
 {
-    int result = client->ConnectTo(plc_ip.c_str(), rack, slot);
-    if (result == 0) {       
-        connected = true;
+    lastError = client->ConnectTo(plc_ip.c_str(), rack, slot);
+    if (lastError == 0)
+    {
         return true;
     }
-    connected = false;
     return false;
 }
-//¶Ï¿ªÁ¬½Ó
+//æ–­å¼€è¿æ¥
 void PLCClient::disconnectPLC()
 {
-    if (connected) {
-        client->Disconnect(); 
-        connected = false;
-    }
+    if (!client)
+        return;
+    lastError = client->Disconnect();
 }
-//²éÑ¯ÊÇ·ñÁ¬½Ó
-bool PLCClient::isConnected() const
-{
-    return connected;
-}
+//åˆ¤æ–­åŒºåŸŸä»£ç 
 int areaCode(char c)
 {
     if (c == 'I')
-        return 0x81;  // ÊäÈëÇø
+        return 0x81;  // è¾“å…¥åŒº
 
     if (c == 'Q')
-        return 0x82;  // Êä³öÇø
+        return 0x82;  // è¾“å‡ºåŒº
 
     if (c == 'M')
-        return 0x83;  // MÇø
+        return 0x83;  // MåŒº
 
     return -1;
 }
-//ÊäÈë×ª»»
+//è¾“å…¥è½¬æ¢
 bool PLCClient::parseAddress(const  string& addr,int& area, int& dbNumber, int& start,int& bitIndex, int& dataSize)
 {
     dbNumber = 0;
     bitIndex = -1;
-    // ÕıÔò£ºÎ»µØÖ· 
+    // æ­£åˆ™ï¼šä½åœ°å€ 
      regex bitPattern(R"(([IQM])(\d+)\.(\d+))");
-    // ÕıÔò£º×Ö½Ú/×Ö/Ë«×Ö
+    // æ­£åˆ™ï¼šå­—èŠ‚/å­—/åŒå­—
      regex bytePattern(R"(([IQM])([BWD])(\d+))");
-    // ÕıÔò£ºDBÇø
+    // æ­£åˆ™ï¼šDBåŒº
      regex dbPattern(R"(DB(\d+)\.DB([XWD])(\d+)(?:\.(\d+))?)");
      smatch m;
-    // ½«ÇøÓò×Ö·û I/Q/M Ó³ÉäÎª Snap7 ÇøÓò´úÂë
-    //µÚÒ»ÖÖ£ºÎ»µØÖ· I0.0
+    // å°†åŒºåŸŸå­—ç¬¦ I/Q/M æ˜ å°„ä¸º Snap7 åŒºåŸŸä»£ç 
+    //ç¬¬ä¸€ç§ï¼šä½åœ°å€ I0.0
     if ( regex_match(addr, m, bitPattern)) {
         area = areaCode(m[1].str()[0]);   // I/Q/M
-        start =  stoi(m[2].str());     // ×Ö½Ú
-        bitIndex =  stoi(m[3].str());     // Î»ºÅ
-        dataSize = 1;                         // ¶Á1×Ö½Ú
+        start =  stoi(m[2].str());     // å­—èŠ‚
+        bitIndex =  stoi(m[3].str());     // ä½å·
+        dataSize = 1;                         // è¯»1å­—èŠ‚
         return true;
     }
-    // µÚ¶şÖÖ
+    // ç¬¬äºŒç§
     if ( regex_match(addr, m, bytePattern)) {
         area = areaCode(m[1].str()[0]);
         char type = m[2].str()[0];
         start =  stoi(m[3].str());
-        if (type == 'B') dataSize = 1;  // ×Ö½Ú
-        else if (type == 'W') dataSize = 2;  // ×Ö
-        else if (type == 'D') dataSize = 4;  // Ë«×Ö
+        if (type == 'B') dataSize = 1;  // å­—èŠ‚
+        else if (type == 'W') dataSize = 2;  // å­—
+        else if (type == 'D') dataSize = 4;  // åŒå­—
         else return false;
         return true;
     }
-    //DB µØÖ·
+    //DB åœ°å€
     if ( regex_match(addr, m, dbPattern)) {
 
         area = S7AreaDB;
-        dbNumber =  stoi(m[1].str());  // DBºÅ
+        dbNumber =  stoi(m[1].str());  // DBå·
 
         char type = m[2].str()[0];
-        start =  stoi(m[3].str());     // ×Ö½ÚÆ«ÒÆ
+        start =  stoi(m[3].str());     // å­—èŠ‚åç§»
 
         if (m[4].matched)
-            bitIndex =  stoi(m[4].str());  // Î»Ë÷Òı£¨½ö DBX£©
+            bitIndex =  stoi(m[4].str());  // ä½ç´¢å¼•ï¼ˆä»… DBXï¼‰
 
         if (type == 'X') dataSize = 1;
         else if (type == 'W') dataSize = 2;
@@ -97,95 +92,216 @@ bool PLCClient::parseAddress(const  string& addr,int& area, int& dbNumber, int& 
         else return false;
         return true;
     }
-    return false;  // ½âÎöÊ§°Ü
+    return false;  // è§£æå¤±è´¥
 }
-//¶Á²Ù×÷
-bool PLCClient::readAddress(const  string& addr, int32_t& value)
+//è¯»
+bool PLCClient::readAddress(const std::string& addr, int32_t& value)
 {
-    if (!connected) return false;
     int area, dbNumber, start, bitIndex, dataSize;
+
     if (!parseAddress(addr, area, dbNumber, start, bitIndex, dataSize))
+    {
+        lastError = -1;
         return false;
-    uint8_t buffer[4] = { 0 };   // ×î´ó¶Á4×Ö½Ú
-    // DBÇø¶ÁÈ¡ or ÆÕÍ¨Çø¶ÁÈ¡
-    int result = (area == S7AreaDB)
+    }
+
+    uint8_t buffer[4] = { 0 };
+
+    lastError = (area == S7AreaDB)
         ? client->DBRead(dbNumber, start, dataSize, buffer)
         : client->ReadArea(area, 0, start, dataSize, S7WLByte, buffer);
-    if (result != 0)
+
+    if (lastError != 0)
         return false;
-    //  Î»·ÃÎÊ
-    if (bitIndex >= 0) {
+
+    if (bitIndex >= 0)
+    {
         value = (buffer[0] >> bitIndex) & 1;
         return true;
     }
-    //  ×Ö½Ú·ÃÎÊB  
-    if (dataSize == 1) {
+
+    if (dataSize == 1)
         value = buffer[0];
-    }
-    //  ×Ö·ÃÎÊW
-    else if (dataSize == 2) {
-        value = (buffer[0] << 8) | buffer[1];  // ´ó¶Ë
-    }
-    //  Ë«×Ö·ÃÎÊD 
-    else if (dataSize == 4) {
+    else if (dataSize == 2)
+        value = (buffer[0] << 8) | buffer[1];
+    else if (dataSize == 4)
         value = (buffer[0] << 24) | (buffer[1] << 16)
-            | (buffer[2] << 8) | buffer[3];
-    }
+        | (buffer[2] << 8) | buffer[3];
+
     return true;
 }
-//Ğ´²Ù×÷
-bool PLCClient::writeAddress(const  string& addr, int32_t value)
+//å†™
+bool PLCClient::writeAddress(const std::string& addr, int32_t value)
 {
-    if (!connected) return false;
     int area, dbNumber, start, bitIndex, dataSize;
+
     if (!parseAddress(addr, area, dbNumber, start, bitIndex, dataSize))
+    {
+        lastError = -1;
         return false;
+    }
+
     uint8_t buffer[4] = { 0 };
+
     if (bitIndex >= 0)
     {
-        // 1) ÏÈ¶Á³öµ±Ç° 1 ×Ö½Ú£¨±ÜÃâĞ´Ò»¸öÎ»°ÑÆäËûÎ»ÇåÁã£©
         uint8_t b = 0;
-        int r = (area == S7AreaDB)
+
+        lastError = (area == S7AreaDB)
             ? client->DBRead(dbNumber, start, 1, &b)
             : client->ReadArea(area, 0, start, 1, S7WLByte, &b);
 
-        if (r != 0) return false;
+        if (lastError != 0)
+            return false;
 
-        // 2) ĞŞ¸ÄÄ¿±ê bit£¬ÆäËü bit ±£³Ö²»±ä
         if (value)
             b |= (uint8_t)(1u << bitIndex);
         else
             b &= (uint8_t)~(1u << bitIndex);
 
-        // 3) Ğ´»ØÕâ¸ö×Ö½Ú
-        int w = (area == S7AreaDB)
+        lastError = (area == S7AreaDB)
             ? client->DBWrite(dbNumber, start, 1, &b)
             : client->WriteArea(area, 0, start, 1, S7WLByte, &b);
 
-        return w == 0;
+        return lastError == 0;
     }
 
-
-    // ---------- ×Ö½Ú ----------
-    if (dataSize == 1) {
+    if (dataSize == 1)
         buffer[0] = (uint8_t)value;
-    }
-    // ---------- ×Ö ----------
-    else if (dataSize == 2) {
+    else if (dataSize == 2)
+    {
         buffer[0] = (value >> 8) & 0xFF;
         buffer[1] = value & 0xFF;
     }
-    // ---------- Ë«×Ö ----------
-    else if (dataSize == 4) {
+    else if (dataSize == 4)
+    {
         buffer[0] = (value >> 24) & 0xFF;
         buffer[1] = (value >> 16) & 0xFF;
         buffer[2] = (value >> 8) & 0xFF;
         buffer[3] = value & 0xFF;
     }
 
-    int result = (area == S7AreaDB)
+    lastError = (area == S7AreaDB)
         ? client->DBWrite(dbNumber, start, dataSize, buffer)
         : client->WriteArea(area, 0, start, dataSize, S7WLByte, buffer);
 
-    return result == 0;
+    return lastError == 0;
 }
+//è¿è¡ŒçŠ¶æ€
+bool PLCClient::getCpuStatus(int& cpuStatus)
+{
+    lastError = client->PlcStatus();
+
+    if (lastError < 0)
+    {
+        cpuStatus = 0;
+        return false;
+    }
+    cpuStatus = lastError;
+    return true;
+}
+bool PLCClient::setPlcRun()
+{
+    lastError = client->PlcHotStart();
+
+    if (lastError < 0)
+        return false;
+
+    return true;
+}
+bool PLCClient::setPlcStop()
+{
+    lastError = client->PlcStop();
+
+    if (lastError < 0)
+        return false;
+
+    return true;
+}
+// è¿”å›æœ€è¿‘ä¸€æ¬¡ Snap7 é”™è¯¯æ–‡æœ¬
+std::string PLCClient::getLastErrorText() const
+{
+    if (!client)
+        return std::string();
+
+    return CliErrorText(lastError);
+}
+
+// è¯»å– PLC çš„èº«ä»½ä¿¡æ¯ï¼ˆæ¨¡å—ä¿¡æ¯ä¸å›ºä»¶ç‰ˆæœ¬ï¼‰
+bool PLCClient::getPlcIdentity(PlcIdentity& info)
+{
+    TS7OrderCode order{};
+    TS7CpuInfo cpuInfo{};
+
+    lastError = client->GetOrderCode(&order);
+    if (lastError != 0)
+        return false;
+
+    lastError = client->GetCpuInfo(&cpuInfo);
+    if (lastError != 0)
+        return false;
+
+    info.orderCode = order.Code;
+    info.moduleName = cpuInfo.ModuleTypeName;
+    info.versionMajor = order.V1;
+    info.versionMinor = order.V2;
+    info.versionPatch = order.V3;
+
+    return true;
+}
+
+// è¯»å– PLC å½“å‰ç³»ç»Ÿæ—¶é—´
+bool PLCClient::getPlcTime(PlcTime& time)
+{
+    tm plcTime{};
+
+    lastError = client->GetPlcDateTime(&plcTime);
+    if (lastError != 0)
+        return false;
+
+    time.year = plcTime.tm_year + 1900;
+    time.month = plcTime.tm_mon + 1;
+    time.day = plcTime.tm_mday;
+    time.hour = plcTime.tm_hour;
+    time.minute = plcTime.tm_min;
+    time.second = plcTime.tm_sec;
+
+    return true;
+}
+
+// å°† PLC ç³»ç»Ÿæ—¶é—´åŒæ­¥ä¸ºå½“å‰æœ¬æœºæ—¶é—´
+bool PLCClient::syncPlcTimeWithLocal()
+{
+    time_t now = time(nullptr);
+    tm localTime{};
+
+#if defined(_WIN32)
+    localtime_s(&localTime, &now);
+#else
+    localtime_r(&now, &localTime);
+#endif
+
+    lastError = client->SetPlcDateTime(&localTime);
+    if (lastError != 0)
+        return false;
+
+    return true;
+}
+
+// è¯»å– PLC çš„ DB å—æ•°æ®ï¼ˆå¿«ç…§è¯»å–ï¼‰
+bool PLCClient::readDbBlock(
+    int dbNumber,
+    int start,
+    int size,
+    std::vector<uint8_t>& buffer
+)
+{
+    buffer.resize(size);
+
+    lastError = client->DBRead(dbNumber, start, size, buffer.data());
+    if (lastError != 0)
+        return false;
+
+    return true;
+}
+

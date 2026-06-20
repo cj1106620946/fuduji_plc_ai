@@ -1,21 +1,87 @@
 #include "decisionai.h"
-DecisionAI::DecisionAI(int AICODE,AIController& aiRef,AITrace& traceRef)
-    :ai(aiRef), trace(traceRef), aicode(AICODE)
+#include "aicontroller.h"
+#include "aitrace.h"
+
+#include <json/json.h>
+#include <string>
+
+// æ„é€ 
+DecisionAI::DecisionAI(
+    int AICODE,
+    AIController& aiRef,
+    AITrace& traceRef
+)
+    : aicode(AICODE),
+    ai(aiRef),
+    trace(traceRef)
 {
 }
-// ĞŞÕı£ºÊµÏÖº¯ÊıÊ±Ğè¼ÓÉÏ·µ»ØÀàĞÍ std::string£¬ÇÒ²»ÄÜÓĞ·ÖºÅ
-std::string DecisionAI::runOnce(const std::string& user_input)
+
+// å”¯ä¸€æ‰§è¡Œå…¥å£
+std::string DecisionAI::runOnce(
+    const std::string& snapshot,
+    const std::string& user_input
+)
 {
-    return "no";
+    std::string trace_in = snapshot + "|" + user_input;
+    // å¼€å§‹ trace è®°å½•
+    trace.begin(
+        "decision",
+        aicode,
+        trace_in,
+        ai.decisionprompt_get()
+    );
+    // è°ƒç”¨ AI
+    std::string jsonOut = callDecisionAI(snapshot, user_input);
+
+    // è§£æ JSON
+    std::string content;
+    if (!parseDecisionJson(jsonOut, content))
+    {
+        trace.end(false, jsonOut);
+        return jsonOut;
+    }
+    trace.end(true, jsonOut);
+    return content;
 }
-// Íâ²¿Êı¾İ½Ó¿Ú£¨Õ¼Î»£¬²»ÊµÏÖ£©
-void DecisionAI::feedExternalData(const std::string& data)
+
+// è°ƒç”¨ AIController
+std::string DecisionAI::callDecisionAI(
+    const std::string& snapshot,
+    const std::string& user_input
+)
 {
-    // Ô¤Áô£º
-    // - ÅÀ³æ½á¹û
-    // - HTTP / MQTT
-    // - ´«¸ĞÆ÷¾ÛºÏÊı¾İ
-    // - µÚÈı·½ÏµÍ³ÊäÈë
-    // ºóĞø¿ÉÒÔÍ¨¹ıĞ­Òé·¢ËÍ¸ø ChatAI£¬ÀıÈç£º
-    // chat.query_once("DECISION_EXTERNAL_DATA\n" + data);
+    // snapshot + user_input ä½œä¸ºè¾“å…¥ä¸Šä¸‹æ–‡
+    std::string input;
+    input.reserve(snapshot.size() + user_input.size() + 16);
+    input.append(snapshot);
+    input.append("\n");
+    input.append(user_input);
+
+    return ai.allairun(
+        true,
+        true,
+        aicode,
+        "decision",
+        input,
+        ai.decisionprompt_get()
+    );
+}
+
+// è§£æ decision JSONï¼Œåªæå– content
+bool DecisionAI::parseDecisionJson(
+    const std::string& jsonText,
+    std::string& outContent
+)
+{
+    Json::Value root;
+    Json::Reader reader;
+    if (!reader.parse(jsonText, root))
+        return false;
+    if (root.isMember("content") && root["content"].isString())
+    {
+        outContent = root["content"].asString();
+        return true;
+    }
+    return false;
 }
